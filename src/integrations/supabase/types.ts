@@ -292,6 +292,7 @@ export type Database = {
       production_cycles: {
         Row: {
           client_id: string
+          contract_number: string | null
           created_at: string
           deleted_at: string | null
           expected_production: number | null
@@ -321,6 +322,7 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          contract_number?: string | null
           created_at?: string
           deleted_at?: string | null
           expected_production?: number | null
@@ -350,6 +352,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          contract_number?: string | null
           created_at?: string
           deleted_at?: string | null
           expected_production?: number | null

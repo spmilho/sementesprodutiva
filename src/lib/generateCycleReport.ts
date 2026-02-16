@@ -14,6 +14,7 @@ interface CycleData {
   area: number;
   ratio: string;
   irrigation: string;
+  contract?: string;
 }
 
 const STATUS_PT: Record<string, string> = {
@@ -69,10 +70,11 @@ function drawFallbackCover(doc: jsPDF, cycle: CycleData, generatedAt: string) {
   doc.setTextColor(50, 50, 50);
   doc.setFontSize(12);
 
-  const lines = [
+  const lines: [string, string][] = [
     ["Cliente", cycle.client],
     ["Fazenda", cycle.farm],
     ["Pivô", cycle.field],
+    ...(cycle.contract ? [["Nº Contrato", cycle.contract] as [string, string]] : []),
     ["Híbrido", cycle.hybrid],
     ["Safra", cycle.season],
     ["Área Total", `${cycle.area} ha`],
@@ -110,6 +112,7 @@ function drawExecutiveSummary(doc: jsPDF, cycle: CycleData) {
       ["Status", STATUS_PT[cycle.status] || cycle.status],
       ["Cliente", cycle.client],
       ["Fazenda / Pivô", `${cycle.farm} — ${cycle.field}`],
+      ...(cycle.contract ? [["Nº Contrato", cycle.contract]] : []),
       ["Híbrido", cycle.hybrid],
       ["Linhagem Fêmea", cycle.female],
       ["Linhagem Macho", cycle.male],
