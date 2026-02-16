@@ -361,6 +361,81 @@ export type Database = {
           },
         ]
       }
+      nicking_observations: {
+        Row: {
+          action_taken: string | null
+          created_at: string
+          cycle_id: string
+          deleted_at: string | null
+          female_stage: string
+          id: string
+          latitude: number
+          longitude: number
+          male_stage: string
+          observation_date: string
+          observations: string | null
+          org_id: string
+          photo_url: string | null
+          pollen_availability: string
+          silk_reception_pct: number
+          synchrony_status: string
+          updated_at: string
+        }
+        Insert: {
+          action_taken?: string | null
+          created_at?: string
+          cycle_id: string
+          deleted_at?: string | null
+          female_stage: string
+          id?: string
+          latitude: number
+          longitude: number
+          male_stage: string
+          observation_date: string
+          observations?: string | null
+          org_id: string
+          photo_url?: string | null
+          pollen_availability: string
+          silk_reception_pct?: number
+          synchrony_status: string
+          updated_at?: string
+        }
+        Update: {
+          action_taken?: string | null
+          created_at?: string
+          cycle_id?: string
+          deleted_at?: string | null
+          female_stage?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          male_stage?: string
+          observation_date?: string
+          observations?: string | null
+          org_id?: string
+          photo_url?: string | null
+          pollen_availability?: string
+          silk_reception_pct?: number
+          synchrony_status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nicking_observations_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nicking_observations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
