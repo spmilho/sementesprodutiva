@@ -177,6 +177,87 @@ export type Database = {
           },
         ]
       }
+      emergence_counts: {
+        Row: {
+          count_date: string
+          created_at: string
+          cycle_id: string
+          deleted_at: string | null
+          emergence_pct: number
+          id: string
+          latitude: number | null
+          line_length: number
+          longitude: number | null
+          observations: string | null
+          org_id: string
+          plant_count: number
+          plants_per_ha: number
+          plants_per_meter: number
+          row_spacing: number
+          sample_point: string
+          target_population: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          count_date: string
+          created_at?: string
+          cycle_id: string
+          deleted_at?: string | null
+          emergence_pct: number
+          id?: string
+          latitude?: number | null
+          line_length?: number
+          longitude?: number | null
+          observations?: string | null
+          org_id: string
+          plant_count: number
+          plants_per_ha: number
+          plants_per_meter: number
+          row_spacing?: number
+          sample_point: string
+          target_population?: number
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          count_date?: string
+          created_at?: string
+          cycle_id?: string
+          deleted_at?: string | null
+          emergence_pct?: number
+          id?: string
+          latitude?: number | null
+          line_length?: number
+          longitude?: number | null
+          observations?: string | null
+          org_id?: string
+          plant_count?: number
+          plants_per_ha?: number
+          plants_per_meter?: number
+          row_spacing?: number
+          sample_point?: string
+          target_population?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergence_counts_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergence_counts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       farms: {
         Row: {
           active: boolean
