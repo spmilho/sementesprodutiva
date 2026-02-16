@@ -1,10 +1,11 @@
-import { Plus, Search as SearchIcon, Filter } from "lucide-react";
+import { Plus, Search as SearchIcon, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { generateCycleReport } from "@/lib/generateCycleReport";
 
 const statusLabels: Record<string, string> = {
   planning: "Planejamento",
@@ -95,9 +96,10 @@ export default function Cycles() {
                   <TableHead className="text-xs hidden lg:table-cell">♀ / ♂</TableHead>
                   <TableHead className="text-xs hidden lg:table-cell">Proporção</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
-                  <TableHead className="text-xs text-right">Área (ha)</TableHead>
-                  <TableHead className="text-xs text-right hidden sm:table-cell">Irrigação</TableHead>
-                  <TableHead className="text-xs text-right hidden xl:table-cell">Atualização</TableHead>
+                   <TableHead className="text-xs text-right">Área (ha)</TableHead>
+                   <TableHead className="text-xs text-right hidden sm:table-cell">Irrigação</TableHead>
+                   <TableHead className="text-xs text-right hidden xl:table-cell">Atualização</TableHead>
+                   <TableHead className="text-xs text-center hidden sm:table-cell">Relatório</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -118,6 +120,11 @@ export default function Cycles() {
                     <TableCell className="text-right text-sm font-medium">{c.area}</TableCell>
                     <TableCell className="text-right text-sm hidden sm:table-cell">{c.irrigation}</TableCell>
                     <TableCell className="text-right text-sm text-muted-foreground hidden xl:table-cell">{c.updated}</TableCell>
+                    <TableCell className="text-center hidden sm:table-cell">
+                      <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => generateCycleReport(c)}>
+                        <FileText className="h-3.5 w-3.5" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
