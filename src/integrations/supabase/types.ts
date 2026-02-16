@@ -298,6 +298,69 @@ export type Database = {
         }
         Relationships: []
       }
+      phenology_records: {
+        Row: {
+          created_at: string
+          cycle_id: string
+          deleted_at: string | null
+          description: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          observation_date: string
+          org_id: string
+          photo_url: string | null
+          stage: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_id: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          observation_date: string
+          org_id: string
+          photo_url?: string | null
+          stage: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cycle_id?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          observation_date?: string
+          org_id?: string
+          photo_url?: string | null
+          stage?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phenology_records_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "phenology_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pivots: {
         Row: {
           active: boolean
