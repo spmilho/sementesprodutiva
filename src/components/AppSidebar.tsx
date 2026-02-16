@@ -1,4 +1,5 @@
-import { Leaf, LayoutDashboard, Layers, CalendarDays, Sprout, TrendingUp, BarChart3, Zap, Scissors, Search, FlaskConical, Bug, Droplets, Thermometer, Wheat, Map, ClipboardCheck, FileText, Settings } from "lucide-react";
+import { Leaf, LayoutDashboard, Layers, CalendarDays, Sprout, TrendingUp, BarChart3, Zap, Scissors, Search, FlaskConical, Bug, Droplets, Thermometer, Wheat, Map, ClipboardCheck, FileText, Settings, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -73,6 +74,8 @@ function MenuGroup({ label, items }: { label: string; items: typeof mainItems })
 }
 
 export function AppSidebar() {
+  const { signOut, user } = useAuth();
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4 border-b border-sidebar-border">
@@ -95,7 +98,12 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-3 border-t border-sidebar-border group-data-[collapsible=icon]:hidden">
-        <p className="text-[10px] text-sidebar-foreground/40 text-center">Safra 2025/26 • Full Tolling</p>
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] text-sidebar-foreground/40 truncate">{user?.email}</p>
+          <button onClick={signOut} className="text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors">
+            <LogOut className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
