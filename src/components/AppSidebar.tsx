@@ -1,6 +1,7 @@
-import { Leaf, LayoutDashboard, Layers, CalendarDays, Sprout, TrendingUp, BarChart3, Zap, Scissors, Search, FlaskConical, Bug, Droplets, Thermometer, Wheat, Map, ClipboardCheck, FileText, Settings, LogOut, Users } from "lucide-react";
+import { LayoutDashboard, Layers, CalendarDays, Sprout, TrendingUp, BarChart3, Zap, Scissors, Search, FlaskConical, Bug, Droplets, Thermometer, Wheat, Map, ClipboardCheck, FileText, Settings, LogOut, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { NavLink } from "@/components/NavLink";
+import logoImg from "@/assets/logo-produtiva.jpg";
 import {
   Sidebar,
   SidebarContent,
@@ -80,11 +81,9 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-sidebar-primary">
-            <Leaf className="h-5 w-5 text-sidebar-primary-foreground" />
-          </div>
+          <img src={logoImg} alt="Produtiva Sementes" className="w-9 h-9 rounded-lg object-contain" />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-bold text-sidebar-foreground tracking-tight">Sementes Produtiva</span>
+            <span className="text-sm font-bold text-sidebar-foreground tracking-tight">Produtiva Sementes</span>
             <span className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">Caderno de Campo</span>
           </div>
         </div>
