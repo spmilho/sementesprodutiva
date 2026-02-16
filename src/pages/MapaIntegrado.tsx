@@ -41,23 +41,23 @@ function getMoistureLabel(pct: number): string {
 const FARM_CENTER: [number, number] = [-15.82, -47.92];
 
 const moistureSamples = [
-  { id: 1, lat: -15.815, lng: -47.915, moisture: 28.4, date: "10/02/2026", method: "Medidor portátil", cycle: "Talhão A1 — P3456H", sampler: "Carlos Silva" },
-  { id: 2, lat: -15.822, lng: -47.925, moisture: 21.3, date: "12/02/2026", method: "NIR", cycle: "Talhão B3 — SYN7205", sampler: "Ana Souza" },
-  { id: 3, lat: -15.828, lng: -47.910, moisture: 17.5, date: "14/02/2026", method: "Medidor portátil", cycle: "Talhão C2 — ADV9012", sampler: "João Lima" },
-  { id: 4, lat: -15.812, lng: -47.930, moisture: 23.8, date: "13/02/2026", method: "Estufa", cycle: "Talhão D1 — GDM4510", sampler: "Maria Santos" },
-  { id: 5, lat: -15.835, lng: -47.918, moisture: 19.2, date: "15/02/2026", method: "Medidor portátil", cycle: "Talhão E4 — P4020Y", sampler: "Pedro Alves" },
+  { id: 1, lat: -15.815, lng: -47.915, moisture: 28.4, date: "10/02/2026", method: "Medidor portátil", cycle: "Pivô A1 — P3456H", sampler: "Carlos Silva" },
+  { id: 2, lat: -15.822, lng: -47.925, moisture: 21.3, date: "12/02/2026", method: "NIR", cycle: "Pivô B3 — SYN7205", sampler: "Ana Souza" },
+  { id: 3, lat: -15.828, lng: -47.910, moisture: 17.5, date: "14/02/2026", method: "Medidor portátil", cycle: "Pivô C2 — ADV9012", sampler: "João Lima" },
+  { id: 4, lat: -15.812, lng: -47.930, moisture: 23.8, date: "13/02/2026", method: "Estufa", cycle: "Pivô D1 — GDM4510", sampler: "Maria Santos" },
+  { id: 5, lat: -15.835, lng: -47.918, moisture: 19.2, date: "15/02/2026", method: "Medidor portátil", cycle: "Pivô E4 — P4020Y", sampler: "Pedro Alves" },
 ];
 
 const visitRecords = [
-  { id: 1, lat: -15.818, lng: -47.920, date: "14/02/2026", type: "Rotina", visitor: "Carlos Silva", condition: "Bom", observations: "Desenvolvimento uniforme, sem pragas visíveis.", cycle: "Talhão A1 — P3456H" },
-  { id: 2, lat: -15.825, lng: -47.912, date: "15/02/2026", type: "Inspeção do cliente", visitor: "Dr. Roberto (Corteva)", condition: "Excelente", observations: "Cliente satisfeito com o stand. Elogiou o despendoamento.", cycle: "Talhão C2 — ADV9012" },
-  { id: 3, lat: -15.830, lng: -47.928, date: "16/02/2026", type: "Auditoria de qualidade", visitor: "Ana Souza", condition: "Regular", observations: "Algumas plantas fora de tipo identificadas no setor norte. Roguing recomendado.", cycle: "Talhão D1 — GDM4510" },
+  { id: 1, lat: -15.818, lng: -47.920, date: "14/02/2026", type: "Rotina", visitor: "Carlos Silva", condition: "Bom", observations: "Desenvolvimento uniforme, sem pragas visíveis.", cycle: "Pivô A1 — P3456H" },
+  { id: 2, lat: -15.825, lng: -47.912, date: "15/02/2026", type: "Inspeção do cliente", visitor: "Dr. Roberto (Corteva)", condition: "Excelente", observations: "Cliente satisfeito com o stand. Elogiou o despendoamento.", cycle: "Pivô C2 — ADV9012" },
+  { id: 3, lat: -15.830, lng: -47.928, date: "16/02/2026", type: "Auditoria de qualidade", visitor: "Ana Souza", condition: "Regular", observations: "Algumas plantas fora de tipo identificadas no setor norte. Roguing recomendado.", cycle: "Pivô D1 — GDM4510" },
 ];
 
 const applicationRecords = [
-  { id: 1, lat: -15.820, lng: -47.917, date: "08/02/2026", product: "Engeo Pleno S", target: "Inseticida", dose: "0,25 L/ha", area: 45, cycle: "Talhão A1 — P3456H", pest: "Spodoptera frugiperda" },
-  { id: 2, lat: -15.827, lng: -47.922, date: "10/02/2026", product: "Nativo", target: "Fungicida", dose: "0,75 L/ha", area: 38, cycle: "Talhão B3 — SYN7205", pest: "Cercospora zeae-maydis" },
-  { id: 3, lat: -15.833, lng: -47.908, date: "12/02/2026", product: "Roundup Original DI", target: "Herbicida", dose: "2,0 L/ha", area: 52, cycle: "Talhão C2 — ADV9012", pest: "Plantas daninhas" },
+  { id: 1, lat: -15.820, lng: -47.917, date: "08/02/2026", product: "Engeo Pleno S", target: "Inseticida", dose: "0,25 L/ha", area: 45, cycle: "Pivô A1 — P3456H", pest: "Spodoptera frugiperda" },
+  { id: 2, lat: -15.827, lng: -47.922, date: "10/02/2026", product: "Nativo", target: "Fungicida", dose: "0,75 L/ha", area: 38, cycle: "Pivô B3 — SYN7205", pest: "Cercospora zeae-maydis" },
+  { id: 3, lat: -15.833, lng: -47.908, date: "12/02/2026", product: "Roundup Original DI", target: "Herbicida", dose: "2,0 L/ha", area: 52, cycle: "Pivô C2 — ADV9012", pest: "Plantas daninhas" },
 ];
 
 const visitIcon = coloredIcon("hsl(215, 70%, 55%)");
