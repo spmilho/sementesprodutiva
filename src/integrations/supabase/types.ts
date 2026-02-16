@@ -364,6 +364,82 @@ export type Database = {
           },
         ]
       }
+      planting_actual: {
+        Row: {
+          actual_area: number
+          created_at: string
+          cv_percent: number | null
+          cycle_id: string
+          deleted_at: string | null
+          id: string
+          observations: string | null
+          org_id: string
+          planter_speed: number | null
+          planting_date: string
+          planting_plan_id: string | null
+          row_spacing: number | null
+          seeds_per_meter: number | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          actual_area: number
+          created_at?: string
+          cv_percent?: number | null
+          cycle_id: string
+          deleted_at?: string | null
+          id?: string
+          observations?: string | null
+          org_id: string
+          planter_speed?: number | null
+          planting_date: string
+          planting_plan_id?: string | null
+          row_spacing?: number | null
+          seeds_per_meter?: number | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          actual_area?: number
+          created_at?: string
+          cv_percent?: number | null
+          cycle_id?: string
+          deleted_at?: string | null
+          id?: string
+          observations?: string | null
+          org_id?: string
+          planter_speed?: number | null
+          planting_date?: string
+          planting_plan_id?: string | null
+          row_spacing?: number | null
+          seeds_per_meter?: number | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planting_actual_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planting_actual_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planting_actual_planting_plan_id_fkey"
+            columns: ["planting_plan_id"]
+            isOneToOne: false
+            referencedRelation: "planting_plan"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       planting_plan: {
         Row: {
           created_at: string
