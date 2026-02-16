@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import PlantingPlan from "@/components/cycles/PlantingPlan";
 import ActualPlanting from "@/components/cycles/ActualPlanting";
+import Phenology from "@/components/cycles/Phenology";
 
 const statusLabels: Record<string, string> = {
   planning: "Planejamento", planting: "Plantio", growing: "Crescimento",
@@ -217,7 +218,19 @@ export default function CycleDetail() {
           />
         </TabsContent>
 
-        {tabItems.filter((t) => !["resumo", "planejamento", "plantio"].includes(t.value)).map((t) => (
+        <TabsContent value="fenologia">
+          <Phenology
+            cycleId={id!}
+            orgId={cycle.org_id}
+            pivotName={cycle.field_name}
+            contractNumber={cycle.contract_number}
+            cooperatorName={(cycle as any).cooperators?.name}
+            farmName={(cycle as any).farms?.name}
+            hybridName={cycle.hybrid_name}
+          />
+        </TabsContent>
+
+        {tabItems.filter((t) => !["resumo", "planejamento", "plantio", "fenologia"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>
