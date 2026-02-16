@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import PlantingPlan from "@/components/cycles/PlantingPlan";
 
 const statusLabels: Record<string, string> = {
   planning: "Planejamento",
@@ -97,6 +98,21 @@ export default function CycleDetail() {
       queryClient.invalidateQueries({ queryKey: ["cycle-detail", id] });
       queryClient.invalidateQueries({ queryKey: ["production_cycles"] });
       toast.success("Status atualizado!");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const finishMutation = useMutation({
+    mutationFn: async ({ type, finished }: { type: "male" | "female"; finished: boolean }) => {
+      const update = type === "male"
+        ? { male_planting_finished: finished }
+        : { female_planting_finished: finished };
+      const { error } = await (supabase as any).from("production_cycles").update(update).eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cycle-detail", id] });
+      toast.success("Atualizado!");
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -228,7 +244,19 @@ export default function CycleDetail() {
           </Card>
         </TabsContent>
 
-        {tabItems.filter((t) => t.value !== "resumo").map((t) => (
+        <TabsContent value="planejamento">
+          <PlantingPlan
+            cycleId={id!}
+            femaleArea={cycle.female_area}
+            maleArea={cycle.male_area}
+            orgId={cycle.org_id}
+            malePlantingFinished={cycle.male_planting_finished ?? false}
+            femalePlantingFinished={cycle.female_planting_finished ?? false}
+            onFinishToggle={(type, finished) => finishMutation.mutate({ type, finished })}
+          />
+        </TabsContent>
+
+        {tabItems.filter((t) => t.value !== "resumo" && t.value !== "planejamento").map((t) => (
           <TabsContent key={t.value} value={t.value}>
             <TabPlaceholder name={t.label} />
           </TabsContent>
