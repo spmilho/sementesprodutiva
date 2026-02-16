@@ -1,4 +1,4 @@
-import { LayoutDashboard, Layers, CalendarDays, Sprout, TrendingUp, BarChart3, Zap, Scissors, Search, FlaskConical, Bug, Droplets, Thermometer, Wheat, Map, ClipboardCheck, FileText, Settings, LogOut, Users } from "lucide-react";
+import { LayoutDashboard, Layers, Map, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { NavLink } from "@/components/NavLink";
 import logoImg from "@/assets/logo-produtiva.jpg";
@@ -18,30 +18,10 @@ import {
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Ciclos de Produção", url: "/ciclos", icon: Layers },
-  { title: "Planejamento", url: "/planejamento", icon: CalendarDays },
-];
-
-const executionItems = [
-  { title: "Plantio", url: "/plantio", icon: Sprout },
-  { title: "Fenologia", url: "/fenologia", icon: TrendingUp },
-  { title: "Emergência / Stand", url: "/emergencia", icon: BarChart3 },
-  { title: "Nicking", url: "/nicking", icon: Zap },
-  { title: "Despendoamento", url: "/despendoamento", icon: Scissors },
-  { title: "Roguing", url: "/roguing", icon: Search },
-  { title: "Manejo Químico", url: "/manejo-quimico", icon: FlaskConical },
-  { title: "Pragas e Doenças", url: "/pragas", icon: Bug },
-];
-
-const monitoringItems = [
-  { title: "Água", url: "/agua", icon: Droplets },
-  { title: "Umidade", url: "/umidade", icon: Thermometer },
-  { title: "Colheita", url: "/colheita", icon: Wheat },
-  { title: "Mapa", url: "/mapa", icon: Map },
+  { title: "Mapa Integrado", url: "/mapa", icon: Map },
 ];
 
 const managementItems = [
-  { title: "Visitas de Campo", url: "/visitas", icon: ClipboardCheck },
-  { title: "Relatórios", url: "/relatorios", icon: FileText },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
@@ -91,8 +71,6 @@ export function AppSidebar() {
 
       <SidebarContent className="px-2 py-3">
         <MenuGroup label="Principal" items={mainItems} />
-        <MenuGroup label="Execução" items={executionItems} />
-        <MenuGroup label="Monitoramento" items={monitoringItems} />
         <MenuGroup label="Gestão" items={managementItems} />
       </SidebarContent>
 
