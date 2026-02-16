@@ -14,6 +14,7 @@ import PlantingPlan from "@/components/cycles/PlantingPlan";
 import ActualPlanting from "@/components/cycles/ActualPlanting";
 import Phenology from "@/components/cycles/Phenology";
 import EmergenceStandCount from "@/components/cycles/EmergenceStandCount";
+import NickingSync from "@/components/cycles/NickingSync";
 
 const statusLabels: Record<string, string> = {
   planning: "Planejamento", planting: "Plantio", growing: "Crescimento",
@@ -235,7 +236,11 @@ export default function CycleDetail() {
           <EmergenceStandCount cycleId={id!} orgId={cycle.org_id} />
         </TabsContent>
 
-        {tabItems.filter((t) => !["resumo", "planejamento", "plantio", "fenologia", "emergencia"].includes(t.value)).map((t) => (
+        <TabsContent value="nicking">
+          <NickingSync cycleId={id!} orgId={cycle.org_id} />
+        </TabsContent>
+
+        {tabItems.filter((t) => !["resumo", "planejamento", "plantio", "fenologia", "emergencia", "nicking"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>
