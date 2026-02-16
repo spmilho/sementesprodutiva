@@ -8,11 +8,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin } from "lucide-react";
 import { toast } from "sonner";
 import type { Farm } from "./FarmsTab";
-import type { Client } from "./ClientsTab";
 
 const UF_LIST = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG",
@@ -20,15 +20,17 @@ const UF_LIST = [
 ];
 
 const schema = z.object({
-  client_id: z.string().min(1, "Selecione um cliente"),
-  name: z.string().trim().min(1, "Nome obrigatório").max(100),
-  cooperado_name: z.string().max(100).optional().or(z.literal("")),
-  cooperado_phone: z.string().max(20).optional().or(z.literal("")),
-  cooperado_email: z.string().max(100).optional().or(z.literal("")),
-  city: z.string().max(100).optional().or(z.literal("")),
-  state: z.string().optional().or(z.literal("")),
+  name: z.string().trim().min(1, "Nome da fazenda é obrigatório").max(100),
+  cooperator_name: z.string().trim().min(1, "Nome do cooperado é obrigatório").max(100),
+  cooperator_document: z.string().max(20).optional().or(z.literal("")),
+  cooperator_phone: z.string().max(20).optional().or(z.literal("")),
+  cooperator_email: z.string().max(100).optional().or(z.literal("")),
+  city: z.string().trim().min(1, "Cidade é obrigatória").max(100),
+  state: z.string().min(1, "UF é obrigatória"),
   latitude: z.coerce.number().min(-90).max(90).optional().or(z.literal("").transform(() => undefined)),
   longitude: z.coerce.number().min(-180).max(180).optional().or(z.literal("").transform(() => undefined)),
+  address: z.string().max(200).optional().or(z.literal("")),
+  status: z.boolean(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -37,38 +39,39 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   farm: Farm | null;
-  clients: Client[];
 }
 
-export default function FarmFormDialog({ open, onOpenChange, farm, clients }: Props) {
+export default function FarmFormDialog({ open, onOpenChange, farm }: Props) {
   const queryClient = useQueryClient();
   const isEditing = !!farm;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      client_id: "", name: "", cooperado_name: "", cooperado_phone: "", cooperado_email: "",
-      city: "", state: "", latitude: undefined, longitude: undefined,
+      name: "", cooperator_name: "", cooperator_document: "", cooperator_phone: "", cooperator_email: "",
+      city: "", state: "", latitude: undefined, longitude: undefined, address: "", status: true,
     },
   });
 
   useEffect(() => {
     if (farm) {
       form.reset({
-        client_id: farm.client_id,
         name: farm.name,
-        cooperado_name: (farm as any).cooperado_name || "",
-        cooperado_phone: (farm as any).cooperado_phone || "",
-        cooperado_email: (farm as any).cooperado_email || "",
+        cooperator_name: farm.cooperator_name || "",
+        cooperator_document: farm.cooperator_document || "",
+        cooperator_phone: farm.cooperator_phone || "",
+        cooperator_email: farm.cooperator_email || "",
         city: farm.city || "",
         state: farm.state || "",
         latitude: farm.latitude ?? undefined,
         longitude: farm.longitude ?? undefined,
+        address: farm.address || "",
+        status: farm.status === "active",
       });
     } else {
       form.reset({
-        client_id: "", name: "", cooperado_name: "", cooperado_phone: "", cooperado_email: "",
-        city: "", state: "", latitude: undefined, longitude: undefined,
+        name: "", cooperator_name: "", cooperator_document: "", cooperator_phone: "", cooperator_email: "",
+        city: "", state: "", latitude: undefined, longitude: undefined, address: "", status: true,
       });
     }
   }, [farm, open]);
@@ -84,15 +87,17 @@ export default function FarmFormDialog({ open, onOpenChange, farm, clients }: Pr
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
       const payload: any = {
-        client_id: values.client_id,
         name: values.name,
-        cooperado_name: values.cooperado_name || null,
-        cooperado_phone: values.cooperado_phone || null,
-        cooperado_email: values.cooperado_email || null,
-        city: values.city || null,
-        state: values.state || null,
+        cooperator_name: values.cooperator_name,
+        cooperator_document: values.cooperator_document || null,
+        cooperator_phone: values.cooperator_phone || null,
+        cooperator_email: values.cooperator_email || null,
+        city: values.city,
+        state: values.state,
         latitude: values.latitude ?? null,
         longitude: values.longitude ?? null,
+        address: values.address || null,
+        status: values.status ? "active" : "inactive",
       };
 
       if (isEditing) {
@@ -122,45 +127,38 @@ export default function FarmFormDialog({ open, onOpenChange, farm, clients }: Pr
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-            <FormField control={form.control} name="client_id" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cliente *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione o cliente" /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    {clients.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
-
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome da fazenda *</FormLabel>
-                <FormControl><Input {...field} /></FormControl>
+                <FormLabel>Nome da fazenda / propriedade *</FormLabel>
+                <FormControl><Input {...field} placeholder="Ex: Fazenda Santa Maria" /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
 
             {/* Cooperado section */}
             <div className="space-y-3 rounded-lg border p-3">
-              <p className="text-sm font-medium text-foreground">Cooperado</p>
-              <p className="text-xs text-muted-foreground">Pessoa que disponibiliza o pivô/área para produção</p>
-              <FormField control={form.control} name="cooperado_name" render={({ field }) => (
+              <p className="text-sm font-medium text-foreground">Cooperado / Produtor</p>
+              <FormField control={form.control} name="cooperator_name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs">Nome do cooperado</FormLabel>
+                  <FormLabel className="text-xs">Nome do cooperado *</FormLabel>
                   <FormControl><Input {...field} placeholder="Nome completo" className="h-8 text-sm" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="cooperator_document" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">CPF ou CNPJ</FormLabel>
+                  <FormControl><Input {...field} placeholder="000.000.000-00" className="h-8 text-sm" /></FormControl>
                 </FormItem>
               )} />
               <div className="grid grid-cols-2 gap-2">
-                <FormField control={form.control} name="cooperado_phone" render={({ field }) => (
+                <FormField control={form.control} name="cooperator_phone" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">Telefone</FormLabel>
                     <FormControl><Input {...field} placeholder="(00) 00000-0000" className="h-8 text-sm" /></FormControl>
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="cooperado_email" render={({ field }) => (
+                <FormField control={form.control} name="cooperator_email" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">Email</FormLabel>
                     <FormControl><Input {...field} type="email" placeholder="email@exemplo.com" className="h-8 text-sm" /></FormControl>
@@ -171,15 +169,16 @@ export default function FarmFormDialog({ open, onOpenChange, farm, clients }: Pr
 
             <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="city" render={({ field }) => (
-                <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                <FormItem><FormLabel>Cidade *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="state" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>UF</FormLabel>
+                  <FormLabel>UF *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger></FormControl>
                     <SelectContent>{UF_LIST.map((uf) => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
                   </Select>
+                  <FormMessage />
                 </FormItem>
               )} />
             </div>
@@ -200,6 +199,22 @@ export default function FarmFormDialog({ open, onOpenChange, farm, clients }: Pr
                 )} />
               </div>
             </div>
+
+            <FormField control={form.control} name="address" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Endereço / Referência</FormLabel>
+                <FormControl><Input {...field} placeholder="Endereço ou ponto de referência" /></FormControl>
+              </FormItem>
+            )} />
+
+            <FormField control={form.control} name="status" render={({ field }) => (
+              <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                <FormLabel className="text-sm">Ativo</FormLabel>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
+            )} />
 
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

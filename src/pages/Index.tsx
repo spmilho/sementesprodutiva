@@ -66,14 +66,14 @@ const harvestData = harvestDataRaw.reduce((acc, item, i) => {
 }, [] as (typeof harvestDataRaw[0] & { acumPlan: number; acumReal: number })[]);
 
 const cyclesData = [
-  { client: "Corteva", farm: "Faz. Santa Maria", field: "Talhão A1", hybrid: "P3456H", season: "2025/26", status: "growing", area: 45, updated: "14/02/2026" },
-  { client: "Syngenta", farm: "Faz. São José", field: "Talhão B3", hybrid: "SYN7205", season: "2025/26", status: "detasseling", area: 38, updated: "15/02/2026" },
-  { client: "Advanta", farm: "Faz. Boa Vista", field: "Talhão C2", hybrid: "ADV9012", season: "2025/26", status: "harvest", area: 52, updated: "16/02/2026" },
-  { client: "GDM", farm: "Faz. Cerrado", field: "Talhão D1", hybrid: "GDM4510", season: "2025/26", status: "growing", area: 30, updated: "13/02/2026" },
-  { client: "Corteva", farm: "Faz. Primavera", field: "Talhão E4", hybrid: "P4020Y", season: "2025/26", status: "planting", area: 60, updated: "16/02/2026" },
-  { client: "Syngenta", farm: "Faz. Esperança", field: "Talhão F2", hybrid: "SYN8300", season: "2025/26", status: "planning", area: 42, updated: "10/02/2026" },
-  { client: "GDM", farm: "Faz. São Pedro", field: "Talhão G1", hybrid: "GDM5520", season: "2025/26", status: "growing", area: 35, updated: "12/02/2026" },
-  { client: "Advanta", farm: "Faz. Ipê", field: "Talhão H3", hybrid: "ADV7800", season: "2025/26", status: "completed", area: 48, updated: "08/02/2026" },
+  { client: "Corteva", farm: "Faz. Santa Maria", field: "Pivô A1", hybrid: "P3456H", season: "2025/26", status: "growing", area: 45, updated: "14/02/2026" },
+  { client: "Syngenta", farm: "Faz. São José", field: "Pivô B3", hybrid: "SYN7205", season: "2025/26", status: "detasseling", area: 38, updated: "15/02/2026" },
+  { client: "Advanta", farm: "Faz. Boa Vista", field: "Pivô C2", hybrid: "ADV9012", season: "2025/26", status: "harvest", area: 52, updated: "16/02/2026" },
+  { client: "GDM", farm: "Faz. Cerrado", field: "Pivô D1", hybrid: "GDM4510", season: "2025/26", status: "growing", area: 30, updated: "13/02/2026" },
+  { client: "Corteva", farm: "Faz. Primavera", field: "Pivô E4", hybrid: "P4020Y", season: "2025/26", status: "planting", area: 60, updated: "16/02/2026" },
+  { client: "Syngenta", farm: "Faz. Esperança", field: "Pivô F2", hybrid: "SYN8300", season: "2025/26", status: "planning", area: 42, updated: "10/02/2026" },
+  { client: "GDM", farm: "Faz. São Pedro", field: "Pivô G1", hybrid: "GDM5520", season: "2025/26", status: "growing", area: 35, updated: "12/02/2026" },
+  { client: "Advanta", farm: "Faz. Ipê", field: "Pivô H3", hybrid: "ADV7800", season: "2025/26", status: "completed", area: 48, updated: "08/02/2026" },
 ];
 
 const statusLabels: Record<string, string> = {
@@ -249,7 +249,7 @@ export default function Dashboard() {
                 <TableRow>
                   <TableHead className="text-xs">Cliente</TableHead>
                   <TableHead className="text-xs">Fazenda</TableHead>
-                  <TableHead className="text-xs hidden sm:table-cell">Talhão</TableHead>
+                  <TableHead className="text-xs hidden sm:table-cell">Pivô</TableHead>
                   <TableHead className="text-xs hidden md:table-cell">Híbrido</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
                   <TableHead className="text-xs text-right hidden sm:table-cell">Área (ha)</TableHead>

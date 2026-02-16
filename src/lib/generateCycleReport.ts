@@ -72,7 +72,7 @@ function drawFallbackCover(doc: jsPDF, cycle: CycleData, generatedAt: string) {
   const lines = [
     ["Cliente", cycle.client],
     ["Fazenda", cycle.farm],
-    ["Talhão", cycle.field],
+    ["Pivô", cycle.field],
     ["Híbrido", cycle.hybrid],
     ["Safra", cycle.season],
     ["Área Total", `${cycle.area} ha`],
@@ -109,7 +109,7 @@ function drawExecutiveSummary(doc: jsPDF, cycle: CycleData) {
     body: [
       ["Status", STATUS_PT[cycle.status] || cycle.status],
       ["Cliente", cycle.client],
-      ["Fazenda / Talhão", `${cycle.farm} — ${cycle.field}`],
+      ["Fazenda / Pivô", `${cycle.farm} — ${cycle.field}`],
       ["Híbrido", cycle.hybrid],
       ["Linhagem Fêmea", cycle.female],
       ["Linhagem Macho", cycle.male],

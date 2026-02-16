@@ -199,7 +199,7 @@ export default function PdfCoverRenderer({ cycle, onReady }: PdfCoverRendererPro
             {[
               `Cliente: ${cycle.client}`,
               `Fazenda: ${cycle.farm}`,
-              `Talhão: ${cycle.field}`,
+              `Pivô: ${cycle.field}`,
               `Área: ${cycle.area} ha`,
             ].map((line, i) => (
               <p

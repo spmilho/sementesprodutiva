@@ -16,6 +16,7 @@ export interface Client {
   name: string;
   contact_name: string | null;
   phone: string | null;
+  contact_email: string | null;
   logo_url: string | null;
   status: string;
   created_at: string;
@@ -33,7 +34,7 @@ export default function ClientsTab() {
     queryFn: async () => {
       const { data, error } = await supabase.from("clients").select("*").order("name");
       if (error) throw error;
-      return data as Client[];
+      return data as unknown as Client[];
     },
   });
 
@@ -90,10 +91,10 @@ export default function ClientsTab() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-xs w-8"></TableHead>
-                  <TableHead className="text-xs">Nome</TableHead>
-                  <TableHead className="text-xs">Contato Principal</TableHead>
+                  <TableHead className="text-xs">Nome da Empresa</TableHead>
+                  <TableHead className="text-xs">Contato</TableHead>
                   <TableHead className="text-xs hidden sm:table-cell">Telefone</TableHead>
-                  <TableHead className="text-xs hidden md:table-cell">Contatos</TableHead>
+                  <TableHead className="text-xs hidden md:table-cell">Email</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
                   <TableHead className="text-xs text-right">Ações</TableHead>
                 </TableRow>
@@ -129,11 +130,7 @@ export default function ClientsTab() {
                           </TableCell>
                           <TableCell className="text-sm">{c.contact_name || "—"}</TableCell>
                           <TableCell className="text-sm hidden sm:table-cell">{c.phone || "—"}</TableCell>
-                          <TableCell className="text-sm hidden md:table-cell">
-                            {contacts.length > 0 && (
-                              <Badge variant="secondary" className="text-xs">{contacts.length}</Badge>
-                            )}
-                          </TableCell>
+                          <TableCell className="text-sm hidden md:table-cell">{c.contact_email || "—"}</TableCell>
                           <TableCell>
                             <Badge variant={c.status === "active" ? "default" : "secondary"}>
                               {c.status === "active" ? "Ativo" : "Inativo"}

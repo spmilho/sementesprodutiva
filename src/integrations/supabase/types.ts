@@ -70,6 +70,7 @@ export type Database = {
       }
       clients: {
         Row: {
+          contact_email: string | null
           contact_name: string | null
           created_at: string
           deleted_at: string | null
@@ -82,6 +83,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          contact_email?: string | null
           contact_name?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -94,6 +96,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          contact_email?: string | null
           contact_name?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -117,11 +120,16 @@ export type Database = {
       }
       farms: {
         Row: {
+          address: string | null
           city: string | null
-          client_id: string
+          client_id: string | null
           cooperado_email: string | null
           cooperado_name: string | null
           cooperado_phone: string | null
+          cooperator_document: string | null
+          cooperator_email: string | null
+          cooperator_name: string | null
+          cooperator_phone: string | null
           created_at: string
           deleted_at: string | null
           id: string
@@ -130,14 +138,20 @@ export type Database = {
           name: string
           org_id: string
           state: string | null
+          status: string
           updated_at: string
         }
         Insert: {
+          address?: string | null
           city?: string | null
-          client_id: string
+          client_id?: string | null
           cooperado_email?: string | null
           cooperado_name?: string | null
           cooperado_phone?: string | null
+          cooperator_document?: string | null
+          cooperator_email?: string | null
+          cooperator_name?: string | null
+          cooperator_phone?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -146,14 +160,20 @@ export type Database = {
           name: string
           org_id: string
           state?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
+          address?: string | null
           city?: string | null
-          client_id?: string
+          client_id?: string | null
           cooperado_email?: string | null
           cooperado_name?: string | null
           cooperado_phone?: string | null
+          cooperator_document?: string | null
+          cooperator_email?: string | null
+          cooperator_name?: string | null
+          cooperator_phone?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -162,6 +182,7 @@ export type Database = {
           name?: string
           org_id?: string
           state?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: [

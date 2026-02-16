@@ -157,7 +157,7 @@ export default function Cycles() {
                     <TableHead className="text-xs">Safra</TableHead>
                     <TableHead className="text-xs">Cliente</TableHead>
                     <TableHead className="text-xs">Fazenda</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Talhão</TableHead>
+                    <TableHead className="text-xs hidden md:table-cell">Pivô</TableHead>
                     <TableHead className="text-xs hidden md:table-cell">Híbrido</TableHead>
                     <TableHead className="text-xs text-right">Área (ha)</TableHead>
                     <TableHead className="text-xs">Status</TableHead>

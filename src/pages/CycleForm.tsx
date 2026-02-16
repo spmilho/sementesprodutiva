@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -44,7 +44,7 @@ function computeAreas(totalArea: number, ratio: string) {
 const schema = z.object({
   client_id: z.string().min(1, "Cliente é obrigatório"),
   farm_id: z.string().min(1, "Fazenda é obrigatória"),
-  field_name: z.string().trim().min(1, "Talhão é obrigatório").max(100),
+  field_name: z.string().trim().min(1, "Pivô é obrigatório").max(100),
   season: z.string().trim().min(1, "Safra é obrigatória").max(20),
   hybrid_name: z.string().trim().min(1, "Híbrido é obrigatório").max(100),
   female_line: z.string().trim().min(1, "Linhagem fêmea é obrigatória").max(100),
@@ -110,25 +110,17 @@ export default function CycleForm() {
   });
 
   const { data: farms = [] } = useQuery({
-    queryKey: ["farms-by-client", clientId],
+    queryKey: ["farms-all"],
     queryFn: async () => {
-      if (!clientId) return [];
       const { data, error } = await supabase
         .from("farms")
         .select("id, name")
-        .eq("client_id", clientId)
         .is("deleted_at", null)
         .order("name");
       if (error) throw error;
       return data;
     },
-    enabled: !!clientId,
   });
-
-  // Reset farm when client changes
-  useEffect(() => {
-    setValue("farm_id", "");
-  }, [clientId, setValue]);
 
   const { data: profile } = useQuery({
     queryKey: ["user-profile"],
@@ -206,10 +198,10 @@ export default function CycleForm() {
               {errors.client_id && <p className="text-xs text-destructive">{errors.client_id.message}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label>Fazenda *</Label>
+              <Label>Fazenda / Cooperado *</Label>
               <Controller name="farm_id" control={control} render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange} disabled={!clientId}>
-                  <SelectTrigger><SelectValue placeholder={clientId ? "Selecione" : "Selecione o cliente primeiro"} /></SelectTrigger>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a fazenda" /></SelectTrigger>
                   <SelectContent>
                     {farms.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
                   </SelectContent>
@@ -218,8 +210,8 @@ export default function CycleForm() {
               {errors.farm_id && <p className="text-xs text-destructive">{errors.farm_id.message}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label>Talhão *</Label>
-              <Input {...register("field_name")} placeholder="Ex: Talhão A1" />
+              <Label>Pivô *</Label>
+              <Input {...register("field_name")} placeholder="Ex: Pivô A1" />
               {errors.field_name && <p className="text-xs text-destructive">{errors.field_name.message}</p>}
             </div>
             <div className="space-y-1.5">
