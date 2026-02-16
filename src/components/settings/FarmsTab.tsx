@@ -20,6 +20,9 @@ export interface Farm {
   state: string | null;
   latitude: number | null;
   longitude: number | null;
+  cooperado_name?: string | null;
+  cooperado_phone?: string | null;
+  cooperado_email?: string | null;
   clients?: { name: string };
 }
 
@@ -121,22 +124,23 @@ export default function FarmsTab() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-xs">Nome</TableHead>
-                  <TableHead className="text-xs">Cooperado</TableHead>
-                  <TableHead className="text-xs hidden sm:table-cell">Cidade/UF</TableHead>
-                  <TableHead className="text-xs hidden md:table-cell">Coordenadas</TableHead>
+                  <TableHead className="text-xs">Cliente</TableHead>
+                  <TableHead className="text-xs hidden sm:table-cell">Cooperado</TableHead>
+                  <TableHead className="text-xs hidden md:table-cell">Cidade/UF</TableHead>
+                  <TableHead className="text-xs hidden lg:table-cell">Coordenadas</TableHead>
                   <TableHead className="text-xs text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
                       Nenhuma fazenda encontrada
                     </TableCell>
                   </TableRow>
@@ -146,9 +150,17 @@ export default function FarmsTab() {
                       <TableCell className="font-medium text-sm">{f.name}</TableCell>
                       <TableCell className="text-sm">{f.clients?.name || "—"}</TableCell>
                       <TableCell className="text-sm hidden sm:table-cell">
+                        {f.cooperado_name ? (
+                          <div>
+                            <div>{f.cooperado_name}</div>
+                            {f.cooperado_phone && <div className="text-xs text-muted-foreground">{f.cooperado_phone}</div>}
+                          </div>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell className="text-sm hidden md:table-cell">
                         {f.city && f.state ? `${f.city}/${f.state}` : f.city || f.state || "—"}
                       </TableCell>
-                      <TableCell className="text-sm font-mono hidden md:table-cell">
+                      <TableCell className="text-sm font-mono hidden lg:table-cell">
                         {f.latitude && f.longitude
                           ? `${f.latitude.toFixed(4)}, ${f.longitude.toFixed(4)}`
                           : "—"}

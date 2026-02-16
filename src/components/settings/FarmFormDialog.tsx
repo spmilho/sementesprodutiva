@@ -20,8 +20,11 @@ const UF_LIST = [
 ];
 
 const schema = z.object({
-  client_id: z.string().min(1, "Selecione um cooperado"),
+  client_id: z.string().min(1, "Selecione um cliente"),
   name: z.string().trim().min(1, "Nome obrigatório").max(100),
+  cooperado_name: z.string().max(100).optional().or(z.literal("")),
+  cooperado_phone: z.string().max(20).optional().or(z.literal("")),
+  cooperado_email: z.string().max(100).optional().or(z.literal("")),
   city: z.string().max(100).optional().or(z.literal("")),
   state: z.string().optional().or(z.literal("")),
   latitude: z.coerce.number().min(-90).max(90).optional().or(z.literal("").transform(() => undefined)),
@@ -44,12 +47,8 @@ export default function FarmFormDialog({ open, onOpenChange, farm, clients }: Pr
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      client_id: "",
-      name: "",
-      city: "",
-      state: "",
-      latitude: undefined,
-      longitude: undefined,
+      client_id: "", name: "", cooperado_name: "", cooperado_phone: "", cooperado_email: "",
+      city: "", state: "", latitude: undefined, longitude: undefined,
     },
   });
 
@@ -58,6 +57,9 @@ export default function FarmFormDialog({ open, onOpenChange, farm, clients }: Pr
       form.reset({
         client_id: farm.client_id,
         name: farm.name,
+        cooperado_name: (farm as any).cooperado_name || "",
+        cooperado_phone: (farm as any).cooperado_phone || "",
+        cooperado_email: (farm as any).cooperado_email || "",
         city: farm.city || "",
         state: farm.state || "",
         latitude: farm.latitude ?? undefined,
@@ -65,36 +67,28 @@ export default function FarmFormDialog({ open, onOpenChange, farm, clients }: Pr
       });
     } else {
       form.reset({
-        client_id: "",
-        name: "",
-        city: "",
-        state: "",
-        latitude: undefined,
-        longitude: undefined,
+        client_id: "", name: "", cooperado_name: "", cooperado_phone: "", cooperado_email: "",
+        city: "", state: "", latitude: undefined, longitude: undefined,
       });
     }
   }, [farm, open]);
 
   const captureGPS = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocalização não suportada");
-      return;
-    }
+    if (!navigator.geolocation) { toast.error("Geolocalização não suportada"); return; }
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        form.setValue("latitude", pos.coords.latitude);
-        form.setValue("longitude", pos.coords.longitude);
-        toast.success("Coordenadas capturadas");
-      },
+      (pos) => { form.setValue("latitude", pos.coords.latitude); form.setValue("longitude", pos.coords.longitude); toast.success("Coordenadas capturadas"); },
       () => toast.error("Não foi possível obter a localização")
     );
   };
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const payload = {
+      const payload: any = {
         client_id: values.client_id,
         name: values.name,
+        cooperado_name: values.cooperado_name || null,
+        cooperado_phone: values.cooperado_phone || null,
+        cooperado_email: values.cooperado_email || null,
         city: values.city || null,
         state: values.state || null,
         latitude: values.latitude ?? null,
@@ -102,21 +96,12 @@ export default function FarmFormDialog({ open, onOpenChange, farm, clients }: Pr
       };
 
       if (isEditing) {
-        const { error } = await supabase
-          .from("farms")
-          .update(payload)
-          .eq("id", farm.id);
+        const { error } = await supabase.from("farms").update(payload).eq("id", farm.id);
         if (error) throw error;
       } else {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("org_id")
-          .single();
+        const { data: profile } = await supabase.from("profiles").select("org_id").single();
         if (!profile?.org_id) throw new Error("Organização não encontrada");
-
-        const { error } = await supabase
-          .from("farms")
-          .insert({ ...payload, org_id: profile.org_id });
+        const { error } = await supabase.from("farms").insert({ ...payload, org_id: profile.org_id });
         if (error) throw error;
       }
     },
@@ -130,84 +115,73 @@ export default function FarmFormDialog({ open, onOpenChange, farm, clients }: Pr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar Fazenda" : "Nova Fazenda"}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="client_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cooperado *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o cooperado" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clients.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormField control={form.control} name="client_id" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cliente *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione o cliente" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {clients.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
+            <FormField control={form.control} name="name" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome da fazenda *</FormLabel>
+                <FormControl><Input {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            {/* Cooperado section */}
+            <div className="space-y-3 rounded-lg border p-3">
+              <p className="text-sm font-medium text-foreground">Cooperado</p>
+              <p className="text-xs text-muted-foreground">Pessoa que disponibiliza o pivô/área para produção</p>
+              <FormField control={form.control} name="cooperado_name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome da fazenda *</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                  <FormMessage />
+                  <FormLabel className="text-xs">Nome do cooperado</FormLabel>
+                  <FormControl><Input {...field} placeholder="Nome completo" className="h-8 text-sm" /></FormControl>
                 </FormItem>
-              )}
-            />
+              )} />
+              <div className="grid grid-cols-2 gap-2">
+                <FormField control={form.control} name="cooperado_phone" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">Telefone</FormLabel>
+                    <FormControl><Input {...field} placeholder="(00) 00000-0000" className="h-8 text-sm" /></FormControl>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="cooperado_email" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">Email</FormLabel>
+                    <FormControl><Input {...field} type="email" placeholder="email@exemplo.com" className="h-8 text-sm" /></FormControl>
+                  </FormItem>
+                )} />
+              </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cidade</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>UF</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="UF" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {UF_LIST.map((uf) => (
-                          <SelectItem key={uf} value={uf}>
-                            {uf}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
+              <FormField control={form.control} name="city" render={({ field }) => (
+                <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+              )} />
+              <FormField control={form.control} name="state" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>UF</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger></FormControl>
+                    <SelectContent>{UF_LIST.map((uf) => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
             </div>
 
             <div className="space-y-2">
@@ -218,52 +192,18 @@ export default function FarmFormDialog({ open, onOpenChange, farm, clients }: Pr
                 </Button>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <FormField
-                  control={form.control}
-                  name="latitude"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="any"
-                          placeholder="Latitude"
-                          value={field.value ?? ""}
-                          onChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="longitude"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="any"
-                          placeholder="Longitude"
-                          value={field.value ?? ""}
-                          onChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormField control={form.control} name="latitude" render={({ field }) => (
+                  <FormItem><FormControl><Input type="number" step="any" placeholder="Latitude" value={field.value ?? ""} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="longitude" render={({ field }) => (
+                  <FormItem><FormControl><Input type="number" step="any" placeholder="Longitude" value={field.value ?? ""} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
+                )} />
               </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? "Salvando..." : "Salvar"}
-              </Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? "Salvando..." : "Salvar"}</Button>
             </div>
           </form>
         </Form>
