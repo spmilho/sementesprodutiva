@@ -123,7 +123,7 @@ export default function PdfCoverRenderer({ cycle, onReady }: PdfCoverRendererPro
               src={logoWhite}
               alt="Sementes Produtiva"
               crossOrigin="anonymous"
-              style={{ maxWidth: "180px", height: "auto" }}
+              style={{ maxWidth: "180px", height: "auto", mixBlendMode: "screen" }}
             />
             <div
               style={{
