@@ -27,6 +27,7 @@ const schema = z.object({
   total_area_ha: z.coerce.number().positive().optional().or(z.literal("").transform(() => undefined)),
   address: z.string().max(200).optional().or(z.literal("")),
   notes: z.string().max(500).optional().or(z.literal("")),
+  pivot_name: z.string().max(100).optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -59,7 +60,7 @@ export default function NewFarmFormDialog({ open, onOpenChange, farm, cooperator
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", city: "", state: "", latitude: undefined, longitude: undefined, total_area_ha: undefined, address: "", notes: "" },
+    defaultValues: { name: "", city: "", state: "", latitude: undefined, longitude: undefined, total_area_ha: undefined, address: "", notes: "", pivot_name: "" },
   });
 
   useEffect(() => {
@@ -75,7 +76,7 @@ export default function NewFarmFormDialog({ open, onOpenChange, farm, cooperator
         notes: farm.notes || "",
       });
     } else {
-      form.reset({ name: "", city: "", state: "", latitude: undefined, longitude: undefined, total_area_ha: undefined, address: "", notes: "" });
+      form.reset({ name: "", city: "", state: "", latitude: undefined, longitude: undefined, total_area_ha: undefined, address: "", notes: "", pivot_name: "" });
     }
   }, [farm, open]);
 
@@ -106,8 +107,17 @@ export default function NewFarmFormDialog({ open, onOpenChange, farm, cooperator
       } else {
         const { data: profile } = await supabase.from("profiles").select("org_id").single();
         if (!profile?.org_id) throw new Error("Organização não encontrada");
-        const { error } = await (supabase as any).from("farms").insert({ ...payload, org_id: profile.org_id });
+        const { data: newFarm, error } = await (supabase as any).from("farms").insert({ ...payload, org_id: profile.org_id }).select("id").single();
         if (error) throw error;
+        // Create pivot if name provided
+        if (values.pivot_name?.trim()) {
+          const { error: pivotError } = await (supabase as any).from("pivots").insert({
+            org_id: profile.org_id,
+            farm_id: newFarm.id,
+            name: values.pivot_name.trim(),
+          });
+          if (pivotError) throw pivotError;
+        }
       }
     },
     onSuccess: () => {
@@ -166,6 +176,14 @@ export default function NewFarmFormDialog({ open, onOpenChange, farm, cooperator
             <FormField control={form.control} name="notes" render={({ field }) => (
               <FormItem><FormLabel>Observações</FormLabel><FormControl><Textarea {...field} rows={2} /></FormControl></FormItem>
             )} />
+            {!isEditing && (
+              <div className="border-t pt-4 mt-2">
+                <FormField control={form.control} name="pivot_name" render={({ field }) => (
+                  <FormItem><FormLabel>Nome do Pivô (opcional)</FormLabel><FormControl><Input {...field} placeholder="Ex: Pivô 1" /></FormControl><FormMessage /></FormItem>
+                )} />
+                <p className="text-xs text-muted-foreground mt-1">Se informado, um pivô será criado automaticamente dentro desta fazenda.</p>
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? "Salvando..." : "Salvar"}</Button>
