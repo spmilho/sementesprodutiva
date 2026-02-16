@@ -4,6 +4,7 @@ import html2canvas from "html2canvas";
 
 interface CycleData {
   client: string;
+  cooperator?: string;
   farm: string;
   field: string;
   hybrid: string;
@@ -72,6 +73,7 @@ function drawFallbackCover(doc: jsPDF, cycle: CycleData, generatedAt: string) {
 
   const lines: [string, string][] = [
     ["Cliente", cycle.client],
+    ...(cycle.cooperator ? [["Cooperado", cycle.cooperator] as [string, string]] : []),
     ["Fazenda", cycle.farm],
     ["Pivô", cycle.field],
     ...(cycle.contract ? [["Nº Contrato", cycle.contract] as [string, string]] : []),
@@ -111,6 +113,7 @@ function drawExecutiveSummary(doc: jsPDF, cycle: CycleData) {
     body: [
       ["Status", STATUS_PT[cycle.status] || cycle.status],
       ["Cliente", cycle.client],
+      ...(cycle.cooperator ? [["Cooperado", cycle.cooperator]] : []),
       ["Fazenda / Pivô", `${cycle.farm} — ${cycle.field}`],
       ...(cycle.contract ? [["Nº Contrato", cycle.contract]] : []),
       ["Híbrido", cycle.hybrid],

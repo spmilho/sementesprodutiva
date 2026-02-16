@@ -4,6 +4,7 @@ import logoWhite from "@/assets/report-logo-white.png";
 
 interface CycleData {
   client: string;
+  cooperator?: string;
   farm: string;
   field: string;
   hybrid: string;
@@ -199,6 +200,7 @@ export default function PdfCoverRenderer({ cycle, onReady }: PdfCoverRendererPro
             {/* Field data */}
             {[
               `Cliente: ${cycle.client}`,
+              ...(cycle.cooperator ? [`Cooperado: ${cycle.cooperator}`] : []),
               `Fazenda: ${cycle.farm}`,
               `Pivô: ${cycle.field}`,
               ...(cycle.contract ? [`Contrato: ${cycle.contract}`] : []),

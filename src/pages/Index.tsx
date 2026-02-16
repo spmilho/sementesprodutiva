@@ -66,14 +66,14 @@ const harvestData = harvestDataRaw.reduce((acc, item, i) => {
 }, [] as (typeof harvestDataRaw[0] & { acumPlan: number; acumReal: number })[]);
 
 const cyclesData = [
-  { contract: "2025-0847", client: "Corteva", farm: "Faz. Santa Maria", field: "Pivô A1", hybrid: "P3456H", season: "2025/26", status: "growing", area: 45, updated: "14/02/2026" },
-  { contract: "", client: "Syngenta", farm: "Faz. São José", field: "Pivô B3", hybrid: "SYN7205", season: "2025/26", status: "detasseling", area: 38, updated: "15/02/2026" },
-  { contract: "2025-0912", client: "Advanta", farm: "Faz. Boa Vista", field: "Pivô C2", hybrid: "ADV9012", season: "2025/26", status: "harvest", area: 52, updated: "16/02/2026" },
-  { contract: "", client: "GDM", farm: "Faz. Cerrado", field: "Pivô D1", hybrid: "GDM4510", season: "2025/26", status: "growing", area: 30, updated: "13/02/2026" },
-  { contract: "2025-1003", client: "Corteva", farm: "Faz. Primavera", field: "Pivô E4", hybrid: "P4020Y", season: "2025/26", status: "planting", area: 60, updated: "16/02/2026" },
-  { contract: "", client: "Syngenta", farm: "Faz. Esperança", field: "Pivô F2", hybrid: "SYN8300", season: "2025/26", status: "planning", area: 42, updated: "10/02/2026" },
-  { contract: "2025-0788", client: "GDM", farm: "Faz. São Pedro", field: "Pivô G1", hybrid: "GDM5520", season: "2025/26", status: "growing", area: 35, updated: "12/02/2026" },
-  { contract: "2025-0654", client: "Advanta", farm: "Faz. Ipê", field: "Pivô H3", hybrid: "ADV7800", season: "2025/26", status: "completed", area: 48, updated: "08/02/2026" },
+  { contract: "2025-0847", client: "Corteva", cooperator: "Oscar Stronchon", farm: "Faz. Santa Maria", field: "Pivô A1", hybrid: "P3456H", season: "2025/26", status: "growing", area: 45, updated: "14/02/2026" },
+  { contract: "", client: "Syngenta", cooperator: "José Silva", farm: "Faz. São José", field: "Pivô B3", hybrid: "SYN7205", season: "2025/26", status: "detasseling", area: 38, updated: "15/02/2026" },
+  { contract: "2025-0912", client: "Advanta", cooperator: "Maria Oliveira", farm: "Faz. Boa Vista", field: "Pivô C2", hybrid: "ADV9012", season: "2025/26", status: "harvest", area: 52, updated: "16/02/2026" },
+  { contract: "", client: "GDM", cooperator: "Carlos Pereira", farm: "Faz. Cerrado", field: "Pivô D1", hybrid: "GDM4510", season: "2025/26", status: "growing", area: 30, updated: "13/02/2026" },
+  { contract: "2025-1003", client: "Corteva", cooperator: "Oscar Stronchon", farm: "Faz. Primavera", field: "Pivô E4", hybrid: "P4020Y", season: "2025/26", status: "planting", area: 60, updated: "16/02/2026" },
+  { contract: "", client: "Syngenta", cooperator: "Ana Santos", farm: "Faz. Esperança", field: "Pivô F2", hybrid: "SYN8300", season: "2025/26", status: "planning", area: 42, updated: "10/02/2026" },
+  { contract: "2025-0788", client: "GDM", cooperator: "Carlos Pereira", farm: "Faz. São Pedro", field: "Pivô G1", hybrid: "GDM5520", season: "2025/26", status: "growing", area: 35, updated: "12/02/2026" },
+  { contract: "2025-0654", client: "Advanta", cooperator: "Maria Oliveira", farm: "Faz. Ipê", field: "Pivô H3", hybrid: "ADV7800", season: "2025/26", status: "completed", area: 48, updated: "08/02/2026" },
 ];
 
 const statusLabels: Record<string, string> = {
@@ -247,14 +247,15 @@ export default function Dashboard() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs">Contrato / Pivô</TableHead>
-                  <TableHead className="text-xs">Cliente</TableHead>
-                  <TableHead className="text-xs">Fazenda</TableHead>
-                  <TableHead className="text-xs hidden md:table-cell">Híbrido</TableHead>
-                  <TableHead className="text-xs">Status</TableHead>
-                  <TableHead className="text-xs text-right hidden sm:table-cell">Área (ha)</TableHead>
-                  <TableHead className="text-xs text-right hidden lg:table-cell">Atualização</TableHead>
-                </TableRow>
+                   <TableHead className="text-xs">Contrato / Pivô</TableHead>
+                   <TableHead className="text-xs">Cliente</TableHead>
+                   <TableHead className="text-xs">Cooperado</TableHead>
+                   <TableHead className="text-xs">Fazenda</TableHead>
+                   <TableHead className="text-xs hidden md:table-cell">Híbrido</TableHead>
+                   <TableHead className="text-xs">Status</TableHead>
+                   <TableHead className="text-xs text-right hidden sm:table-cell">Área (ha)</TableHead>
+                   <TableHead className="text-xs text-right hidden lg:table-cell">Atualização</TableHead>
+                 </TableRow>
               </TableHeader>
               <TableBody>
                 {cyclesData.map((c, i) => (
@@ -272,11 +273,12 @@ export default function Dashboard() {
                       )}
                     </TableCell>
                     <TableCell className="font-medium text-sm">{c.client}</TableCell>
-                    <TableCell className="text-sm">{c.farm}</TableCell>
-                    <TableCell className="text-sm hidden md:table-cell font-mono">{c.hybrid}</TableCell>
-                    <TableCell><StatusBadge status={c.status} /></TableCell>
-                    <TableCell className="text-right text-sm hidden sm:table-cell">{c.area}</TableCell>
-                    <TableCell className="text-right text-sm text-muted-foreground hidden lg:table-cell">{c.updated}</TableCell>
+                     <TableCell className="text-sm">{c.cooperator}</TableCell>
+                     <TableCell className="text-sm">{c.farm}</TableCell>
+                     <TableCell className="text-sm hidden md:table-cell font-mono">{c.hybrid}</TableCell>
+                     <TableCell><StatusBadge status={c.status} /></TableCell>
+                     <TableCell className="text-right text-sm hidden sm:table-cell">{c.area}</TableCell>
+                     <TableCell className="text-right text-sm text-muted-foreground hidden lg:table-cell">{c.updated}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
