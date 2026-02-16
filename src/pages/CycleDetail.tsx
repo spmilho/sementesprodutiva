@@ -199,6 +199,7 @@ export default function CycleDetail() {
         <TabsContent value="planejamento">
           <PlantingPlan cycleId={id!} femaleArea={cycle.female_area} maleArea={cycle.male_area} orgId={cycle.org_id}
             malePlantingFinished={cycle.male_planting_finished ?? false} femalePlantingFinished={cycle.female_planting_finished ?? false}
+            pivotName={cycle.field_name} contractNumber={cycle.contract_number}
             onFinishToggle={(type, finished) => finishMutation.mutate({ type, finished })} />
         </TabsContent>
 

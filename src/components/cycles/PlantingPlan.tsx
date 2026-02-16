@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Pencil, Trash2, Loader2, CalendarIcon, Lock } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, CalendarIcon, Lock, CheckCircle2, Clock } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +28,8 @@ interface PlantingPlanProps {
   orgId: string;
   malePlantingFinished: boolean;
   femalePlantingFinished: boolean;
+  pivotName?: string;
+  contractNumber?: string | null;
   onFinishToggle: (type: "male" | "female", finished: boolean) => void;
 }
 
@@ -51,7 +53,8 @@ type FormValues = z.infer<typeof schema>;
 
 export default function PlantingPlan({
   cycleId, femaleArea, maleArea, orgId,
-  malePlantingFinished, femalePlantingFinished, onFinishToggle,
+  malePlantingFinished, femalePlantingFinished,
+  pivotName, contractNumber, onFinishToggle,
 }: PlantingPlanProps) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -186,8 +189,19 @@ export default function PlantingPlan({
 
   return (
     <div className="space-y-6">
-      {/* Progress Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* 4 Top Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1 — Pivô / Contrato */}
+        <Card>
+          <CardContent className="p-4 space-y-1">
+            <p className="text-xs text-muted-foreground">Pivô</p>
+            <p className="text-base font-semibold text-foreground">{pivotName || "—"}</p>
+            <p className="text-xs text-muted-foreground mt-2">Contrato</p>
+            <p className="text-sm font-medium text-foreground">{contractNumber || "Sem contrato"}</p>
+          </CardContent>
+        </Card>
+
+        {/* Card 2 — Área Fêmea */}
         <Card>
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center justify-between">
@@ -201,9 +215,11 @@ export default function PlantingPlan({
               <span>•</span>
               <span>Restante: {Math.max(femaleArea - totalFemale, 0).toFixed(2)} ha</span>
             </div>
-            <Progress value={femalePct} className="h-2" />
+            <Progress value={femalePct} className="h-2 [&>div]:bg-pink-500" />
           </CardContent>
         </Card>
+
+        {/* Card 3 — Área Macho */}
         <Card>
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center justify-between">
@@ -217,7 +233,34 @@ export default function PlantingPlan({
               <span>•</span>
               <span>Restante: {Math.max(maleArea - totalMale, 0).toFixed(2)} ha</span>
             </div>
-            <Progress value={malePct} className="h-2" />
+            <Progress value={malePct} className="h-2 [&>div]:bg-blue-500" />
+          </CardContent>
+        </Card>
+
+        {/* Card 4 — Status */}
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <p className="text-sm font-medium text-foreground">Status do Plantio</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs">
+                {femalePlantingFinished
+                  ? <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  : <Clock className="h-4 w-4 text-amber-500" />}
+                <span className="text-muted-foreground">Fêmea:</span>
+                <span className={cn("font-medium", femalePlantingFinished ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400")}>
+                  {femalePlantingFinished ? "Finalizado" : "Pendente"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                {malePlantingFinished
+                  ? <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  : <Clock className="h-4 w-4 text-amber-500" />}
+                <span className="text-muted-foreground">Macho:</span>
+                <span className={cn("font-medium", malePlantingFinished ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400")}>
+                  {malePlantingFinished ? "Finalizado" : "Pendente"}
+                </span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
