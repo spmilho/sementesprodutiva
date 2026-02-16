@@ -1,4 +1,4 @@
-import { Leaf, LayoutDashboard, Layers, CalendarDays, Sprout, TrendingUp, BarChart3, Zap, Scissors, Search, FlaskConical, Bug, Droplets, Thermometer, Wheat, Map, ClipboardCheck, FileText, Settings, LogOut } from "lucide-react";
+import { Leaf, LayoutDashboard, Layers, CalendarDays, Sprout, TrendingUp, BarChart3, Zap, Scissors, Search, FlaskConical, Bug, Droplets, Thermometer, Wheat, Map, ClipboardCheck, FileText, Settings, LogOut, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { NavLink } from "@/components/NavLink";
 import {

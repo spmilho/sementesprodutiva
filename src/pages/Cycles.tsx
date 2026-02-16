@@ -48,6 +48,7 @@ export default function Cycles() {
   const [search, setSearch] = useState("");
   const [filterSeason, setFilterSeason] = useState("all");
   const [filterClient, setFilterClient] = useState("all");
+  const [filterCooperator, setFilterCooperator] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
 
   const { data: cycles = [], isLoading } = useQuery({
@@ -55,7 +56,7 @@ export default function Cycles() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("production_cycles")
-        .select("*, clients(name), farms(name)")
+        .select("*, clients(name), farms(name), cooperators(name)")
         .is("deleted_at", null)
         .order("updated_at", { ascending: false });
       if (error) throw error;
@@ -65,9 +66,13 @@ export default function Cycles() {
 
   const clients = useMemo(() => {
     const unique = new Map<string, string>();
-    cycles.forEach((c: any) => {
-      if (c.clients?.name) unique.set(c.client_id, c.clients.name);
-    });
+    cycles.forEach((c: any) => { if (c.clients?.name) unique.set(c.client_id, c.clients.name); });
+    return Array.from(unique, ([id, name]) => ({ id, name }));
+  }, [cycles]);
+
+  const cooperatorsList = useMemo(() => {
+    const unique = new Map<string, string>();
+    cycles.forEach((c: any) => { if (c.cooperators?.name) unique.set(c.cooperator_id, c.cooperators.name); });
     return Array.from(unique, ([id, name]) => ({ id, name }));
   }, [cycles]);
 
@@ -81,6 +86,7 @@ export default function Cycles() {
     return cycles.filter((c: any) => {
       if (filterSeason !== "all" && c.season !== filterSeason) return false;
       if (filterClient !== "all" && c.client_id !== filterClient) return false;
+      if (filterCooperator !== "all" && c.cooperator_id !== filterCooperator) return false;
       if (filterStatus !== "all" && c.status !== filterStatus) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -89,12 +95,13 @@ export default function Cycles() {
           c.field_name?.toLowerCase().includes(q) ||
           c.contract_number?.toLowerCase().includes(q) ||
           c.clients?.name?.toLowerCase().includes(q) ||
-          c.farms?.name?.toLowerCase().includes(q);
+          c.farms?.name?.toLowerCase().includes(q) ||
+          c.cooperators?.name?.toLowerCase().includes(q);
         if (!match) return false;
       }
       return true;
     });
-  }, [cycles, filterSeason, filterClient, filterStatus, search]);
+  }, [cycles, filterSeason, filterClient, filterCooperator, filterStatus, search]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
@@ -109,47 +116,37 @@ export default function Cycles() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por contrato, pivô, híbrido, fazenda ou cliente..."
-            className="pl-9 h-9"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <Input placeholder="Buscar por contrato, pivô, híbrido, cooperado..." className="pl-9 h-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Select value={filterSeason} onValueChange={setFilterSeason}>
-          <SelectTrigger className="w-[140px] h-9 text-sm">
-            <SelectValue placeholder="Safra" />
-          </SelectTrigger>
+          <SelectTrigger className="w-[140px] h-9 text-sm"><SelectValue placeholder="Safra" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas Safras</SelectItem>
-            {seasons.map((s) => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
-            ))}
+            {seasons.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterClient} onValueChange={setFilterClient}>
-          <SelectTrigger className="w-[140px] h-9 text-sm">
-            <SelectValue placeholder="Cliente" />
-          </SelectTrigger>
+          <SelectTrigger className="w-[140px] h-9 text-sm"><SelectValue placeholder="Cliente" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            {clients.map((c) => (
-              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-            ))}
+            {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterCooperator} onValueChange={setFilterCooperator}>
+          <SelectTrigger className="w-[140px] h-9 text-sm"><SelectValue placeholder="Cooperado" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {cooperatorsList.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[140px] h-9 text-sm">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
+          <SelectTrigger className="w-[140px] h-9 text-sm"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            {Object.entries(statusLabels).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
-            ))}
+            {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -158,9 +155,7 @@ export default function Cycles() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
+            <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground text-sm">
               {cycles.length === 0 ? "Nenhum ciclo cadastrado ainda." : "Nenhum ciclo encontrado com os filtros aplicados."}
@@ -173,6 +168,7 @@ export default function Cycles() {
                     <TableHead className="text-xs">Contrato / Pivô</TableHead>
                     <TableHead className="text-xs">Safra</TableHead>
                     <TableHead className="text-xs">Cliente</TableHead>
+                    <TableHead className="text-xs">Cooperado</TableHead>
                     <TableHead className="text-xs">Fazenda</TableHead>
                     <TableHead className="text-xs hidden md:table-cell">Híbrido</TableHead>
                     <TableHead className="text-xs text-right">Área (ha)</TableHead>
@@ -192,6 +188,7 @@ export default function Cycles() {
                       </TableCell>
                       <TableCell className="text-sm font-medium">{c.season}</TableCell>
                       <TableCell className="text-sm">{c.clients?.name}</TableCell>
+                      <TableCell className="text-sm">{c.cooperators?.name || "—"}</TableCell>
                       <TableCell className="text-sm">{c.farms?.name}</TableCell>
                       <TableCell className="text-sm font-mono hidden md:table-cell">{c.hybrid_name}</TableCell>
                       <TableCell className="text-right text-sm font-medium">{c.total_area}</TableCell>

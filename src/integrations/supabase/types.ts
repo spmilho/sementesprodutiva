@@ -118,8 +118,68 @@ export type Database = {
           },
         ]
       }
+      cooperators: {
+        Row: {
+          active: boolean
+          address: string | null
+          city: string | null
+          created_at: string
+          deleted_at: string | null
+          document: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          org_id: string
+          phone: string | null
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          document?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          org_id: string
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          document?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cooperators_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       farms: {
         Row: {
+          active: boolean
           address: string | null
           city: string | null
           client_id: string | null
@@ -128,6 +188,7 @@ export type Database = {
           cooperado_phone: string | null
           cooperator_document: string | null
           cooperator_email: string | null
+          cooperator_id: string | null
           cooperator_name: string | null
           cooperator_phone: string | null
           created_at: string
@@ -136,12 +197,15 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           name: string
+          notes: string | null
           org_id: string
           state: string | null
           status: string
+          total_area_ha: number | null
           updated_at: string
         }
         Insert: {
+          active?: boolean
           address?: string | null
           city?: string | null
           client_id?: string | null
@@ -150,6 +214,7 @@ export type Database = {
           cooperado_phone?: string | null
           cooperator_document?: string | null
           cooperator_email?: string | null
+          cooperator_id?: string | null
           cooperator_name?: string | null
           cooperator_phone?: string | null
           created_at?: string
@@ -158,12 +223,15 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           name: string
+          notes?: string | null
           org_id: string
           state?: string | null
           status?: string
+          total_area_ha?: number | null
           updated_at?: string
         }
         Update: {
+          active?: boolean
           address?: string | null
           city?: string | null
           client_id?: string | null
@@ -172,6 +240,7 @@ export type Database = {
           cooperado_phone?: string | null
           cooperator_document?: string | null
           cooperator_email?: string | null
+          cooperator_id?: string | null
           cooperator_name?: string | null
           cooperator_phone?: string | null
           created_at?: string
@@ -180,9 +249,11 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           name?: string
+          notes?: string | null
           org_id?: string
           state?: string | null
           status?: string
+          total_area_ha?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -191,6 +262,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farms_cooperator_id_fkey"
+            columns: ["cooperator_id"]
+            isOneToOne: false
+            referencedRelation: "cooperators"
             referencedColumns: ["id"]
           },
           {
@@ -219,6 +297,72 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      pivots: {
+        Row: {
+          active: boolean
+          area_ha: number | null
+          created_at: string
+          deleted_at: string | null
+          farm_id: string
+          id: string
+          irrigation_type: string | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          notes: string | null
+          org_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          area_ha?: number | null
+          created_at?: string
+          deleted_at?: string | null
+          farm_id: string
+          id?: string
+          irrigation_type?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          notes?: string | null
+          org_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          area_ha?: number | null
+          created_at?: string
+          deleted_at?: string | null
+          farm_id?: string
+          id?: string
+          irrigation_type?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          notes?: string | null
+          org_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pivots_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pivots_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       planting_plan: {
         Row: {
@@ -293,6 +437,7 @@ export type Database = {
         Row: {
           client_id: string
           contract_number: string | null
+          cooperator_id: string | null
           created_at: string
           deleted_at: string | null
           expected_production: number | null
@@ -313,6 +458,7 @@ export type Database = {
           material_cycle_days: number | null
           org_id: string
           pivot_area: number | null
+          pivot_id: string | null
           season: string
           status: string
           target_moisture: number | null
@@ -323,6 +469,7 @@ export type Database = {
         Insert: {
           client_id: string
           contract_number?: string | null
+          cooperator_id?: string | null
           created_at?: string
           deleted_at?: string | null
           expected_production?: number | null
@@ -343,6 +490,7 @@ export type Database = {
           material_cycle_days?: number | null
           org_id: string
           pivot_area?: number | null
+          pivot_id?: string | null
           season: string
           status?: string
           target_moisture?: number | null
@@ -353,6 +501,7 @@ export type Database = {
         Update: {
           client_id?: string
           contract_number?: string | null
+          cooperator_id?: string | null
           created_at?: string
           deleted_at?: string | null
           expected_production?: number | null
@@ -373,6 +522,7 @@ export type Database = {
           material_cycle_days?: number | null
           org_id?: string
           pivot_area?: number | null
+          pivot_id?: string | null
           season?: string
           status?: string
           target_moisture?: number | null
@@ -389,6 +539,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "production_cycles_cooperator_id_fkey"
+            columns: ["cooperator_id"]
+            isOneToOne: false
+            referencedRelation: "cooperators"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "production_cycles_farm_id_fkey"
             columns: ["farm_id"]
             isOneToOne: false
@@ -400,6 +557,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_cycles_pivot_id_fkey"
+            columns: ["pivot_id"]
+            isOneToOne: false
+            referencedRelation: "pivots"
             referencedColumns: ["id"]
           },
         ]

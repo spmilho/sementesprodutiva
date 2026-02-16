@@ -14,7 +14,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const ratioOptions = ["4F:2M", "6F:2M", "4F:1M", "3F:1M", "custom"];
-const irrigationOptions = ["Pivô Central", "Sequeiro", "Gotejamento"];
+const irrigationLabels: Record<string, string> = {
+  pivot: "Pivô Central",
+  dryland: "Sequeiro",
+  drip: "Gotejamento",
+  sprinkler: "Aspersão",
+};
+const irrigationOptions = ["Pivô Central", "Sequeiro", "Gotejamento", "Aspersão"];
 const statusOptions = [
   { value: "planning", label: "Planejamento" },
   { value: "planting", label: "Plantio" },
@@ -44,7 +50,9 @@ function computeAreas(totalArea: number, ratio: string) {
 const schema = z.object({
   contract_number: z.string().max(50).optional().or(z.literal("")),
   client_id: z.string().min(1, "Cliente é obrigatório"),
+  cooperator_id: z.string().min(1, "Cooperado é obrigatório"),
   farm_id: z.string().min(1, "Fazenda é obrigatória"),
+  pivot_id: z.string().min(1, "Pivô é obrigatório"),
   field_name: z.string().trim().min(1, "Pivô é obrigatório").max(100),
   season: z.string().trim().min(1, "Safra é obrigatória").max(20),
   hybrid_name: z.string().trim().min(1, "Híbrido é obrigatório").max(100),
@@ -68,7 +76,7 @@ export default function CycleForm() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       contract_number: "",
@@ -78,6 +86,7 @@ export default function CycleForm() {
       target_moisture: 18,
       isolation_distance: 300,
       temporal_isolation_days: 30,
+      field_name: "",
     },
   });
 
@@ -85,6 +94,8 @@ export default function CycleForm() {
   const ratio = watch("female_male_ratio");
   const irrigation = watch("irrigation_system");
   const expectedProductivity = watch("expected_productivity");
+  const selectedCooperatorId = watch("cooperator_id");
+  const selectedFarmId = watch("farm_id");
 
   const { female: femaleArea, male: maleArea } = useMemo(
     () => computeAreas(totalArea || 0, ratio),
@@ -99,29 +110,55 @@ export default function CycleForm() {
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-active"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("id, name")
-        .eq("status", "active")
-        .is("deleted_at", null)
-        .order("name");
+      const { data, error } = await supabase.from("clients").select("id, name").eq("status", "active").is("deleted_at", null).order("name");
       if (error) throw error;
       return data;
     },
   });
 
-  const { data: farms = [] } = useQuery({
-    queryKey: ["farms-all"],
+  const { data: cooperators = [] } = useQuery({
+    queryKey: ["cooperators-active"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("farms")
-        .select("id, name")
-        .is("deleted_at", null)
-        .order("name");
+      const { data, error } = await (supabase as any).from("cooperators").select("id, name").eq("active", true).is("deleted_at", null).order("name");
       if (error) throw error;
-      return data;
+      return data as { id: string; name: string }[];
     },
   });
+
+  const { data: farms = [] } = useQuery({
+    queryKey: ["farms-by-cooperator", selectedCooperatorId],
+    queryFn: async () => {
+      if (!selectedCooperatorId) return [];
+      const { data, error } = await (supabase as any).from("farms").select("id, name").eq("cooperator_id", selectedCooperatorId).is("deleted_at", null).order("name");
+      if (error) throw error;
+      return data as { id: string; name: string }[];
+    },
+    enabled: !!selectedCooperatorId,
+  });
+
+  const { data: pivots = [] } = useQuery({
+    queryKey: ["pivots-by-farm", selectedFarmId],
+    queryFn: async () => {
+      if (!selectedFarmId) return [];
+      const { data, error } = await (supabase as any).from("pivots").select("id, name, area_ha, irrigation_type").eq("farm_id", selectedFarmId).is("deleted_at", null).order("name");
+      if (error) throw error;
+      return data as { id: string; name: string; area_ha: number | null; irrigation_type: string | null }[];
+    },
+    enabled: !!selectedFarmId,
+  });
+
+  const handlePivotChange = (pivotId: string) => {
+    setValue("pivot_id", pivotId);
+    const pivot = pivots.find((p) => p.id === pivotId);
+    if (pivot) {
+      setValue("field_name", pivot.name);
+      if (pivot.area_ha) setValue("pivot_area", pivot.area_ha);
+      if (pivot.irrigation_type) {
+        const label = irrigationLabels[pivot.irrigation_type];
+        if (label) setValue("irrigation_system", label);
+      }
+    }
+  };
 
   const { data: profile } = useQuery({
     queryKey: ["user-profile"],
@@ -137,10 +174,12 @@ export default function CycleForm() {
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
       if (!profile?.org_id) throw new Error("Organização não encontrada");
-      const { error } = await supabase.from("production_cycles").insert({
+      const { error } = await (supabase as any).from("production_cycles").insert({
         contract_number: values.contract_number || null,
         client_id: values.client_id,
+        cooperator_id: values.cooperator_id,
         farm_id: values.farm_id,
+        pivot_id: values.pivot_id,
         field_name: values.field_name,
         season: values.season,
         hybrid_name: values.hybrid_name,
@@ -160,7 +199,7 @@ export default function CycleForm() {
         target_moisture: values.target_moisture ?? 18,
         isolation_distance: values.isolation_distance ?? 300,
         temporal_isolation_days: values.temporal_isolation_days ?? 30,
-      } as any);
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -196,12 +235,12 @@ export default function CycleForm() {
                 </p>
               </div>
               <div className="space-y-1.5">
-                <Label>Pivô *</Label>
-                <Input {...register("field_name")} placeholder="Ex: Pivô A1" />
-                {errors.field_name && <p className="text-xs text-destructive">{errors.field_name.message}</p>}
+                <Label>Safra *</Label>
+                <Input {...register("season")} placeholder="Ex: 2025/26" />
+                {errors.season && <p className="text-xs text-destructive">{errors.season.message}</p>}
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Cliente *</Label>
                 <Controller name="client_id" control={control} render={({ field }) => (
@@ -215,10 +254,24 @@ export default function CycleForm() {
                 {errors.client_id && <p className="text-xs text-destructive">{errors.client_id.message}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label>Fazenda / Cooperado *</Label>
+                <Label>Cooperado *</Label>
+                <Controller name="cooperator_id" control={control} render={({ field }) => (
+                  <Select value={field.value} onValueChange={(v) => { field.onChange(v); setValue("farm_id", ""); setValue("pivot_id", ""); setValue("field_name", ""); }}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o cooperado" /></SelectTrigger>
+                    <SelectContent>
+                      {cooperators.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )} />
+                {errors.cooperator_id && <p className="text-xs text-destructive">{errors.cooperator_id.message}</p>}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Fazenda *</Label>
                 <Controller name="farm_id" control={control} render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a fazenda" /></SelectTrigger>
+                  <Select value={field.value} onValueChange={(v) => { field.onChange(v); setValue("pivot_id", ""); setValue("field_name", ""); }} disabled={!selectedCooperatorId}>
+                    <SelectTrigger><SelectValue placeholder={selectedCooperatorId ? "Selecione a fazenda" : "Selecione o cooperado primeiro"} /></SelectTrigger>
                     <SelectContent>
                       {farms.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
                     </SelectContent>
@@ -227,9 +280,17 @@ export default function CycleForm() {
                 {errors.farm_id && <p className="text-xs text-destructive">{errors.farm_id.message}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label>Safra *</Label>
-                <Input {...register("season")} placeholder="Ex: 2025/26" />
-                {errors.season && <p className="text-xs text-destructive">{errors.season.message}</p>}
+                <Label>Pivô *</Label>
+                <Controller name="pivot_id" control={control} render={({ field }) => (
+                  <Select value={field.value} onValueChange={handlePivotChange} disabled={!selectedFarmId}>
+                    <SelectTrigger><SelectValue placeholder={selectedFarmId ? "Selecione o pivô" : "Selecione a fazenda primeiro"} /></SelectTrigger>
+                    <SelectContent>
+                      {pivots.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}{p.area_ha ? ` (${p.area_ha} ha)` : ""}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )} />
+                {errors.pivot_id && <p className="text-xs text-destructive">{errors.pivot_id.message}</p>}
+                <input type="hidden" {...register("field_name")} />
               </div>
             </div>
           </CardContent>
