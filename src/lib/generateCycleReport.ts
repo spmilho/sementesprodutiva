@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import html2canvas from "html2canvas";
 
 interface CycleData {
   client: string;
@@ -25,14 +26,32 @@ const STATUS_PT: Record<string, string> = {
   cancelled: "Cancelado",
 };
 
-const PRIMARY: [number, number, number] = [27, 94, 32]; // #1B5E20
+const PRIMARY: [number, number, number] = [27, 94, 32];
 
-function drawCover(doc: jsPDF, cycle: CycleData, generatedAt: string) {
+async function renderHtmlCover(doc: jsPDF): Promise<boolean> {
+  const coverEl = document.getElementById("pdf-cover");
+  if (!coverEl) return false;
+
+  try {
+    const canvas = await html2canvas(coverEl, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: "#0d1f0d",
+    });
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    doc.addImage(imgData, "JPEG", 0, 0, 210, 297);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function drawFallbackCover(doc: jsPDF, cycle: CycleData, generatedAt: string) {
   // Background band
   doc.setFillColor(...PRIMARY);
   doc.rect(0, 0, 210, 100, "F");
 
-  // Company name
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(28);
   doc.setFont("helvetica", "bold");
@@ -42,7 +61,6 @@ function drawCover(doc: jsPDF, cycle: CycleData, generatedAt: string) {
   doc.setFont("helvetica", "normal");
   doc.text("Caderno de Campo — Relatório do Ciclo", 105, 55, { align: "center" });
 
-  // Cycle info box
   const boxY = 120;
   doc.setDrawColor(200, 200, 200);
   doc.setFillColor(248, 250, 248);
@@ -50,7 +68,6 @@ function drawCover(doc: jsPDF, cycle: CycleData, generatedAt: string) {
 
   doc.setTextColor(50, 50, 50);
   doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
 
   const lines = [
     ["Cliente", cycle.client],
@@ -69,7 +86,6 @@ function drawCover(doc: jsPDF, cycle: CycleData, generatedAt: string) {
     doc.text(value, 90, y);
   });
 
-  // Date
   doc.setFontSize(10);
   doc.setTextColor(130, 130, 130);
   doc.text(`Gerado em: ${generatedAt}`, 105, 270, { align: "center" });
@@ -87,7 +103,6 @@ function drawExecutiveSummary(doc: jsPDF, cycle: CycleData) {
   doc.setLineWidth(0.5);
   doc.line(14, 28, 196, 28);
 
-  // KPI cards as table
   autoTable(doc, {
     startY: 35,
     head: [["Indicador", "Valor"]],
@@ -103,7 +118,7 @@ function drawExecutiveSummary(doc: jsPDF, cycle: CycleData) {
       ["Sistema de Irrigação", cycle.irrigation],
       ["Safra", cycle.season],
     ],
-    headStyles: { fillColor: [27, 94, 32] as [number, number, number], fontSize: 10 },
+    headStyles: { fillColor: PRIMARY, fontSize: 10 },
     bodyStyles: { fontSize: 10 },
     alternateRowStyles: { fillColor: [245, 248, 245] },
     margin: { left: 14 },
@@ -121,7 +136,6 @@ function drawOperationalData(doc: jsPDF) {
   doc.setLineWidth(0.5);
   doc.line(14, 28, 196, 28);
 
-  // Planting table
   doc.setFontSize(13);
   doc.setTextColor(60, 60, 60);
   doc.text("Plantio — Planejado × Realizado", 14, 40);
@@ -138,13 +152,12 @@ function drawOperationalData(doc: jsPDF) {
       ["12/01", "Fêmea", "8,0", "9,0", "+1,0"],
       ["15/01", "Fêmea", "5,0", "4,0", "-1,0"],
     ],
-    headStyles: { fillColor: [27, 94, 32] as [number, number, number], fontSize: 9 },
+    headStyles: { fillColor: PRIMARY, fontSize: 9 },
     bodyStyles: { fontSize: 9 },
     alternateRowStyles: { fillColor: [245, 248, 245] },
     margin: { left: 14 },
   });
 
-  // Chemical applications
   const currentY = (doc as any).lastAutoTable.finalY + 15;
   doc.setFontSize(13);
   doc.setTextColor(60, 60, 60);
@@ -158,13 +171,12 @@ function drawOperationalData(doc: jsPDF) {
       ["10/02", "Nativo", "Fungicida", "0,75 L/ha", "38"],
       ["12/02", "Roundup Original DI", "Herbicida", "2,0 L/ha", "52"],
     ],
-    headStyles: { fillColor: [27, 94, 32] as [number, number, number], fontSize: 9 },
+    headStyles: { fillColor: PRIMARY, fontSize: 9 },
     bodyStyles: { fontSize: 9 },
     alternateRowStyles: { fillColor: [245, 248, 245] },
     margin: { left: 14 },
   });
 
-  // Detasseling
   const detY = (doc as any).lastAutoTable.finalY + 15;
   doc.setFontSize(13);
   doc.setTextColor(60, 60, 60);
@@ -180,13 +192,12 @@ function drawOperationalData(doc: jsPDF) {
       ["28/01", "10", "95%", "0,3%", "Manual"],
       ["01/02", "8", "100%", "0,1%", "Manual"],
     ],
-    headStyles: { fillColor: [27, 94, 32] as [number, number, number], fontSize: 9 },
+    headStyles: { fillColor: PRIMARY, fontSize: 9 },
     bodyStyles: { fontSize: 9 },
     alternateRowStyles: { fillColor: [245, 248, 245] },
     margin: { left: 14 },
   });
 
-  // Moisture
   const moistY = (doc as any).lastAutoTable.finalY + 15;
   doc.setFontSize(13);
   doc.setTextColor(60, 60, 60);
@@ -202,13 +213,12 @@ function drawOperationalData(doc: jsPDF) {
       ["12/02", "19,8%", "NIR", "Quase"],
       ["16/02", "17,5%", "Medidor portátil", "Pronta"],
     ],
-    headStyles: { fillColor: [27, 94, 32] as [number, number, number], fontSize: 9 },
+    headStyles: { fillColor: PRIMARY, fontSize: 9 },
     bodyStyles: { fontSize: 9 },
     alternateRowStyles: { fillColor: [245, 248, 245] },
     margin: { left: 14 },
   });
 
-  // Harvest
   const harvY = (doc as any).lastAutoTable.finalY + 15;
   if (harvY > 240) doc.addPage();
   const startHarv = harvY > 240 ? 25 : harvY;
@@ -227,14 +237,14 @@ function drawOperationalData(doc: jsPDF) {
       ["11/02", "20", "17,2%", "7", "112,0"],
       ["13/02", "15", "16,8%", "5", "78,3"],
     ],
-    headStyles: { fillColor: [27, 94, 32] as [number, number, number], fontSize: 9 },
+    headStyles: { fillColor: PRIMARY, fontSize: 9 },
     bodyStyles: { fontSize: 9 },
     alternateRowStyles: { fillColor: [245, 248, 245] },
     margin: { left: 14 },
   });
 }
 
-function drawConclusion(doc: jsPDF, cycle: CycleData) {
+function drawConclusion(doc: jsPDF, _cycle: CycleData) {
   doc.addPage();
 
   doc.setFontSize(18);
@@ -262,19 +272,13 @@ function drawConclusion(doc: jsPDF, cycle: CycleData) {
       (totalActual >= totalPlanned * 0.95
         ? "Resultado dentro do esperado. ✅"
         : "Houve desvio significativo que pode impactar a produção final. ⚠️"),
-
-    `2. SINCRONISMO FLORAL (NICKING): O sincronismo entre macho e fêmea foi classificado como adequado na maioria das avaliações. ` +
-      "Não foram registradas falhas críticas de polinização. ✅",
-
+    `2. SINCRONISMO FLORAL (NICKING): O sincronismo entre macho e fêmea foi classificado como adequado na maioria das avaliações. Não foram registradas falhas críticas de polinização. ✅`,
     `3. DESPENDOAMENTO: O despendoamento atingiu 100% com pendão remanescente final de 0,1%, dentro do padrão exigido (< 0,5%). ✅`,
-
     `4. UMIDADE: A umidade final média foi de ${avgMoisture.toFixed(1).replace(".", ",")}%. ` +
       (avgMoisture <= 18
         ? "Dentro da faixa ideal para colheita. ✅"
         : "Acima do alvo recomendado. Recomenda-se secagem adicional na UBS. ⚠️"),
-
-    `5. PRODUÇÃO: A produção total acumulada foi de ${totalHarvest.toFixed(1).replace(".", ",")} toneladas, ` +
-      `representando ${productionPct}% da meta de ${expectedProduction} toneladas. ` +
+    `5. PRODUÇÃO: A produção total acumulada foi de ${totalHarvest.toFixed(1).replace(".", ",")} toneladas, representando ${productionPct}% da meta de ${expectedProduction} toneladas. ` +
       (totalHarvest >= expectedProduction * 0.9
         ? "Resultado satisfatório. ✅"
         : "Abaixo da expectativa. Recomenda-se análise de causas. ⚠️"),
@@ -287,7 +291,6 @@ function drawConclusion(doc: jsPDF, cycle: CycleData) {
     y += lines.length * 6 + 6;
   });
 
-  // Recommendations
   y += 6;
   doc.setFontSize(13);
   doc.setTextColor(...PRIMARY);
@@ -312,7 +315,6 @@ function drawConclusion(doc: jsPDF, cycle: CycleData) {
     y += 7;
   });
 
-  // Footer
   doc.setFontSize(8);
   doc.setTextColor(160, 160, 160);
   doc.text(
@@ -323,17 +325,22 @@ function drawConclusion(doc: jsPDF, cycle: CycleData) {
   );
 }
 
-export function generateCycleReport(cycle: CycleData) {
+export async function generateCycleReport(cycle: CycleData) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const now = new Date();
   const generatedAt = `${now.toLocaleDateString("pt-BR")} às ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 
-  drawCover(doc, cycle, generatedAt);
+  // Try html2canvas cover first, fallback to jsPDF-drawn cover
+  const htmlCoverRendered = await renderHtmlCover(doc);
+  if (!htmlCoverRendered) {
+    drawFallbackCover(doc, cycle, generatedAt);
+  }
+
   drawExecutiveSummary(doc, cycle);
   drawOperationalData(doc);
   drawConclusion(doc, cycle);
 
-  // Page numbers
+  // Page numbers (skip cover)
   const pageCount = doc.getNumberOfPages();
   for (let i = 2; i <= pageCount; i++) {
     doc.setPage(i);
