@@ -1,11 +1,12 @@
-import { Plus, Search as SearchIcon, FileText } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Plus, Search as SearchIcon, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { generateCycleReport } from "@/lib/generateCycleReport";
+import PdfCoverRenderer from "@/components/PdfCoverRenderer";
 
 const statusLabels: Record<string, string> = {
   planning: "Planejamento",
@@ -37,8 +38,29 @@ const cycles = [
 ];
 
 export default function Cycles() {
+  const [reportCycle, setReportCycle] = useState<typeof cycles[0] | null>(null);
+  const [generating, setGenerating] = useState<number | null>(null);
+
+  const handleCoverReady = useCallback(async () => {
+    if (!reportCycle) return;
+    try {
+      await generateCycleReport(reportCycle);
+    } finally {
+      setGenerating(null);
+      setReportCycle(null);
+    }
+  }, [reportCycle]);
+
+  const startReport = (cycle: typeof cycles[0]) => {
+    setGenerating(cycle.id);
+    setReportCycle(cycle);
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      {/* Hidden cover renderer */}
+      <PdfCoverRenderer cycle={reportCycle} onReady={handleCoverReady} />
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Ciclos de Produção</h1>
@@ -121,8 +143,18 @@ export default function Cycles() {
                     <TableCell className="text-right text-sm hidden sm:table-cell">{c.irrigation}</TableCell>
                     <TableCell className="text-right text-sm text-muted-foreground hidden xl:table-cell">{c.updated}</TableCell>
                     <TableCell className="text-center hidden sm:table-cell">
-                      <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => generateCycleReport(c)}>
-                        <FileText className="h-3.5 w-3.5" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2"
+                        disabled={generating === c.id}
+                        onClick={() => startReport(c)}
+                      >
+                        {generating === c.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <FileText className="h-3.5 w-3.5" />
+                        )}
                       </Button>
                     </TableCell>
                   </TableRow>
