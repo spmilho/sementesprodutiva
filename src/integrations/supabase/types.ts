@@ -136,6 +136,75 @@ export type Database = {
         }
         Relationships: []
       }
+      planting_plan: {
+        Row: {
+          created_at: string
+          cycle_id: string
+          deleted_at: string | null
+          germination_rate: number
+          id: string
+          observations: string | null
+          org_id: string
+          planned_area: number
+          planned_date: string
+          planting_order: number
+          row_spacing: number
+          seeds_per_meter: number
+          target_population: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_id: string
+          deleted_at?: string | null
+          germination_rate?: number
+          id?: string
+          observations?: string | null
+          org_id: string
+          planned_area: number
+          planned_date: string
+          planting_order?: number
+          row_spacing?: number
+          seeds_per_meter: number
+          target_population?: number
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cycle_id?: string
+          deleted_at?: string | null
+          germination_rate?: number
+          id?: string
+          observations?: string | null
+          org_id?: string
+          planned_area?: number
+          planned_date?: string
+          planting_order?: number
+          row_spacing?: number
+          seeds_per_meter?: number
+          target_population?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planting_plan_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planting_plan_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_cycles: {
         Row: {
           client_id: string
@@ -147,6 +216,7 @@ export type Database = {
           female_area: number
           female_line: string
           female_male_ratio: string
+          female_planting_finished: boolean
           field_name: string
           hybrid_name: string
           id: string
@@ -154,6 +224,7 @@ export type Database = {
           isolation_distance: number | null
           male_area: number
           male_line: string
+          male_planting_finished: boolean
           material_cycle_days: number | null
           org_id: string
           pivot_area: number | null
@@ -174,6 +245,7 @@ export type Database = {
           female_area: number
           female_line: string
           female_male_ratio?: string
+          female_planting_finished?: boolean
           field_name: string
           hybrid_name: string
           id?: string
@@ -181,6 +253,7 @@ export type Database = {
           isolation_distance?: number | null
           male_area: number
           male_line: string
+          male_planting_finished?: boolean
           material_cycle_days?: number | null
           org_id: string
           pivot_area?: number | null
@@ -201,6 +274,7 @@ export type Database = {
           female_area?: number
           female_line?: string
           female_male_ratio?: string
+          female_planting_finished?: boolean
           field_name?: string
           hybrid_name?: string
           id?: string
@@ -208,6 +282,7 @@ export type Database = {
           isolation_distance?: number | null
           male_area?: number
           male_line?: string
+          male_planting_finished?: boolean
           material_cycle_days?: number | null
           org_id?: string
           pivot_area?: number | null
