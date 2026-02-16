@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_contacts: {
+        Row: {
+          client_id: string
+          created_at: string
+          deleted_at: string | null
+          email: string | null
+          id: string
+          name: string
+          org_id: string
+          phone: string | null
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          org_id: string
+          phone?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          org_id?: string
+          phone?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contacts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           contact_name: string | null
@@ -65,6 +119,9 @@ export type Database = {
         Row: {
           city: string | null
           client_id: string
+          cooperado_email: string | null
+          cooperado_name: string | null
+          cooperado_phone: string | null
           created_at: string
           deleted_at: string | null
           id: string
@@ -78,6 +135,9 @@ export type Database = {
         Insert: {
           city?: string | null
           client_id: string
+          cooperado_email?: string | null
+          cooperado_name?: string | null
+          cooperado_phone?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -91,6 +151,9 @@ export type Database = {
         Update: {
           city?: string | null
           client_id?: string
+          cooperado_email?: string | null
+          cooperado_name?: string | null
+          cooperado_phone?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
