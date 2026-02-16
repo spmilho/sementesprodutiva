@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend, ReferenceArea,
 } from "recharts";
 import KPICard from "@/components/KPICard";
@@ -17,7 +17,7 @@ const CHART_COLORS = {
   muted: "hsl(130, 10%, 72%)",
 };
 
-const plantingData = [
+const plantingDataRaw = [
   { day: "01/01", planejado: 8, realizado: 7 },
   { day: "03/01", planejado: 12, realizado: 11 },
   { day: "05/01", planejado: 10, realizado: 12 },
@@ -26,6 +26,11 @@ const plantingData = [
   { day: "12/01", planejado: 8, realizado: 9 },
   { day: "15/01", planejado: 5, realizado: 4 },
 ];
+const plantingData = plantingDataRaw.reduce((acc, item, i) => {
+  const prev = i > 0 ? acc[i - 1] : { acumPlan: 0, acumReal: 0 };
+  acc.push({ ...item, acumPlan: prev.acumPlan + item.planejado, acumReal: prev.acumReal + item.realizado });
+  return acc;
+}, [] as (typeof plantingDataRaw[0] & { acumPlan: number; acumReal: number })[]);
 
 const moistureData = [
   { date: "25/01", umidade: 35.2 },
@@ -46,7 +51,7 @@ const statusData = [
   { name: "Colheita", value: 1, color: "hsl(70, 60%, 45%)" },
 ];
 
-const harvestData = [
+const harvestDataRaw = [
   { day: "05/02", planejado: 15, realizado: 12 },
   { day: "07/02", planejado: 18, realizado: 16 },
   { day: "09/02", planejado: 20, realizado: 22 },
@@ -54,6 +59,11 @@ const harvestData = [
   { day: "13/02", planejado: 15, realizado: 17 },
   { day: "15/02", planejado: 12, realizado: 10 },
 ];
+const harvestData = harvestDataRaw.reduce((acc, item, i) => {
+  const prev = i > 0 ? acc[i - 1] : { acumPlan: 0, acumReal: 0 };
+  acc.push({ ...item, acumPlan: prev.acumPlan + item.planejado, acumReal: prev.acumReal + item.realizado });
+  return acc;
+}, [] as (typeof harvestDataRaw[0] & { acumPlan: number; acumReal: number })[]);
 
 const cyclesData = [
   { client: "Corteva", farm: "Faz. Santa Maria", field: "Talhão A1", hybrid: "P3456H", season: "2025/26", status: "growing", area: 45, updated: "14/02/2026" },
@@ -137,16 +147,19 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-semibold">Plantio: Planejado × Realizado (ha)</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={plantingData} barGap={2}>
+            <ResponsiveContainer width="100%" height={280}>
+              <ComposedChart data={plantingData} barGap={2}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(110,12%,87%)" />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="planejado" name="Planejado" fill={CHART_COLORS.muted} radius={[3, 3, 0, 0]} />
-                <Bar dataKey="realizado" name="Realizado" fill={CHART_COLORS.primary} radius={[3, 3, 0, 0]} />
-              </BarChart>
+                <Bar yAxisId="left" dataKey="planejado" name="Planejado" fill={CHART_COLORS.muted} radius={[3, 3, 0, 0]} />
+                <Bar yAxisId="left" dataKey="realizado" name="Realizado" fill={CHART_COLORS.primary} radius={[3, 3, 0, 0]} />
+                <Line yAxisId="right" type="monotone" dataKey="acumPlan" name="Acum. Plan." stroke={CHART_COLORS.muted} strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                <Line yAxisId="right" type="monotone" dataKey="acumReal" name="Acum. Real." stroke={CHART_COLORS.primary} strokeWidth={2} dot={{ r: 3 }} />
+              </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -157,16 +170,19 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-semibold">Colheita: Planejado × Realizado (ha)</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={harvestData} barGap={2}>
+            <ResponsiveContainer width="100%" height={280}>
+              <ComposedChart data={harvestData} barGap={2}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(110,12%,87%)" />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="planejado" name="Planejado" fill={CHART_COLORS.muted} radius={[3, 3, 0, 0]} />
-                <Bar dataKey="realizado" name="Realizado" fill={CHART_COLORS.accent} radius={[3, 3, 0, 0]} />
-              </BarChart>
+                <Bar yAxisId="left" dataKey="planejado" name="Planejado" fill={CHART_COLORS.muted} radius={[3, 3, 0, 0]} />
+                <Bar yAxisId="left" dataKey="realizado" name="Realizado" fill={CHART_COLORS.accent} radius={[3, 3, 0, 0]} />
+                <Line yAxisId="right" type="monotone" dataKey="acumPlan" name="Acum. Plan." stroke={CHART_COLORS.muted} strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                <Line yAxisId="right" type="monotone" dataKey="acumReal" name="Acum. Real." stroke={CHART_COLORS.accent} strokeWidth={2} dot={{ r: 3 }} />
+              </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
