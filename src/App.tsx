@@ -7,6 +7,7 @@ import Layout from "@/components/Layout";
 import Index from "./pages/Index";
 import Cycles from "./pages/Cycles";
 import Placeholder from "./pages/Placeholder";
+import MapaIntegrado from "./pages/MapaIntegrado";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,7 +34,7 @@ const App = () => (
             <Route path="/agua" element={<Placeholder title="Água — Irrigação e Chuva" />} />
             <Route path="/umidade" element={<Placeholder title="Umidade" />} />
             <Route path="/colheita" element={<Placeholder title="Colheita" />} />
-            <Route path="/mapa" element={<Placeholder title="Mapa Integrado" />} />
+            <Route path="/mapa" element={<MapaIntegrado />} />
             <Route path="/visitas" element={<Placeholder title="Visitas de Campo" />} />
             <Route path="/relatorios" element={<Placeholder title="Relatórios" />} />
             <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
