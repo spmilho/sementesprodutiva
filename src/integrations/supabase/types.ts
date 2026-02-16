@@ -136,6 +136,112 @@ export type Database = {
         }
         Relationships: []
       }
+      production_cycles: {
+        Row: {
+          client_id: string
+          created_at: string
+          deleted_at: string | null
+          expected_production: number | null
+          expected_productivity: number | null
+          farm_id: string
+          female_area: number
+          female_line: string
+          female_male_ratio: string
+          field_name: string
+          hybrid_name: string
+          id: string
+          irrigation_system: string
+          isolation_distance: number | null
+          male_area: number
+          male_line: string
+          material_cycle_days: number | null
+          org_id: string
+          pivot_area: number | null
+          season: string
+          status: string
+          target_moisture: number | null
+          temporal_isolation_days: number | null
+          total_area: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          deleted_at?: string | null
+          expected_production?: number | null
+          expected_productivity?: number | null
+          farm_id: string
+          female_area: number
+          female_line: string
+          female_male_ratio?: string
+          field_name: string
+          hybrid_name: string
+          id?: string
+          irrigation_system?: string
+          isolation_distance?: number | null
+          male_area: number
+          male_line: string
+          material_cycle_days?: number | null
+          org_id: string
+          pivot_area?: number | null
+          season: string
+          status?: string
+          target_moisture?: number | null
+          temporal_isolation_days?: number | null
+          total_area: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          expected_production?: number | null
+          expected_productivity?: number | null
+          farm_id?: string
+          female_area?: number
+          female_line?: string
+          female_male_ratio?: string
+          field_name?: string
+          hybrid_name?: string
+          id?: string
+          irrigation_system?: string
+          isolation_distance?: number | null
+          male_area?: number
+          male_line?: string
+          material_cycle_days?: number | null
+          org_id?: string
+          pivot_area?: number | null
+          season?: string
+          status?: string
+          target_moisture?: number | null
+          temporal_isolation_days?: number | null
+          total_area?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_cycles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_cycles_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_cycles_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
 import Index from "./pages/Index";
 import Cycles from "./pages/Cycles";
+import CycleForm from "./pages/CycleForm";
+import CycleDetail from "./pages/CycleDetail";
 import Placeholder from "./pages/Placeholder";
 import MapaIntegrado from "./pages/MapaIntegrado";
 import Configuracoes from "./pages/Configuracoes";
@@ -44,6 +46,8 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/ciclos" element={<Cycles />} />
+                    <Route path="/ciclos/novo" element={<CycleForm />} />
+                    <Route path="/ciclos/:id" element={<CycleDetail />} />
                     <Route path="/planejamento" element={<Placeholder title="Planejamento de Plantio" />} />
                     <Route path="/plantio" element={<Placeholder title="Plantio Realizado" />} />
                     <Route path="/fenologia" element={<Placeholder title="Fenologia" />} />
