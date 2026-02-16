@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import PlantingPlan from "@/components/cycles/PlantingPlan";
+import ActualPlanting from "@/components/cycles/ActualPlanting";
 
 const statusLabels: Record<string, string> = {
   planning: "Planejamento", planting: "Plantio", growing: "Crescimento",
@@ -203,7 +204,20 @@ export default function CycleDetail() {
             onFinishToggle={(type, finished) => finishMutation.mutate({ type, finished })} />
         </TabsContent>
 
-        {tabItems.filter((t) => t.value !== "resumo" && t.value !== "planejamento").map((t) => (
+        <TabsContent value="plantio">
+          <ActualPlanting
+            cycleId={id!}
+            femaleArea={cycle.female_area}
+            maleArea={cycle.male_area}
+            orgId={cycle.org_id}
+            pivotName={cycle.field_name}
+            contractNumber={cycle.contract_number}
+            cooperatorName={(cycle as any).cooperators?.name}
+            farmName={(cycle as any).farms?.name}
+          />
+        </TabsContent>
+
+        {tabItems.filter((t) => !["resumo", "planejamento", "plantio"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>
