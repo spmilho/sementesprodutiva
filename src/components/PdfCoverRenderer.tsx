@@ -9,6 +9,7 @@ interface CycleData {
   hybrid: string;
   season: string;
   area: number;
+  contract?: string;
 }
 
 interface PdfCoverRendererProps {
@@ -200,6 +201,7 @@ export default function PdfCoverRenderer({ cycle, onReady }: PdfCoverRendererPro
               `Cliente: ${cycle.client}`,
               `Fazenda: ${cycle.farm}`,
               `Pivô: ${cycle.field}`,
+              ...(cycle.contract ? [`Contrato: ${cycle.contract}`] : []),
               `Área: ${cycle.area} ha`,
             ].map((line, i) => (
               <p

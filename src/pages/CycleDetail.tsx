@@ -1,9 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,6 +73,8 @@ export default function CycleDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [editingContract, setEditingContract] = useState(false);
+  const contractInputRef = useRef<HTMLInputElement>(null);
 
   const { data: cycle, isLoading } = useQuery({
     queryKey: ["cycle-detail", id],
@@ -98,6 +102,28 @@ export default function CycleDetail() {
       queryClient.invalidateQueries({ queryKey: ["cycle-detail", id] });
       queryClient.invalidateQueries({ queryKey: ["production_cycles"] });
       toast.success("Status atualizado!");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const contractMutation = useMutation({
+    mutationFn: async (contractNumber: string) => {
+      const { error } = await (supabase as any)
+        .from("production_cycles")
+        .update({ contract_number: contractNumber || null })
+        .eq("id", id!);
+      if (error) throw error;
+      return contractNumber;
+    },
+    onSuccess: (contractNumber) => {
+      queryClient.invalidateQueries({ queryKey: ["cycle-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["production_cycles"] });
+      setEditingContract(false);
+      if (contractNumber && !cycle?.contract_number) {
+        toast.success(`✅ Contrato atualizado! O ciclo agora é identificado pelo contrato ${contractNumber}.`);
+      } else {
+        toast.success("Contrato atualizado!");
+      }
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -139,6 +165,11 @@ export default function CycleDetail() {
     );
   }
 
+  const handleContractSave = () => {
+    const value = contractInputRef.current?.value ?? "";
+    contractMutation.mutate(value.trim());
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
@@ -147,13 +178,58 @@ export default function CycleDetail() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-foreground font-mono">{cycle.hybrid_name}</h1>
+          {/* Contract / Pivot identifier */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {cycle.contract_number ? (
+              <h1 className="text-2xl font-bold text-foreground">Contrato {cycle.contract_number}</h1>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-foreground">{cycle.field_name}</h1>
+                <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                  sem contrato
+                </Badge>
+              </div>
+            )}
+            {!editingContract && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs text-muted-foreground"
+                onClick={() => setEditingContract(true)}
+              >
+                {cycle.contract_number ? "editar" : "adicionar contrato"}
+              </Button>
+            )}
+          </div>
+          {editingContract && (
+            <div className="flex items-center gap-2 mt-1">
+              <Input
+                ref={contractInputRef}
+                defaultValue={cycle.contract_number || ""}
+                placeholder="Nº do contrato"
+                className="h-8 w-48 text-sm"
+                onKeyDown={(e) => e.key === "Enter" && handleContractSave()}
+              />
+              <Button size="sm" className="h-8 text-xs" onClick={handleContractSave} disabled={contractMutation.isPending}>
+                Salvar
+              </Button>
+              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setEditingContract(false)}>
+                Cancelar
+              </Button>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
+            <span className="font-mono">{cycle.hybrid_name}</span>
+            <span>•</span>
             <span>{(cycle as any).clients?.name}</span>
             <span>•</span>
             <span>{(cycle as any).farms?.name}</span>
-            <span>•</span>
-            <span>{cycle.field_name}</span>
+            {cycle.contract_number && (
+              <>
+                <span>•</span>
+                <span>{cycle.field_name}</span>
+              </>
+            )}
             <span>•</span>
             <span>Safra {cycle.season}</span>
           </div>
@@ -197,6 +273,16 @@ export default function CycleDetail() {
           <Card>
             <CardContent className="p-6 space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                {cycle.contract_number && (
+                  <div>
+                    <p className="text-muted-foreground text-xs">Nº Contrato</p>
+                    <p className="font-medium">{cycle.contract_number}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-muted-foreground text-xs">Pivô</p>
+                  <p className="font-medium">{cycle.field_name}</p>
+                </div>
                 <div>
                   <p className="text-muted-foreground text-xs">Proporção F:M</p>
                   <p className="font-medium">{cycle.female_male_ratio}</p>

@@ -42,6 +42,7 @@ function computeAreas(totalArea: number, ratio: string) {
 }
 
 const schema = z.object({
+  contract_number: z.string().max(50).optional().or(z.literal("")),
   client_id: z.string().min(1, "Cliente é obrigatório"),
   farm_id: z.string().min(1, "Fazenda é obrigatória"),
   field_name: z.string().trim().min(1, "Pivô é obrigatório").max(100),
@@ -67,9 +68,10 @@ export default function CycleForm() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
+      contract_number: "",
       status: "planning",
       female_male_ratio: "4F:2M",
       irrigation_system: "Pivô Central",
@@ -79,7 +81,6 @@ export default function CycleForm() {
     },
   });
 
-  const clientId = watch("client_id");
   const totalArea = watch("total_area");
   const ratio = watch("female_male_ratio");
   const irrigation = watch("irrigation_system");
@@ -137,6 +138,7 @@ export default function CycleForm() {
     mutationFn: async (values: FormValues) => {
       if (!profile?.org_id) throw new Error("Organização não encontrada");
       const { error } = await supabase.from("production_cycles").insert({
+        contract_number: values.contract_number || null,
         client_id: values.client_id,
         farm_id: values.farm_id,
         field_name: values.field_name,
@@ -184,40 +186,51 @@ export default function CycleForm() {
         {/* Identificação */}
         <Card>
           <CardHeader><CardTitle className="text-base">Identificação</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Cliente *</Label>
-              <Controller name="client_id" control={control} render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              )} />
-              {errors.client_id && <p className="text-xs text-destructive">{errors.client_id.message}</p>}
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Número do contrato</Label>
+                <Input {...register("contract_number")} placeholder="Preencha quando disponível" />
+                <p className="text-xs text-muted-foreground">
+                  Se o contrato ainda não foi gerado, o pivô será usado como identificador até a atualização.
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Pivô *</Label>
+                <Input {...register("field_name")} placeholder="Ex: Pivô A1" />
+                {errors.field_name && <p className="text-xs text-destructive">{errors.field_name.message}</p>}
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label>Fazenda / Cooperado *</Label>
-              <Controller name="farm_id" control={control} render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger><SelectValue placeholder="Selecione a fazenda" /></SelectTrigger>
-                  <SelectContent>
-                    {farms.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              )} />
-              {errors.farm_id && <p className="text-xs text-destructive">{errors.farm_id.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label>Pivô *</Label>
-              <Input {...register("field_name")} placeholder="Ex: Pivô A1" />
-              {errors.field_name && <p className="text-xs text-destructive">{errors.field_name.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label>Safra *</Label>
-              <Input {...register("season")} placeholder="Ex: 2025/26" />
-              {errors.season && <p className="text-xs text-destructive">{errors.season.message}</p>}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label>Cliente *</Label>
+                <Controller name="client_id" control={control} render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )} />
+                {errors.client_id && <p className="text-xs text-destructive">{errors.client_id.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label>Fazenda / Cooperado *</Label>
+                <Controller name="farm_id" control={control} render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a fazenda" /></SelectTrigger>
+                    <SelectContent>
+                      {farms.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )} />
+                {errors.farm_id && <p className="text-xs text-destructive">{errors.farm_id.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label>Safra *</Label>
+                <Input {...register("season")} placeholder="Ex: 2025/26" />
+                {errors.season && <p className="text-xs text-destructive">{errors.season.message}</p>}
+              </div>
             </div>
           </CardContent>
         </Card>

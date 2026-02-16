@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
@@ -24,6 +25,20 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium status-${status}`}>
       {statusLabels[status] || status}
+    </span>
+  );
+}
+
+function ContractIdentifier({ contractNumber, fieldName }: { contractNumber?: string | null; fieldName: string }) {
+  if (contractNumber) {
+    return <span className="font-medium">{contractNumber}</span>;
+  }
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="text-muted-foreground">{fieldName}</span>
+      <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+        sem contrato
+      </Badge>
     </span>
   );
 }
@@ -72,6 +87,7 @@ export default function Cycles() {
         const match =
           c.hybrid_name?.toLowerCase().includes(q) ||
           c.field_name?.toLowerCase().includes(q) ||
+          c.contract_number?.toLowerCase().includes(q) ||
           c.clients?.name?.toLowerCase().includes(q) ||
           c.farms?.name?.toLowerCase().includes(q);
         if (!match) return false;
@@ -97,7 +113,7 @@ export default function Cycles() {
         <div className="relative flex-1">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por híbrido, fazenda ou cliente..."
+            placeholder="Buscar por contrato, pivô, híbrido, fazenda ou cliente..."
             className="pl-9 h-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -154,10 +170,10 @@ export default function Cycles() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="text-xs">Contrato / Pivô</TableHead>
                     <TableHead className="text-xs">Safra</TableHead>
                     <TableHead className="text-xs">Cliente</TableHead>
                     <TableHead className="text-xs">Fazenda</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Pivô</TableHead>
                     <TableHead className="text-xs hidden md:table-cell">Híbrido</TableHead>
                     <TableHead className="text-xs text-right">Área (ha)</TableHead>
                     <TableHead className="text-xs">Status</TableHead>
@@ -168,13 +184,15 @@ export default function Cycles() {
                   {filtered.map((c: any) => (
                     <TableRow
                       key={c.id}
-                      className="cursor-pointer hover:bg-muted/50"
+                      className={`cursor-pointer hover:bg-muted/50 ${!c.contract_number ? "bg-amber-50/40 dark:bg-amber-950/20" : ""}`}
                       onClick={() => navigate(`/ciclos/${c.id}`)}
                     >
+                      <TableCell className="text-sm">
+                        <ContractIdentifier contractNumber={c.contract_number} fieldName={c.field_name} />
+                      </TableCell>
                       <TableCell className="text-sm font-medium">{c.season}</TableCell>
                       <TableCell className="text-sm">{c.clients?.name}</TableCell>
                       <TableCell className="text-sm">{c.farms?.name}</TableCell>
-                      <TableCell className="text-sm hidden md:table-cell">{c.field_name}</TableCell>
                       <TableCell className="text-sm font-mono hidden md:table-cell">{c.hybrid_name}</TableCell>
                       <TableCell className="text-right text-sm font-medium">{c.total_area}</TableCell>
                       <TableCell><StatusBadge status={c.status} /></TableCell>
