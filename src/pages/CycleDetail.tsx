@@ -237,7 +237,16 @@ export default function CycleDetail() {
         </TabsContent>
 
         <TabsContent value="nicking">
-          <NickingSync cycleId={id!} orgId={cycle.org_id} />
+          <NickingSync
+            cycleId={id!}
+            orgId={cycle.org_id}
+            contractNumber={cycle.contract_number}
+            pivotName={cycle.field_name}
+            hybridName={cycle.hybrid_name}
+            cooperatorName={(cycle as any).cooperators?.name}
+            farmName={(cycle as any).farms?.name}
+            season={cycle.season}
+          />
         </TabsContent>
 
         {tabItems.filter((t) => !["resumo", "planejamento", "plantio", "fenologia", "emergencia", "nicking"].includes(t.value)).map((t) => (
