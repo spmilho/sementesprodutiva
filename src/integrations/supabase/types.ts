@@ -1010,6 +1010,91 @@ export type Database = {
           },
         ]
       }
+      moisture_samples: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          field_position: string | null
+          gleba_id: string | null
+          grain_temperature_c: number | null
+          id: string
+          latitude: number
+          longitude: number
+          method: string
+          moisture_pct: number
+          notes: string | null
+          org_id: string
+          photos: string[] | null
+          point_identifier: string | null
+          sample_date: string
+          sample_time: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          field_position?: string | null
+          gleba_id?: string | null
+          grain_temperature_c?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          method?: string
+          moisture_pct: number
+          notes?: string | null
+          org_id: string
+          photos?: string[] | null
+          point_identifier?: string | null
+          sample_date: string
+          sample_time: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          field_position?: string | null
+          gleba_id?: string | null
+          grain_temperature_c?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          method?: string
+          moisture_pct?: number
+          notes?: string | null
+          org_id?: string
+          photos?: string[] | null
+          point_identifier?: string | null
+          sample_date?: string
+          sample_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moisture_samples_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moisture_samples_gleba_id_fkey"
+            columns: ["gleba_id"]
+            isOneToOne: false
+            referencedRelation: "pivot_glebas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moisture_samples_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nicking_fixed_points: {
         Row: {
           active: boolean
@@ -1497,6 +1582,63 @@ export type Database = {
           },
           {
             foreignKeyName: "phenology_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pivot_glebas: {
+        Row: {
+          area_ha: number | null
+          created_at: string
+          cycle_id: string
+          deleted_at: string | null
+          id: string
+          name: string
+          notes: string | null
+          org_id: string
+          parent_type: string
+          planting_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          area_ha?: number | null
+          created_at?: string
+          cycle_id: string
+          deleted_at?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          org_id: string
+          parent_type?: string
+          planting_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          area_ha?: number | null
+          created_at?: string
+          cycle_id?: string
+          deleted_at?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          parent_type?: string
+          planting_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pivot_glebas_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pivot_glebas_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
