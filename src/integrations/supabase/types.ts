@@ -1296,6 +1296,244 @@ export type Database = {
           },
         ]
       }
+      seed_lot_treatment_products: {
+        Row: {
+          active_ingredient: string | null
+          application_order: number | null
+          category: string | null
+          created_at: string
+          dose: number
+          dose_unit: string
+          id: string
+          product_name: string
+          product_type: string | null
+          seed_lot_treatment_id: string
+        }
+        Insert: {
+          active_ingredient?: string | null
+          application_order?: number | null
+          category?: string | null
+          created_at?: string
+          dose: number
+          dose_unit: string
+          id?: string
+          product_name: string
+          product_type?: string | null
+          seed_lot_treatment_id: string
+        }
+        Update: {
+          active_ingredient?: string | null
+          application_order?: number | null
+          category?: string | null
+          created_at?: string
+          dose?: number
+          dose_unit?: string
+          id?: string
+          product_name?: string
+          product_type?: string | null
+          seed_lot_treatment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seed_lot_treatment_products_seed_lot_treatment_id_fkey"
+            columns: ["seed_lot_treatment_id"]
+            isOneToOne: false
+            referencedRelation: "seed_lot_treatments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seed_lot_treatments: {
+        Row: {
+          client_document_url: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          equipment_used: string | null
+          germination_after_ts: number | null
+          id: string
+          no_treatment_reason: string | null
+          notes: string | null
+          photos: string[] | null
+          responsible_person: string | null
+          seed_lot_id: string
+          total_slurry_volume: string | null
+          treatment_date: string | null
+          treatment_location: string | null
+          treatment_origin: string
+          visual_quality: string | null
+        }
+        Insert: {
+          client_document_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          equipment_used?: string | null
+          germination_after_ts?: number | null
+          id?: string
+          no_treatment_reason?: string | null
+          notes?: string | null
+          photos?: string[] | null
+          responsible_person?: string | null
+          seed_lot_id: string
+          total_slurry_volume?: string | null
+          treatment_date?: string | null
+          treatment_location?: string | null
+          treatment_origin: string
+          visual_quality?: string | null
+        }
+        Update: {
+          client_document_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          equipment_used?: string | null
+          germination_after_ts?: number | null
+          id?: string
+          no_treatment_reason?: string | null
+          notes?: string | null
+          photos?: string[] | null
+          responsible_person?: string | null
+          seed_lot_id?: string
+          total_slurry_volume?: string | null
+          treatment_date?: string | null
+          treatment_location?: string | null
+          treatment_origin?: string
+          visual_quality?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seed_lot_treatments_seed_lot_id_fkey"
+            columns: ["seed_lot_id"]
+            isOneToOne: false
+            referencedRelation: "seed_lots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seed_lots: {
+        Row: {
+          analysis_report_number: string | null
+          analysis_report_url: string | null
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          designated_male_planting: string | null
+          genetic_purity_pct: number | null
+          germination_pct: number
+          id: string
+          lot_number: string
+          org_id: string
+          origin_season: string
+          packaging_condition: string | null
+          parent_type: string
+          pest_presence: string | null
+          physical_purity_pct: number | null
+          quality_analysis_date: string | null
+          quantity: number
+          quantity_kg: number | null
+          quantity_unit: string
+          received_date: string | null
+          reception_notes: string | null
+          reception_photos: string[] | null
+          seed_moisture_pct: number | null
+          sieve_classification: string | null
+          status: string
+          supplier_origin: string | null
+          tetrazolium_viability_pct: number | null
+          tetrazolium_vigor_pct: number | null
+          thousand_seed_weight_g: number | null
+          vigor_aa_pct: number | null
+          vigor_cold_pct: number | null
+        }
+        Insert: {
+          analysis_report_number?: string | null
+          analysis_report_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          designated_male_planting?: string | null
+          genetic_purity_pct?: number | null
+          germination_pct: number
+          id?: string
+          lot_number: string
+          org_id: string
+          origin_season: string
+          packaging_condition?: string | null
+          parent_type: string
+          pest_presence?: string | null
+          physical_purity_pct?: number | null
+          quality_analysis_date?: string | null
+          quantity: number
+          quantity_kg?: number | null
+          quantity_unit?: string
+          received_date?: string | null
+          reception_notes?: string | null
+          reception_photos?: string[] | null
+          seed_moisture_pct?: number | null
+          sieve_classification?: string | null
+          status?: string
+          supplier_origin?: string | null
+          tetrazolium_viability_pct?: number | null
+          tetrazolium_vigor_pct?: number | null
+          thousand_seed_weight_g?: number | null
+          vigor_aa_pct?: number | null
+          vigor_cold_pct?: number | null
+        }
+        Update: {
+          analysis_report_number?: string | null
+          analysis_report_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          designated_male_planting?: string | null
+          genetic_purity_pct?: number | null
+          germination_pct?: number
+          id?: string
+          lot_number?: string
+          org_id?: string
+          origin_season?: string
+          packaging_condition?: string | null
+          parent_type?: string
+          pest_presence?: string | null
+          physical_purity_pct?: number | null
+          quality_analysis_date?: string | null
+          quantity?: number
+          quantity_kg?: number | null
+          quantity_unit?: string
+          received_date?: string | null
+          reception_notes?: string | null
+          reception_photos?: string[] | null
+          seed_moisture_pct?: number | null
+          sieve_classification?: string | null
+          status?: string
+          supplier_origin?: string | null
+          tetrazolium_viability_pct?: number | null
+          tetrazolium_vigor_pct?: number | null
+          thousand_seed_weight_g?: number | null
+          vigor_aa_pct?: number | null
+          vigor_cold_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seed_lots_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seed_lots_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seed_treatment: {
         Row: {
           client_document_url: string | null
