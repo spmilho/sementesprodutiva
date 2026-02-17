@@ -17,6 +17,7 @@ import EmergenceStandCount from "@/components/cycles/EmergenceStandCount";
 import NickingSync from "@/components/cycles/NickingSync";
 import SementeBasica from "@/components/cycles/SementeBasica";
 import Nutrition from "@/components/cycles/Nutrition";
+import Detasseling from "@/components/cycles/Detasseling";
 
 const statusLabels: Record<string, string> = {
   planning: "Planejamento", planting: "Plantio", growing: "Crescimento",
@@ -278,7 +279,19 @@ export default function CycleDetail() {
           />
         </TabsContent>
 
-        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking"].includes(t.value)).map((t) => (
+        <TabsContent value="despendoamento">
+          <Detasseling
+            cycleId={id!}
+            orgId={cycle.org_id}
+            contractNumber={cycle.contract_number}
+            pivotName={cycle.field_name}
+            hybridName={cycle.hybrid_name}
+            cooperatorName={(cycle as any).cooperators?.name}
+            femaleArea={cycle.female_area}
+          />
+        </TabsContent>
+
+        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>

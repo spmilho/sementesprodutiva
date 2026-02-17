@@ -177,6 +177,114 @@ export type Database = {
           },
         ]
       }
+      detasseling_records: {
+        Row: {
+          area_worked_ha: number
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          difficulties: string[] | null
+          gleba_id: string | null
+          gps_latitude: number | null
+          gps_longitude: number | null
+          id: string
+          machine_hours: number | null
+          machine_id: string | null
+          machine_speed_kmh: number | null
+          machine_yield_ha_h: number | null
+          method: string
+          non_conformities: string | null
+          notes: string | null
+          operation_date: string
+          org_id: string
+          pass_type: string
+          pct_detasseled_this_pass: number
+          pct_remaining_after: number
+          photos: string[] | null
+          shift: string | null
+          tassel_height: string | null
+          team_size: number | null
+          updated_at: string
+          yield_per_person_ha: number | null
+        }
+        Insert: {
+          area_worked_ha: number
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          difficulties?: string[] | null
+          gleba_id?: string | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          id?: string
+          machine_hours?: number | null
+          machine_id?: string | null
+          machine_speed_kmh?: number | null
+          machine_yield_ha_h?: number | null
+          method: string
+          non_conformities?: string | null
+          notes?: string | null
+          operation_date: string
+          org_id: string
+          pass_type: string
+          pct_detasseled_this_pass: number
+          pct_remaining_after: number
+          photos?: string[] | null
+          shift?: string | null
+          tassel_height?: string | null
+          team_size?: number | null
+          updated_at?: string
+          yield_per_person_ha?: number | null
+        }
+        Update: {
+          area_worked_ha?: number
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          difficulties?: string[] | null
+          gleba_id?: string | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          id?: string
+          machine_hours?: number | null
+          machine_id?: string | null
+          machine_speed_kmh?: number | null
+          machine_yield_ha_h?: number | null
+          method?: string
+          non_conformities?: string | null
+          notes?: string | null
+          operation_date?: string
+          org_id?: string
+          pass_type?: string
+          pct_detasseled_this_pass?: number
+          pct_remaining_after?: number
+          photos?: string[] | null
+          shift?: string | null
+          tassel_height?: string | null
+          team_size?: number | null
+          updated_at?: string
+          yield_per_person_ha?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detasseling_records_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detasseling_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       emergence_counts: {
         Row: {
           count_date: string
