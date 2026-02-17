@@ -1994,6 +1994,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_role: { Args: { _user_id: string }; Returns: undefined }
+      admin_upsert_role: {
+        Args: {
+          _client_id?: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
       get_user_emails_for_admin: {
         Args: never
         Returns: {

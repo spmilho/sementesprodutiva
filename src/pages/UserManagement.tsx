@@ -95,12 +95,11 @@ export default function UserManagement() {
 
   const updateRole = useMutation({
     mutationFn: async ({ userId, newRole, clientId }: { userId: string; newRole: AppRole; clientId?: string | null }) => {
-      // Delete existing role
-      await (supabase as any).from("user_roles").delete().eq("user_id", userId);
-      // Insert new role
-      const payload: any = { user_id: userId, role: newRole };
-      if (newRole === "client" && clientId) payload.client_id = clientId;
-      const { error } = await (supabase as any).from("user_roles").insert(payload);
+      const { error } = await (supabase as any).rpc("admin_upsert_role", {
+        _user_id: userId,
+        _role: newRole,
+        _client_id: newRole === "client" && clientId ? clientId : null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -112,7 +111,7 @@ export default function UserManagement() {
 
   const deleteRole = useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await (supabase as any).from("user_roles").delete().eq("user_id", userId);
+      const { error } = await (supabase as any).rpc("admin_delete_role", { _user_id: userId });
       if (error) throw error;
     },
     onSuccess: () => {
