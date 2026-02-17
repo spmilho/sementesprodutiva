@@ -186,7 +186,7 @@ export default function ActualPlanting({
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("planting_actual").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await (supabase as any).rpc("soft_delete_record", { _table_name: "planting_actual", _record_id: id });
       if (error) throw error;
     },
     onSuccess: () => {

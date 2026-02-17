@@ -2018,6 +2018,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      soft_delete_record: {
+        Args: { _record_id: string; _table_name: string }
+        Returns: undefined
+      }
       user_client_id: { Args: never; Returns: string }
       user_org_id: { Args: never; Returns: string }
     }

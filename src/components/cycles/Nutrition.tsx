@@ -346,7 +346,7 @@ export default function Nutrition({
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("fertilization_records").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await (supabase as any).rpc("soft_delete_record", { _table_name: "fertilization_records", _record_id: id });
       if (error) throw error;
     },
     onSuccess: () => {

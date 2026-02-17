@@ -252,7 +252,7 @@ export default function Phenology({
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("phenology_records").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await (supabase as any).rpc("soft_delete_record", { _table_name: "phenology_records", _record_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
