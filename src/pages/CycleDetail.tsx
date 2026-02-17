@@ -18,6 +18,7 @@ import NickingSync from "@/components/cycles/NickingSync";
 import SementeBasica from "@/components/cycles/SementeBasica";
 import Nutrition from "@/components/cycles/Nutrition";
 import Detasseling from "@/components/cycles/Detasseling";
+import Roguing from "@/components/cycles/Roguing";
 
 const statusLabels: Record<string, string> = {
   planning: "Planejamento", planting: "Plantio", growing: "Crescimento",
@@ -291,7 +292,11 @@ export default function CycleDetail() {
           />
         </TabsContent>
 
-        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento"].includes(t.value)).map((t) => (
+        <TabsContent value="roguing">
+          <Roguing cycleId={id!} orgId={cycle.org_id} />
+        </TabsContent>
+
+        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento", "roguing"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>
