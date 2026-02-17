@@ -21,6 +21,7 @@ import Detasseling from "@/components/cycles/Detasseling";
 import Roguing from "@/components/cycles/Roguing";
 import ChemicalApplications from "@/components/cycles/ChemicalApplications";
 import PestDiseaseRecords from "@/components/cycles/PestDiseaseRecords";
+import YieldEstimateTab from "@/components/cycles/yield-estimate/YieldEstimateTab";
 
 const statusLabels: Record<string, string> = {
   planning: "Planejamento", planting: "Plantio", growing: "Crescimento",
@@ -35,6 +36,7 @@ const tabItems = [
   { value: "despendoamento", label: "Despendoamento" }, { value: "roguing", label: "Roguing" },
   { value: "manejo", label: "Manejo" }, { value: "pragas", label: "Pragas" },
   { value: "agua", label: "Água" }, { value: "umidade", label: "Umidade" },
+  { value: "estimativa", label: "Est. Produtividade" },
   { value: "colheita", label: "Colheita" }, { value: "mapa", label: "Mapa" },
   { value: "visitas", label: "Visitas" }, { value: "documentos", label: "Documentos" },
   { value: "relatorio", label: "Relatório" },
@@ -306,7 +308,22 @@ export default function CycleDetail() {
           <PestDiseaseRecords cycleId={id!} orgId={cycle.org_id} />
         </TabsContent>
 
-        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento", "roguing", "manejo", "pragas"].includes(t.value)).map((t) => (
+        <TabsContent value="estimativa">
+          <YieldEstimateTab
+            cycleId={id!}
+            orgId={cycle.org_id}
+            contractNumber={cycle.contract_number}
+            pivotName={cycle.field_name}
+            hybridName={cycle.hybrid_name}
+            cooperatorName={(cycle as any).cooperators?.name}
+            femaleArea={cycle.female_area}
+            pivotId={cycle.pivot_id}
+            expectedProductivity={cycle.expected_productivity}
+            defaultRowSpacing={70}
+          />
+        </TabsContent>
+
+        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento", "roguing", "manejo", "pragas", "estimativa"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>

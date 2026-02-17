@@ -2373,6 +2373,226 @@ export type Database = {
           },
         ]
       }
+      yield_ear_samples: {
+        Row: {
+          created_at: string
+          ear_length_cm: number | null
+          ear_number: number
+          id: string
+          kernel_rows: number
+          kernels_per_row: number
+          sample_point_id: string
+          total_kernels: number
+        }
+        Insert: {
+          created_at?: string
+          ear_length_cm?: number | null
+          ear_number: number
+          id?: string
+          kernel_rows: number
+          kernels_per_row: number
+          sample_point_id: string
+          total_kernels: number
+        }
+        Update: {
+          created_at?: string
+          ear_length_cm?: number | null
+          ear_number?: number
+          id?: string
+          kernel_rows?: number
+          kernels_per_row?: number
+          sample_point_id?: string
+          total_kernels?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yield_ear_samples_sample_point_id_fkey"
+            columns: ["sample_point_id"]
+            isOneToOne: false
+            referencedRelation: "yield_sample_points"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      yield_estimates: {
+        Row: {
+          avg_ears_per_ha: number | null
+          avg_kernels_per_ear: number | null
+          bag_weight_kg: number
+          classification_loss_pct: number
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          default_tgw_g: number
+          dehusking_loss_pct: number
+          deleted_at: string | null
+          estimate_date: string
+          estimate_number: number
+          final_pms_g: number | null
+          gross_yield_kg_ha: number | null
+          id: string
+          moisture_reference_pct: number
+          net_yield_kg_ha: number | null
+          notes: string | null
+          org_id: string
+          other_loss_pct: number
+          total_production_bags: number | null
+          total_production_tons: number | null
+          total_sample_points: number | null
+        }
+        Insert: {
+          avg_ears_per_ha?: number | null
+          avg_kernels_per_ear?: number | null
+          bag_weight_kg?: number
+          classification_loss_pct?: number
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          default_tgw_g?: number
+          dehusking_loss_pct?: number
+          deleted_at?: string | null
+          estimate_date: string
+          estimate_number?: number
+          final_pms_g?: number | null
+          gross_yield_kg_ha?: number | null
+          id?: string
+          moisture_reference_pct?: number
+          net_yield_kg_ha?: number | null
+          notes?: string | null
+          org_id: string
+          other_loss_pct?: number
+          total_production_bags?: number | null
+          total_production_tons?: number | null
+          total_sample_points?: number | null
+        }
+        Update: {
+          avg_ears_per_ha?: number | null
+          avg_kernels_per_ear?: number | null
+          bag_weight_kg?: number
+          classification_loss_pct?: number
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          default_tgw_g?: number
+          dehusking_loss_pct?: number
+          deleted_at?: string | null
+          estimate_date?: string
+          estimate_number?: number
+          final_pms_g?: number | null
+          gross_yield_kg_ha?: number | null
+          id?: string
+          moisture_reference_pct?: number
+          net_yield_kg_ha?: number | null
+          notes?: string | null
+          org_id?: string
+          other_loss_pct?: number
+          total_production_bags?: number | null
+          total_production_tons?: number | null
+          total_sample_points?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yield_estimates_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "yield_estimates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      yield_sample_points: {
+        Row: {
+          avg_kernels_per_ear: number | null
+          created_at: string
+          discarded_ears_counted: number
+          ears_per_ha: number | null
+          id: string
+          kernels_cv_pct: number | null
+          latitude: number
+          longitude: number
+          notes: string | null
+          photos: string[] | null
+          pivot_position: string | null
+          plant_condition: string | null
+          point_gross_yield_kg_ha: number | null
+          point_number: string
+          row_spacing_cm: number
+          sample_date: string | null
+          sample_length_m: number
+          sample_moisture_pct: number
+          sample_tgw_g: number | null
+          sample_time: string | null
+          viable_ears_counted: number
+          viable_ears_pct: number | null
+          yield_estimate_id: string
+        }
+        Insert: {
+          avg_kernels_per_ear?: number | null
+          created_at?: string
+          discarded_ears_counted?: number
+          ears_per_ha?: number | null
+          id?: string
+          kernels_cv_pct?: number | null
+          latitude: number
+          longitude: number
+          notes?: string | null
+          photos?: string[] | null
+          pivot_position?: string | null
+          plant_condition?: string | null
+          point_gross_yield_kg_ha?: number | null
+          point_number: string
+          row_spacing_cm: number
+          sample_date?: string | null
+          sample_length_m?: number
+          sample_moisture_pct: number
+          sample_tgw_g?: number | null
+          sample_time?: string | null
+          viable_ears_counted: number
+          viable_ears_pct?: number | null
+          yield_estimate_id: string
+        }
+        Update: {
+          avg_kernels_per_ear?: number | null
+          created_at?: string
+          discarded_ears_counted?: number
+          ears_per_ha?: number | null
+          id?: string
+          kernels_cv_pct?: number | null
+          latitude?: number
+          longitude?: number
+          notes?: string | null
+          photos?: string[] | null
+          pivot_position?: string | null
+          plant_condition?: string | null
+          point_gross_yield_kg_ha?: number | null
+          point_number?: string
+          row_spacing_cm?: number
+          sample_date?: string | null
+          sample_length_m?: number
+          sample_moisture_pct?: number
+          sample_tgw_g?: number | null
+          sample_time?: string | null
+          viable_ears_counted?: number
+          viable_ears_pct?: number | null
+          yield_estimate_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yield_sample_points_yield_estimate_id_fkey"
+            columns: ["yield_estimate_id"]
+            isOneToOne: false
+            referencedRelation: "yield_estimates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
