@@ -1351,6 +1351,96 @@ export type Database = {
         }
         Relationships: []
       }
+      pest_disease_records: {
+        Row: {
+          action_taken: string | null
+          affected_area_ha: number | null
+          affected_parent: string
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          economic_damage_reached: boolean
+          gps_latitude: number | null
+          gps_longitude: number | null
+          growth_stage: string | null
+          id: string
+          incidence_pct: number | null
+          notes: string | null
+          observation_date: string
+          org_id: string
+          pest_name: string
+          pest_type: string
+          photos: string[] | null
+          severity: string
+          severity_score: number
+          updated_at: string
+        }
+        Insert: {
+          action_taken?: string | null
+          affected_area_ha?: number | null
+          affected_parent?: string
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          economic_damage_reached?: boolean
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          growth_stage?: string | null
+          id?: string
+          incidence_pct?: number | null
+          notes?: string | null
+          observation_date: string
+          org_id: string
+          pest_name: string
+          pest_type: string
+          photos?: string[] | null
+          severity?: string
+          severity_score?: number
+          updated_at?: string
+        }
+        Update: {
+          action_taken?: string | null
+          affected_area_ha?: number | null
+          affected_parent?: string
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          economic_damage_reached?: boolean
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          growth_stage?: string | null
+          id?: string
+          incidence_pct?: number | null
+          notes?: string | null
+          observation_date?: string
+          org_id?: string
+          pest_name?: string
+          pest_type?: string
+          photos?: string[] | null
+          severity?: string
+          severity_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pest_disease_records_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pest_disease_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       phenology_records: {
         Row: {
           created_at: string
