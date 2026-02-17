@@ -123,7 +123,7 @@ export default function ClientFormDialog({ open, onOpenChange, client }: Props) 
 
       for (const c of contacts) {
         if (c._deleted && c.id) {
-          await (supabase as any).from("client_contacts").update({ deleted_at: new Date().toISOString() }).eq("id", c.id);
+          await (supabase as any).rpc("soft_delete_record", { _table_name: "client_contacts", _record_id: c.id });
         } else if (c.id) {
           await (supabase as any).from("client_contacts").update({ name: c.name, phone: c.phone || null, email: c.email || null, role: c.role || null }).eq("id", c.id);
         } else if (c.name.trim()) {

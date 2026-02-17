@@ -234,7 +234,7 @@ export default function EmergenceStandCount({ cycleId, orgId }: EmergenceProps) 
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("emergence_counts").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await (supabase as any).rpc("soft_delete_record", { _table_name: "emergence_counts", _record_id: id });
       if (error) throw error;
     },
     onSuccess: () => {

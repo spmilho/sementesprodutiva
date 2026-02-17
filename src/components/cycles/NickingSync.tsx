@@ -236,7 +236,7 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
 
   const deleteFpMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("nicking_fixed_points").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await (supabase as any).rpc("soft_delete_record", { _table_name: "nicking_fixed_points", _record_id: id });
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["nicking_fixed_points", cycleId] }); toast.success("Ponto removido!"); },

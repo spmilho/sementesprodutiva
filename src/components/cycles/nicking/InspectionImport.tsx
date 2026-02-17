@@ -485,8 +485,10 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
   // ── Delete import ──
   const deleteMutation = useMutation({
     mutationFn: async (importId: string) => {
-      const { error } = await (supabase as any)
-        .from("inspection_imports").update({ deleted_at: new Date().toISOString() }).eq("id", importId);
+      const { error } = await (supabase as any).rpc("soft_delete_record", {
+        _table_name: "inspection_imports",
+        _record_id: importId,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
