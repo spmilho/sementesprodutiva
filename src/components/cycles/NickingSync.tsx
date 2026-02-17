@@ -33,6 +33,7 @@ import MilestonesSection from "./nicking/MilestonesSection";
 import ObservationHistory from "./nicking/ObservationHistory";
 import FixedPointsMap from "./nicking/FixedPointsMap";
 import NickingExport from "./nicking/NickingExport";
+import InspectionImport from "./nicking/InspectionImport";
 
 // ═══════════════════════════════════
 // TYPES & HELPERS
@@ -388,6 +389,9 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
           floweringChartRef={floweringChartRef} ganttChartRef={ganttChartRef}
         />
       </div>
+
+      {/* 1.5. IMPORTAÇÃO DE RELATÓRIO DE INSPEÇÃO */}
+      <InspectionImport cycleId={cycleId} orgId={orgId} />
 
       {/* 2. SEMÁFORO + KPI CARDS */}
       <SyncSemaphore status={latestStatus} />

@@ -517,6 +517,286 @@ export type Database = {
           },
         ]
       }
+      inspection_counting_points: {
+        Row: {
+          created_at: string
+          detasseled_count: number | null
+          id: string
+          inspection_data_id: string
+          latitude: number | null
+          longitude: number | null
+          male1_count: number | null
+          male2_count: number | null
+          male3_count: number | null
+          normal_not_pol: number | null
+          normal_pol: number | null
+          point_number: number
+          pse_not_pol: number | null
+          pse_pol: number | null
+          rogue_female_not_pol: number | null
+          rogue_female_pol: number | null
+          rogue_male_not_pol: number | null
+          rogue_male_pol: number | null
+          short_not_pol: number | null
+          short_pol: number | null
+          stigma_receptive_count: number | null
+          stump_not_pol: number | null
+          stump_pol: number | null
+          volunteer_female_not_pol: number | null
+          volunteer_female_pol: number | null
+          volunteer_male_not_pol: number | null
+          volunteer_male_pol: number | null
+        }
+        Insert: {
+          created_at?: string
+          detasseled_count?: number | null
+          id?: string
+          inspection_data_id: string
+          latitude?: number | null
+          longitude?: number | null
+          male1_count?: number | null
+          male2_count?: number | null
+          male3_count?: number | null
+          normal_not_pol?: number | null
+          normal_pol?: number | null
+          point_number: number
+          pse_not_pol?: number | null
+          pse_pol?: number | null
+          rogue_female_not_pol?: number | null
+          rogue_female_pol?: number | null
+          rogue_male_not_pol?: number | null
+          rogue_male_pol?: number | null
+          short_not_pol?: number | null
+          short_pol?: number | null
+          stigma_receptive_count?: number | null
+          stump_not_pol?: number | null
+          stump_pol?: number | null
+          volunteer_female_not_pol?: number | null
+          volunteer_female_pol?: number | null
+          volunteer_male_not_pol?: number | null
+          volunteer_male_pol?: number | null
+        }
+        Update: {
+          created_at?: string
+          detasseled_count?: number | null
+          id?: string
+          inspection_data_id?: string
+          latitude?: number | null
+          longitude?: number | null
+          male1_count?: number | null
+          male2_count?: number | null
+          male3_count?: number | null
+          normal_not_pol?: number | null
+          normal_pol?: number | null
+          point_number?: number
+          pse_not_pol?: number | null
+          pse_pol?: number | null
+          rogue_female_not_pol?: number | null
+          rogue_female_pol?: number | null
+          rogue_male_not_pol?: number | null
+          rogue_male_pol?: number | null
+          short_not_pol?: number | null
+          short_pol?: number | null
+          stigma_receptive_count?: number | null
+          stump_not_pol?: number | null
+          stump_pol?: number | null
+          volunteer_female_not_pol?: number | null
+          volunteer_female_pol?: number | null
+          volunteer_male_not_pol?: number | null
+          volunteer_male_pol?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_counting_points_inspection_data_id_fkey"
+            columns: ["inspection_data_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_data"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_data: {
+        Row: {
+          created_at: string
+          id: string
+          import_id: string
+          inspection_date: string | null
+          inspection_number: number
+          inspection_time: string | null
+          inspector_name: string | null
+          observations: string | null
+          pct_detasseled: number | null
+          pct_female_pollinating: number | null
+          pct_male1_pollinating: number | null
+          pct_male2_pollinating: number | null
+          pct_male3_pollinating: number | null
+          pct_normal_pollinating: number | null
+          pct_pse_pollinating: number | null
+          pct_rogue_female: number | null
+          pct_rogue_male: number | null
+          pct_short_pollinating: number | null
+          pct_stigma_receptive: number | null
+          pct_stump_pollinating: number | null
+          pct_volunteer_female: number | null
+          pct_volunteer_male: number | null
+          pf_male1_pollinating: number | null
+          pf_male2_pollinating: number | null
+          pf_male3_pollinating: number | null
+          pf_stigma_receptive: number | null
+          temperature: string | null
+          total_atypical_pollinating: number | null
+          weather: string | null
+          wind: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          import_id: string
+          inspection_date?: string | null
+          inspection_number: number
+          inspection_time?: string | null
+          inspector_name?: string | null
+          observations?: string | null
+          pct_detasseled?: number | null
+          pct_female_pollinating?: number | null
+          pct_male1_pollinating?: number | null
+          pct_male2_pollinating?: number | null
+          pct_male3_pollinating?: number | null
+          pct_normal_pollinating?: number | null
+          pct_pse_pollinating?: number | null
+          pct_rogue_female?: number | null
+          pct_rogue_male?: number | null
+          pct_short_pollinating?: number | null
+          pct_stigma_receptive?: number | null
+          pct_stump_pollinating?: number | null
+          pct_volunteer_female?: number | null
+          pct_volunteer_male?: number | null
+          pf_male1_pollinating?: number | null
+          pf_male2_pollinating?: number | null
+          pf_male3_pollinating?: number | null
+          pf_stigma_receptive?: number | null
+          temperature?: string | null
+          total_atypical_pollinating?: number | null
+          weather?: string | null
+          wind?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          import_id?: string
+          inspection_date?: string | null
+          inspection_number?: number
+          inspection_time?: string | null
+          inspector_name?: string | null
+          observations?: string | null
+          pct_detasseled?: number | null
+          pct_female_pollinating?: number | null
+          pct_male1_pollinating?: number | null
+          pct_male2_pollinating?: number | null
+          pct_male3_pollinating?: number | null
+          pct_normal_pollinating?: number | null
+          pct_pse_pollinating?: number | null
+          pct_rogue_female?: number | null
+          pct_rogue_male?: number | null
+          pct_short_pollinating?: number | null
+          pct_stigma_receptive?: number | null
+          pct_stump_pollinating?: number | null
+          pct_volunteer_female?: number | null
+          pct_volunteer_male?: number | null
+          pf_male1_pollinating?: number | null
+          pf_male2_pollinating?: number | null
+          pf_male3_pollinating?: number | null
+          pf_stigma_receptive?: number | null
+          temperature?: string | null
+          total_atypical_pollinating?: number | null
+          weather?: string | null
+          wind?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_data_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_imports: {
+        Row: {
+          area_ha: number | null
+          created_at: string
+          cycle_id: string
+          deleted_at: string | null
+          endosperm: string | null
+          field_code: string | null
+          file_name: string
+          file_url: string | null
+          hybrid_name: string | null
+          id: string
+          imported_at: string
+          imported_by: string | null
+          isolation: string | null
+          leader: string | null
+          org_id: string
+          technician: string | null
+          total_inspections: number
+        }
+        Insert: {
+          area_ha?: number | null
+          created_at?: string
+          cycle_id: string
+          deleted_at?: string | null
+          endosperm?: string | null
+          field_code?: string | null
+          file_name: string
+          file_url?: string | null
+          hybrid_name?: string | null
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          isolation?: string | null
+          leader?: string | null
+          org_id: string
+          technician?: string | null
+          total_inspections?: number
+        }
+        Update: {
+          area_ha?: number | null
+          created_at?: string
+          cycle_id?: string
+          deleted_at?: string | null
+          endosperm?: string | null
+          field_code?: string | null
+          file_name?: string
+          file_url?: string | null
+          hybrid_name?: string | null
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          isolation?: string | null
+          leader?: string | null
+          org_id?: string
+          technician?: string | null
+          total_inspections?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_imports_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_imports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nicking_fixed_points: {
         Row: {
           active: boolean
