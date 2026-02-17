@@ -15,7 +15,7 @@ import ActualPlanting from "@/components/cycles/ActualPlanting";
 import Phenology from "@/components/cycles/Phenology";
 import EmergenceStandCount from "@/components/cycles/EmergenceStandCount";
 import NickingSync from "@/components/cycles/NickingSync";
-import SeedTreatment from "@/components/cycles/SeedTreatment";
+import SementeBasica from "@/components/cycles/SementeBasica";
 import Nutrition from "@/components/cycles/Nutrition";
 
 const statusLabels: Record<string, string> = {
@@ -24,7 +24,8 @@ const statusLabels: Record<string, string> = {
 };
 
 const tabItems = [
-  { value: "resumo", label: "Resumo" }, { value: "tratamento-sementes", label: "TS" }, { value: "planejamento", label: "Planejamento" },
+  { value: "resumo", label: "Resumo" }, { value: "planejamento", label: "Planejamento" },
+  { value: "semente-basica", label: "Semente Básica" },
   { value: "plantio", label: "Plantio" }, { value: "nutricao", label: "Nutrição" }, { value: "fenologia", label: "Fenologia" },
   { value: "emergencia", label: "Emergência" }, { value: "nicking", label: "Nicking" },
   { value: "despendoamento", label: "Despendoamento" }, { value: "roguing", label: "Roguing" },
@@ -202,8 +203,8 @@ export default function CycleDetail() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="tratamento-sementes">
-          <SeedTreatment
+        <TabsContent value="semente-basica">
+          <SementeBasica
             cycleId={id!}
             orgId={cycle.org_id}
             contractNumber={cycle.contract_number}
@@ -212,6 +213,7 @@ export default function CycleDetail() {
             clientName={(cycle as any).clients?.name}
             femaleLine={cycle.female_line}
             maleLine={cycle.male_line}
+            totalArea={cycle.total_area}
           />
         </TabsContent>
 
@@ -276,7 +278,7 @@ export default function CycleDetail() {
           />
         </TabsContent>
 
-        {tabItems.filter((t) => !["resumo", "tratamento-sementes", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking"].includes(t.value)).map((t) => (
+        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>
