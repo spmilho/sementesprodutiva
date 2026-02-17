@@ -12,6 +12,7 @@ import CycleDetail from "./pages/CycleDetail";
 
 import MapaIntegrado from "./pages/MapaIntegrado";
 import Configuracoes from "./pages/Configuracoes";
+import UserManagement from "./pages/UserManagement";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -51,6 +52,7 @@ const App = () => (
                     <Route path="/mapa" element={<MapaIntegrado />} />
                     
                     <Route path="/configuracoes" element={<Configuracoes />} />
+                    <Route path="/usuarios" element={<UserManagement />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Layout>
