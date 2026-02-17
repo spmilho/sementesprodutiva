@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      chemical_applications: {
+        Row: {
+          active_ingredient: string | null
+          application_date: string
+          application_method: string
+          application_time: string | null
+          application_type: string
+          area_applied_ha: number
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          dose_per_ha: number
+          dose_unit: string
+          gps_latitude: number | null
+          gps_longitude: number | null
+          humidity_pct: number | null
+          id: string
+          notes: string | null
+          org_id: string
+          photos: string[] | null
+          prescription_number: string | null
+          product_name: string
+          responsible_technician: string | null
+          spray_volume: number | null
+          target_pest: string | null
+          temperature_c: number | null
+          updated_at: string
+          wind_speed_kmh: number | null
+        }
+        Insert: {
+          active_ingredient?: string | null
+          application_date: string
+          application_method?: string
+          application_time?: string | null
+          application_type: string
+          area_applied_ha: number
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          dose_per_ha: number
+          dose_unit?: string
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          humidity_pct?: number | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          photos?: string[] | null
+          prescription_number?: string | null
+          product_name: string
+          responsible_technician?: string | null
+          spray_volume?: number | null
+          target_pest?: string | null
+          temperature_c?: number | null
+          updated_at?: string
+          wind_speed_kmh?: number | null
+        }
+        Update: {
+          active_ingredient?: string | null
+          application_date?: string
+          application_method?: string
+          application_time?: string | null
+          application_type?: string
+          area_applied_ha?: number
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          dose_per_ha?: number
+          dose_unit?: string
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          humidity_pct?: number | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          photos?: string[] | null
+          prescription_number?: string | null
+          product_name?: string
+          responsible_technician?: string | null
+          spray_volume?: number | null
+          target_pest?: string | null
+          temperature_c?: number | null
+          updated_at?: string
+          wind_speed_kmh?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chemical_applications_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chemical_applications_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_contacts: {
         Row: {
           client_id: string
