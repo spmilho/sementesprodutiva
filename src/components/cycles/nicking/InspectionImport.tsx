@@ -1,5 +1,7 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Upload, Loader2, Trash2, FileSpreadsheet, Eye, ChevronDown, ChevronRight, MapPin, TrendingUp, TrendingDown } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -357,6 +359,7 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [parsing, setParsing] = useState(false);
   const [expandedInsp, setExpandedInsp] = useState<number | null>(null);
+  const [autoExpanded, setAutoExpanded] = useState(false);
 
   // Fetch existing imports
   const { data: imports = [], isLoading: importsLoading } = useQuery({
@@ -530,6 +533,14 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
 
   const latest = inspectionData.length > 0 ? inspectionData[inspectionData.length - 1] : null;
   const prev = inspectionData.length > 1 ? inspectionData[inspectionData.length - 2] : null;
+
+  // Auto-expand the last inspection
+  useEffect(() => {
+    if (latest && !autoExpanded) {
+      setExpandedInsp(latest.inspection_number);
+      setAutoExpanded(true);
+    }
+  }, [latest, autoExpanded]);
 
   // ═══════════════════════════════════
   // RENDER
@@ -855,21 +866,87 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
                             <CollapsibleContent asChild>
                               <tr>
                                 <td colSpan={hasMale3 ? 9 : 8} className="p-0">
-                                  <div className="bg-muted/30 p-4 space-y-3">
+                                  <div className="bg-muted/30 p-4 space-y-4">
+                                    {/* KPI summary for this inspection */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                                      <div className="rounded-lg border bg-card p-3 text-center">
+                                        <p className="text-lg font-bold" style={{ color: (d.pct_detasseled ?? 0) >= 0.99 ? "#4CAF50" : (d.pct_detasseled ?? 0) >= 0.95 ? "#FF9800" : "#F44336" }}>
+                                          {d.pct_detasseled != null ? `${(d.pct_detasseled * 100).toFixed(1)}%` : "—"}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground">Despendoada</p>
+                                      </div>
+                                      <div className="rounded-lg border bg-card p-3 text-center">
+                                        <p className="text-lg font-bold" style={{ color: "#1E88E5" }}>{d.pct_stigma_receptive != null ? `${(d.pct_stigma_receptive * 100).toFixed(1)}%` : "—"}</p>
+                                        <p className="text-[10px] text-muted-foreground">Estigma Receptivo</p>
+                                      </div>
+                                      <div className="rounded-lg border bg-card p-3 text-center">
+                                        <p className="text-lg font-bold" style={{ color: "#4CAF50" }}>{d.pct_male1_pollinating != null ? `${(d.pct_male1_pollinating * 100).toFixed(1)}%` : "—"}</p>
+                                        <p className="text-[10px] text-muted-foreground">Macho 1 Pol.</p>
+                                      </div>
+                                      <div className="rounded-lg border bg-card p-3 text-center">
+                                        <p className="text-lg font-bold" style={{ color: "#FF9800" }}>{d.pct_male2_pollinating != null ? `${(d.pct_male2_pollinating * 100).toFixed(1)}%` : "—"}</p>
+                                        <p className="text-[10px] text-muted-foreground">Macho 2 Pol.</p>
+                                      </div>
+                                      <div className="rounded-lg border bg-card p-3 text-center">
+                                        <p className="text-lg font-bold" style={{ color: "#F44336" }}>{d.pct_female_pollinating != null ? `${(d.pct_female_pollinating * 100).toFixed(1)}%` : "—"}</p>
+                                        <p className="text-[10px] text-muted-foreground">Fêmea Pol.</p>
+                                      </div>
+                                      <div className="rounded-lg border bg-card p-3 text-center">
+                                        <p className="text-lg font-bold">{d.total_atypical_pollinating != null ? `${(d.total_atypical_pollinating * 100).toFixed(2)}%` : "—"}</p>
+                                        <p className="text-[10px] text-muted-foreground">Atípicas</p>
+                                      </div>
+                                    </div>
+
+                                    {/* Atypical breakdown bar for this inspection */}
+                                    {(d.pct_normal_pollinating != null || d.pct_short_pollinating != null || d.pct_pse_pollinating != null || d.pct_stump_pollinating != null) && (
+                                      <div className="rounded-lg border bg-card p-3">
+                                        <p className="text-xs font-semibold mb-2">Detalhamento Atípicas (Pol.)</p>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                          <div className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: "#616161" }}></span> Normal: {d.pct_normal_pollinating != null ? `${(d.pct_normal_pollinating * 100).toFixed(2)}%` : "—"}</div>
+                                          <div className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: "#FDD835" }}></span> Baixa: {d.pct_short_pollinating != null ? `${(d.pct_short_pollinating * 100).toFixed(2)}%` : "—"}</div>
+                                          <div className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: "#FF9800" }}></span> PSE: {d.pct_pse_pollinating != null ? `${(d.pct_pse_pollinating * 100).toFixed(2)}%` : "—"}</div>
+                                          <div className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: "#F44336" }}></span> Toco: {d.pct_stump_pollinating != null ? `${(d.pct_stump_pollinating * 100).toFixed(2)}%` : "—"}</div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Rogues & Volunteers for this inspection */}
+                                    {(d.pct_rogue_female != null || d.pct_rogue_male != null || d.pct_volunteer_female != null || d.pct_volunteer_male != null) && (
+                                      <div className="rounded-lg border bg-card p-3">
+                                        <p className="text-xs font-semibold mb-2">Rogues e Tigueras</p>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                          <div className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: "#EC407A" }}></span> Rogue ♀: {d.pct_rogue_female != null ? `${(d.pct_rogue_female * 100).toFixed(2)}%` : "—"}</div>
+                                          <div className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: "#1E88E5" }}></span> Rogue ♂: {d.pct_rogue_male != null ? `${(d.pct_rogue_male * 100).toFixed(2)}%` : "—"}</div>
+                                          <div className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: "#F48FB1" }}></span> Tiguera ♀: {d.pct_volunteer_female != null ? `${(d.pct_volunteer_female * 100).toFixed(2)}%` : "—"}</div>
+                                          <div className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: "#90CAF9" }}></span> Tiguera ♂: {d.pct_volunteer_male != null ? `${(d.pct_volunteer_male * 100).toFixed(2)}%` : "—"}</div>
+                                        </div>
+                                      </div>
+                                    )}
+
                                     {d.observations && (
-                                      <div>
-                                        <p className="text-xs font-semibold mb-1">Observações:</p>
+                                      <div className="rounded-lg border bg-card p-3">
+                                        <p className="text-xs font-semibold mb-1">📝 Observações:</p>
                                         <p className="text-xs text-muted-foreground whitespace-pre-wrap">{d.observations}</p>
                                       </div>
                                     )}
+
+                                    {/* Counting points table */}
                                     {pts.length > 0 && (
-                                      <div>
-                                        <p className="text-xs font-semibold mb-1">Pontos de Contagem ({pts.length}):</p>
+                                      <div className="rounded-lg border bg-card p-3">
+                                        <p className="text-xs font-semibold mb-2">Pontos de Contagem ({pts.length})</p>
                                         <div className="overflow-x-auto">
                                           <table className="w-full text-[10px]">
                                             <thead>
                                               <tr className="border-b">
                                                 <th className="p-1">Ponto</th>
+                                                <th className="p-1">PT</th>
+                                                <th className="p-1">ER</th>
+                                                <th className="p-1">MP1</th>
+                                                <th className="p-1">MP2</th>
+                                                <th className="p-1">Normal P/NP</th>
+                                                <th className="p-1">Baixa P/NP</th>
+                                                <th className="p-1">PSE P/NP</th>
+                                                <th className="p-1">Toco P/NP</th>
                                                 <th className="p-1">Lat</th>
                                                 <th className="p-1">Lng</th>
                                               </tr>
@@ -878,8 +955,16 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
                                               {pts.map((pt: any) => (
                                                 <tr key={pt.id} className="border-b">
                                                   <td className="p-1 font-medium">{pt.point_number}</td>
-                                                  <td className="p-1">{pt.latitude?.toFixed(5) ?? "—"}</td>
-                                                  <td className="p-1">{pt.longitude?.toFixed(5) ?? "—"}</td>
+                                                  <td className="p-1">{pt.detasseled_count ?? "—"}</td>
+                                                  <td className="p-1">{pt.stigma_receptive_count ?? "—"}</td>
+                                                  <td className="p-1">{pt.male1_count ?? "—"}</td>
+                                                  <td className="p-1">{pt.male2_count ?? "—"}</td>
+                                                  <td className="p-1">{pt.normal_pol ?? 0}/{pt.normal_not_pol ?? 0}</td>
+                                                  <td className="p-1">{pt.short_pol ?? 0}/{pt.short_not_pol ?? 0}</td>
+                                                  <td className="p-1">{pt.pse_pol ?? 0}/{pt.pse_not_pol ?? 0}</td>
+                                                  <td className="p-1">{pt.stump_pol ?? 0}/{pt.stump_not_pol ?? 0}</td>
+                                                  <td className="p-1">{pt.latitude != null ? Number(pt.latitude).toFixed(5) : "—"}</td>
+                                                  <td className="p-1">{pt.longitude != null ? Number(pt.longitude).toFixed(5) : "—"}</td>
                                                 </tr>
                                               ))}
                                             </tbody>
@@ -887,6 +972,62 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
                                         </div>
                                       </div>
                                     )}
+
+                                    {/* MAP of counting points for this inspection */}
+                                    {(() => {
+                                      const geoPoints = pts.filter((p: any) => p.latitude != null && p.longitude != null);
+                                      if (geoPoints.length === 0) return null;
+                                      const avgLat = geoPoints.reduce((s: number, p: any) => s + Number(p.latitude), 0) / geoPoints.length;
+                                      const avgLng = geoPoints.reduce((s: number, p: any) => s + Number(p.longitude), 0) / geoPoints.length;
+                                      return (
+                                        <div className="rounded-lg border bg-card overflow-hidden">
+                                          <div className="px-3 py-2 border-b flex items-center gap-2">
+                                            <MapPin className="h-3 w-3 text-primary" />
+                                            <p className="text-xs font-semibold">🗺️ Mapa dos Pontos — Inspeção #{d.inspection_number}</p>
+                                            <Badge variant="outline" className="text-[10px] ml-auto">{geoPoints.length} pontos</Badge>
+                                          </div>
+                                          <MapContainer
+                                            center={[avgLat, avgLng] as [number, number]}
+                                            zoom={15}
+                                            style={{ height: 350, width: "100%" }}
+                                            scrollWheelZoom={false}
+                                          >
+                                            <TileLayer
+                                              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+                                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                            />
+                                            {geoPoints.map((pt: any) => {
+                                              const ptIcon = L.divIcon({
+                                                className: "",
+                                                html: `<div style="width:20px;height:20px;border-radius:50%;background:#1E88E5;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:bold;">${pt.point_number}</div>`,
+                                                iconSize: [20, 20],
+                                                iconAnchor: [10, 10],
+                                              });
+                                              return (
+                                                <Marker
+                                                  key={pt.id}
+                                                  position={[Number(pt.latitude), Number(pt.longitude)]}
+                                                  icon={ptIcon}
+                                                >
+                                                  <Popup>
+                                                    <div className="text-xs space-y-1 min-w-[140px]">
+                                                      <p className="font-bold">Ponto {pt.point_number}</p>
+                                                      <p>PT: {pt.detasseled_count ?? "—"} | ER: {pt.stigma_receptive_count ?? "—"}</p>
+                                                      <p>MP1: {pt.male1_count ?? "—"} | MP2: {pt.male2_count ?? "—"}</p>
+                                                      <p>Normal: {pt.normal_pol ?? 0}P / {pt.normal_not_pol ?? 0}NP</p>
+                                                      <p>Baixa: {pt.short_pol ?? 0}P / {pt.short_not_pol ?? 0}NP</p>
+                                                      <p>PSE: {pt.pse_pol ?? 0}P / {pt.pse_not_pol ?? 0}NP</p>
+                                                      <p>Toco: {pt.stump_pol ?? 0}P / {pt.stump_not_pol ?? 0}NP</p>
+                                                      <p className="text-muted-foreground">{Number(pt.latitude).toFixed(5)}, {Number(pt.longitude).toFixed(5)}</p>
+                                                    </div>
+                                                  </Popup>
+                                                </Marker>
+                                              );
+                                            })}
+                                          </MapContainer>
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                 </td>
                               </tr>
