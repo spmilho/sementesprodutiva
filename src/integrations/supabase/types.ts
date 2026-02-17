@@ -361,63 +361,213 @@ export type Database = {
           },
         ]
       }
+      nicking_fixed_points: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          org_id: string
+          parent_type: string
+          photo_url: string | null
+          plants_monitored: number
+          reference_description: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          org_id: string
+          parent_type: string
+          photo_url?: string | null
+          plants_monitored?: number
+          reference_description?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          org_id?: string
+          parent_type?: string
+          photo_url?: string | null
+          plants_monitored?: number
+          reference_description?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nicking_fixed_points_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nicking_fixed_points_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nicking_milestones: {
+        Row: {
+          anthesis_50pct_date: string | null
+          anthesis_end_date: string | null
+          anthesis_start_date: string | null
+          cycle_id: string
+          fixed_point_id: string
+          id: string
+          parent_type: string
+          silk_50pct_date: string | null
+          silk_end_date: string | null
+          silk_start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          anthesis_50pct_date?: string | null
+          anthesis_end_date?: string | null
+          anthesis_start_date?: string | null
+          cycle_id: string
+          fixed_point_id: string
+          id?: string
+          parent_type: string
+          silk_50pct_date?: string | null
+          silk_end_date?: string | null
+          silk_start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anthesis_50pct_date?: string | null
+          anthesis_end_date?: string | null
+          anthesis_start_date?: string | null
+          cycle_id?: string
+          fixed_point_id?: string
+          id?: string
+          parent_type?: string
+          silk_50pct_date?: string | null
+          silk_end_date?: string | null
+          silk_start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nicking_milestones_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nicking_milestones_fixed_point_id_fkey"
+            columns: ["fixed_point_id"]
+            isOneToOne: false
+            referencedRelation: "nicking_fixed_points"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nicking_observations: {
         Row: {
           action_taken: string | null
           created_at: string
           cycle_id: string
           deleted_at: string | null
-          female_stage: string
+          female_stage: string | null
+          gdu_accumulated: number | null
           id: string
-          latitude: number
-          longitude: number
-          male_stage: string
+          latitude: number | null
+          longitude: number | null
+          male_stage: string | null
           observation_date: string
+          observation_time: string | null
           observations: string | null
+          observer_name: string | null
           org_id: string
+          overall_synchrony_status: string | null
           photo_url: string | null
-          pollen_availability: string
-          silk_reception_pct: number
-          synchrony_status: string
+          photos: string[] | null
+          pollen_availability: string | null
+          silk_reception_pct: number | null
+          synchrony_status: string | null
+          technical_notes: string | null
+          temp_max_c: number | null
+          temp_min_c: number | null
           updated_at: string
+          water_stress: string | null
         }
         Insert: {
           action_taken?: string | null
           created_at?: string
           cycle_id: string
           deleted_at?: string | null
-          female_stage: string
+          female_stage?: string | null
+          gdu_accumulated?: number | null
           id?: string
-          latitude: number
-          longitude: number
-          male_stage: string
+          latitude?: number | null
+          longitude?: number | null
+          male_stage?: string | null
           observation_date: string
+          observation_time?: string | null
           observations?: string | null
+          observer_name?: string | null
           org_id: string
+          overall_synchrony_status?: string | null
           photo_url?: string | null
-          pollen_availability: string
-          silk_reception_pct?: number
-          synchrony_status: string
+          photos?: string[] | null
+          pollen_availability?: string | null
+          silk_reception_pct?: number | null
+          synchrony_status?: string | null
+          technical_notes?: string | null
+          temp_max_c?: number | null
+          temp_min_c?: number | null
           updated_at?: string
+          water_stress?: string | null
         }
         Update: {
           action_taken?: string | null
           created_at?: string
           cycle_id?: string
           deleted_at?: string | null
-          female_stage?: string
+          female_stage?: string | null
+          gdu_accumulated?: number | null
           id?: string
-          latitude?: number
-          longitude?: number
-          male_stage?: string
+          latitude?: number | null
+          longitude?: number | null
+          male_stage?: string | null
           observation_date?: string
+          observation_time?: string | null
           observations?: string | null
+          observer_name?: string | null
           org_id?: string
+          overall_synchrony_status?: string | null
           photo_url?: string | null
-          pollen_availability?: string
-          silk_reception_pct?: number
-          synchrony_status?: string
+          photos?: string[] | null
+          pollen_availability?: string | null
+          silk_reception_pct?: number | null
+          synchrony_status?: string | null
+          technical_notes?: string | null
+          temp_max_c?: number | null
+          temp_min_c?: number | null
           updated_at?: string
+          water_stress?: string | null
         }
         Relationships: [
           {
@@ -432,6 +582,69 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nicking_point_readings: {
+        Row: {
+          created_at: string
+          female_pollination_evidence: string | null
+          female_silk_receptive_pct: number | null
+          female_silk_stage: string | null
+          female_silk_visible_pct: number | null
+          fixed_point_id: string
+          id: string
+          male_anthers_exposed_pct: number | null
+          male_pollen_intensity: string | null
+          male_pollen_release_pct: number | null
+          male_tassel_stage: string | null
+          observation_id: string
+          parent_type: string
+        }
+        Insert: {
+          created_at?: string
+          female_pollination_evidence?: string | null
+          female_silk_receptive_pct?: number | null
+          female_silk_stage?: string | null
+          female_silk_visible_pct?: number | null
+          fixed_point_id: string
+          id?: string
+          male_anthers_exposed_pct?: number | null
+          male_pollen_intensity?: string | null
+          male_pollen_release_pct?: number | null
+          male_tassel_stage?: string | null
+          observation_id: string
+          parent_type: string
+        }
+        Update: {
+          created_at?: string
+          female_pollination_evidence?: string | null
+          female_silk_receptive_pct?: number | null
+          female_silk_stage?: string | null
+          female_silk_visible_pct?: number | null
+          fixed_point_id?: string
+          id?: string
+          male_anthers_exposed_pct?: number | null
+          male_pollen_intensity?: string | null
+          male_pollen_release_pct?: number | null
+          male_tassel_stage?: string | null
+          observation_id?: string
+          parent_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nicking_point_readings_fixed_point_id_fkey"
+            columns: ["fixed_point_id"]
+            isOneToOne: false
+            referencedRelation: "nicking_fixed_points"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nicking_point_readings_observation_id_fkey"
+            columns: ["observation_id"]
+            isOneToOne: false
+            referencedRelation: "nicking_observations"
             referencedColumns: ["id"]
           },
         ]
