@@ -361,6 +361,162 @@ export type Database = {
           },
         ]
       }
+      fertilization_records: {
+        Row: {
+          application_date: string
+          application_method: string | null
+          area_applied_ha: number
+          b_kg_ha: number | null
+          ca_kg_ha: number | null
+          co_kg_ha: number | null
+          conditions: string | null
+          created_at: string
+          created_by: string | null
+          cu_kg_ha: number | null
+          cycle_id: string
+          deleted_at: string | null
+          dose_per_ha: number
+          dose_unit: string | null
+          equipment_used: string | null
+          fe_kg_ha: number | null
+          fertilization_type: string
+          foliar_application_time: string | null
+          foliar_mixed_with_pesticide: boolean | null
+          foliar_pesticide_name: string | null
+          foliar_product_detail: string | null
+          foliar_spray_volume: number | null
+          formulation_k_pct: number | null
+          formulation_n_pct: number | null
+          formulation_p_pct: number | null
+          growth_stage: string | null
+          id: string
+          k2o_supplied_kg_ha: number | null
+          mg_kg_ha: number | null
+          micro_unit: string | null
+          mn_kg_ha: number | null
+          mo_kg_ha: number | null
+          n_supplied_kg_ha: number | null
+          notes: string | null
+          org_id: string
+          p2o5_supplied_kg_ha: number | null
+          photos: string[] | null
+          product_name: string
+          responsible_person: string | null
+          s_kg_ha: number | null
+          si_kg_ha: number | null
+          target_parent: string | null
+          updated_at: string
+          zn_kg_ha: number | null
+        }
+        Insert: {
+          application_date: string
+          application_method?: string | null
+          area_applied_ha: number
+          b_kg_ha?: number | null
+          ca_kg_ha?: number | null
+          co_kg_ha?: number | null
+          conditions?: string | null
+          created_at?: string
+          created_by?: string | null
+          cu_kg_ha?: number | null
+          cycle_id: string
+          deleted_at?: string | null
+          dose_per_ha: number
+          dose_unit?: string | null
+          equipment_used?: string | null
+          fe_kg_ha?: number | null
+          fertilization_type: string
+          foliar_application_time?: string | null
+          foliar_mixed_with_pesticide?: boolean | null
+          foliar_pesticide_name?: string | null
+          foliar_product_detail?: string | null
+          foliar_spray_volume?: number | null
+          formulation_k_pct?: number | null
+          formulation_n_pct?: number | null
+          formulation_p_pct?: number | null
+          growth_stage?: string | null
+          id?: string
+          k2o_supplied_kg_ha?: number | null
+          mg_kg_ha?: number | null
+          micro_unit?: string | null
+          mn_kg_ha?: number | null
+          mo_kg_ha?: number | null
+          n_supplied_kg_ha?: number | null
+          notes?: string | null
+          org_id: string
+          p2o5_supplied_kg_ha?: number | null
+          photos?: string[] | null
+          product_name: string
+          responsible_person?: string | null
+          s_kg_ha?: number | null
+          si_kg_ha?: number | null
+          target_parent?: string | null
+          updated_at?: string
+          zn_kg_ha?: number | null
+        }
+        Update: {
+          application_date?: string
+          application_method?: string | null
+          area_applied_ha?: number
+          b_kg_ha?: number | null
+          ca_kg_ha?: number | null
+          co_kg_ha?: number | null
+          conditions?: string | null
+          created_at?: string
+          created_by?: string | null
+          cu_kg_ha?: number | null
+          cycle_id?: string
+          deleted_at?: string | null
+          dose_per_ha?: number
+          dose_unit?: string | null
+          equipment_used?: string | null
+          fe_kg_ha?: number | null
+          fertilization_type?: string
+          foliar_application_time?: string | null
+          foliar_mixed_with_pesticide?: boolean | null
+          foliar_pesticide_name?: string | null
+          foliar_product_detail?: string | null
+          foliar_spray_volume?: number | null
+          formulation_k_pct?: number | null
+          formulation_n_pct?: number | null
+          formulation_p_pct?: number | null
+          growth_stage?: string | null
+          id?: string
+          k2o_supplied_kg_ha?: number | null
+          mg_kg_ha?: number | null
+          micro_unit?: string | null
+          mn_kg_ha?: number | null
+          mo_kg_ha?: number | null
+          n_supplied_kg_ha?: number | null
+          notes?: string | null
+          org_id?: string
+          p2o5_supplied_kg_ha?: number | null
+          photos?: string[] | null
+          product_name?: string
+          responsible_person?: string | null
+          s_kg_ha?: number | null
+          si_kg_ha?: number | null
+          target_parent?: string | null
+          updated_at?: string
+          zn_kg_ha?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fertilization_records_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fertilization_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nicking_fixed_points: {
         Row: {
           active: boolean
@@ -645,6 +801,41 @@ export type Database = {
             columns: ["observation_id"]
             isOneToOne: false
             referencedRelation: "nicking_observations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutrition_targets: {
+        Row: {
+          cycle_id: string
+          id: string
+          k2o_target: number
+          n_target: number
+          p2o5_target: number
+          updated_at: string
+        }
+        Insert: {
+          cycle_id: string
+          id?: string
+          k2o_target?: number
+          n_target?: number
+          p2o5_target?: number
+          updated_at?: string
+        }
+        Update: {
+          cycle_id?: string
+          id?: string
+          k2o_target?: number
+          n_target?: number
+          p2o5_target?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutrition_targets_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: true
+            referencedRelation: "production_cycles"
             referencedColumns: ["id"]
           },
         ]
