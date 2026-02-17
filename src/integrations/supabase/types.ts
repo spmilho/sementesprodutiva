@@ -1684,6 +1684,87 @@ export type Database = {
           },
         ]
       }
+      roguing_records: {
+        Row: {
+          affected_area_m2: number | null
+          affected_parent: string
+          corrective_action: string | null
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          description: string
+          gps_latitude: number | null
+          gps_longitude: number | null
+          growth_stage: string | null
+          id: string
+          notes: string | null
+          observation_date: string
+          off_type: string
+          org_id: string
+          photos: string[] | null
+          plants_removed: number
+          updated_at: string
+        }
+        Insert: {
+          affected_area_m2?: number | null
+          affected_parent: string
+          corrective_action?: string | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          description: string
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          growth_stage?: string | null
+          id?: string
+          notes?: string | null
+          observation_date: string
+          off_type: string
+          org_id: string
+          photos?: string[] | null
+          plants_removed: number
+          updated_at?: string
+        }
+        Update: {
+          affected_area_m2?: number | null
+          affected_parent?: string
+          corrective_action?: string | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          description?: string
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          growth_stage?: string | null
+          id?: string
+          notes?: string | null
+          observation_date?: string
+          off_type?: string
+          org_id?: string
+          photos?: string[] | null
+          plants_removed?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roguing_records_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roguing_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seed_lot_treatment_products: {
         Row: {
           active_ingredient: string | null
