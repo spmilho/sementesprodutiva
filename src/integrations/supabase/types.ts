@@ -1105,6 +1105,149 @@ export type Database = {
           },
         ]
       }
+      seed_treatment: {
+        Row: {
+          client_document_url: string | null
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          equipment_used: string | null
+          germination_after: number | null
+          germination_before: number | null
+          id: string
+          no_treatment_reason: string | null
+          notes: string | null
+          org_id: string
+          parent_type: string
+          photos: string[] | null
+          responsible_person: string | null
+          seed_condition_notes: string | null
+          seed_lot: string | null
+          total_slurry_volume: string | null
+          treatment_date: string | null
+          treatment_location: string | null
+          treatment_origin: string
+          updated_at: string
+          vigor_before: number | null
+          visual_quality: string | null
+        }
+        Insert: {
+          client_document_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          equipment_used?: string | null
+          germination_after?: number | null
+          germination_before?: number | null
+          id?: string
+          no_treatment_reason?: string | null
+          notes?: string | null
+          org_id: string
+          parent_type: string
+          photos?: string[] | null
+          responsible_person?: string | null
+          seed_condition_notes?: string | null
+          seed_lot?: string | null
+          total_slurry_volume?: string | null
+          treatment_date?: string | null
+          treatment_location?: string | null
+          treatment_origin: string
+          updated_at?: string
+          vigor_before?: number | null
+          visual_quality?: string | null
+        }
+        Update: {
+          client_document_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          equipment_used?: string | null
+          germination_after?: number | null
+          germination_before?: number | null
+          id?: string
+          no_treatment_reason?: string | null
+          notes?: string | null
+          org_id?: string
+          parent_type?: string
+          photos?: string[] | null
+          responsible_person?: string | null
+          seed_condition_notes?: string | null
+          seed_lot?: string | null
+          total_slurry_volume?: string | null
+          treatment_date?: string | null
+          treatment_location?: string | null
+          treatment_origin?: string
+          updated_at?: string
+          vigor_before?: number | null
+          visual_quality?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seed_treatment_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seed_treatment_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seed_treatment_products: {
+        Row: {
+          active_ingredient: string | null
+          application_order: number | null
+          category: string | null
+          created_at: string
+          dose: number
+          dose_unit: string
+          id: string
+          product_name: string
+          product_type: string | null
+          seed_treatment_id: string
+        }
+        Insert: {
+          active_ingredient?: string | null
+          application_order?: number | null
+          category?: string | null
+          created_at?: string
+          dose: number
+          dose_unit: string
+          id?: string
+          product_name: string
+          product_type?: string | null
+          seed_treatment_id: string
+        }
+        Update: {
+          active_ingredient?: string | null
+          application_order?: number | null
+          category?: string | null
+          created_at?: string
+          dose?: number
+          dose_unit?: string
+          id?: string
+          product_name?: string
+          product_type?: string | null
+          seed_treatment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seed_treatment_products_seed_treatment_id_fkey"
+            columns: ["seed_treatment_id"]
+            isOneToOne: false
+            referencedRelation: "seed_treatment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
