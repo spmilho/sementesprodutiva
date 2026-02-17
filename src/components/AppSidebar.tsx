@@ -1,5 +1,6 @@
-import { LayoutDashboard, Layers, Map, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Layers, Map, Settings, LogOut, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useRole } from "@/hooks/useRole";
 import { NavLink } from "@/components/NavLink";
 import logoImg from "@/assets/logo-produtiva.jpg";
 import {
@@ -56,6 +57,11 @@ function MenuGroup({ label, items }: { label: string; items: typeof mainItems })
 
 export function AppSidebar() {
   const { signOut, user } = useAuth();
+  const { isAdmin } = useRole();
+
+  const adminItems = isAdmin
+    ? [{ title: "Usuários & Roles", url: "/usuarios", icon: ShieldCheck }]
+    : [];
 
   return (
     <Sidebar collapsible="icon">
@@ -72,6 +78,7 @@ export function AppSidebar() {
       <SidebarContent className="px-2 py-3">
         <MenuGroup label="Principal" items={mainItems} />
         <MenuGroup label="Gestão" items={managementItems} />
+        {adminItems.length > 0 && <MenuGroup label="Administração" items={adminItems} />}
       </SidebarContent>
 
       <SidebarFooter className="p-3 border-t border-sidebar-border group-data-[collapsible=icon]:hidden">
