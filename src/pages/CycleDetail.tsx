@@ -20,6 +20,7 @@ import Nutrition from "@/components/cycles/Nutrition";
 import Detasseling from "@/components/cycles/Detasseling";
 import Roguing from "@/components/cycles/Roguing";
 import ChemicalApplications from "@/components/cycles/ChemicalApplications";
+import PestDiseaseRecords from "@/components/cycles/PestDiseaseRecords";
 
 const statusLabels: Record<string, string> = {
   planning: "Planejamento", planting: "Plantio", growing: "Crescimento",
@@ -301,7 +302,11 @@ export default function CycleDetail() {
           <ChemicalApplications cycleId={id!} orgId={cycle.org_id} />
         </TabsContent>
 
-        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento", "roguing", "manejo"].includes(t.value)).map((t) => (
+        <TabsContent value="pragas">
+          <PestDiseaseRecords cycleId={id!} orgId={cycle.org_id} />
+        </TabsContent>
+
+        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento", "roguing", "manejo", "pragas"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>

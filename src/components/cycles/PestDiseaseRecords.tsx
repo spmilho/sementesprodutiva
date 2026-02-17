@@ -1,0 +1,302 @@
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { format, differenceInDays } from "date-fns";
+import { Plus, Trash2, ImageIcon, Loader2, MapPin, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+
+const PEST_TYPES = ["Praga", "Doença", "Daninha", "Nematóide", "Outro"] as const;
+const SEVERITIES = ["Baixa", "Moderada", "Alta", "Crítica"] as const;
+const PARENTS = ["Fêmea", "Macho", "Ambos"] as const;
+const STAGES = ["VE","V1","V2","V3","V4","V5","V6","V7","V8","V9","V10","V11","V12","VT","R1","R2","R3","R4","R5","R6"] as const;
+
+const COMMON_PESTS = [
+  "Spodoptera frugiperda", "Helicoverpa zea", "Dalbulus maidis", "Diabrotica speciosa",
+  "Rhopalosiphum maidis", "Elasmopalpus lignosellus", "Cercospora zeae-maydis",
+  "Exserohilum turcicum", "Puccinia polysora", "Phaeosphaeria maydis",
+  "Fusarium verticillioides", "Colletotrichum graminicola", "Pratylenchus brachyurus",
+  "Meloidogyne incognita", "Cyperus rotundus", "Digitaria horizontalis",
+  "Brachiaria plantaginea", "Ipomoea grandifolia",
+];
+
+const TYPE_COLORS: { [k: string]: string } = {
+  Praga: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
+  Doença: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300",
+  Daninha: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+  Nematóide: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+  Outro: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
+};
+
+const SEV_COLORS: { [k: string]: string } = {
+  Baixa: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+  Moderada: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+  Alta: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
+  Crítica: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
+};
+
+interface Props { cycleId: string; orgId: string; }
+
+export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [nameFilter, setNameFilter] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Form
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [pestName, setPestName] = useState("");
+  const [pestType, setPestType] = useState<string>("Praga");
+  const [incidence, setIncidence] = useState("");
+  const [severity, setSeverity] = useState<string>("Baixa");
+  const [score, setScore] = useState("1");
+  const [stage, setStage] = useState("");
+  const [parent, setParent] = useState<string>("Ambos");
+  const [area, setArea] = useState("");
+  const [action, setAction] = useState("");
+  const [nde, setNde] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+
+  const qk = ["pest_disease_records", cycleId];
+
+  const { data: records = [], isLoading } = useQuery({
+    queryKey: qk,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("pest_disease_records").select("*").eq("cycle_id", cycleId)
+        .order("observation_date", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const insertMut = useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase as any).from("pest_disease_records").insert({
+        cycle_id: cycleId, org_id: orgId, observation_date: date,
+        pest_name: pestName, pest_type: pestType,
+        incidence_pct: incidence ? parseFloat(incidence) : null,
+        severity, severity_score: parseInt(score),
+        growth_stage: stage || null, affected_parent: parent,
+        affected_area_ha: area ? parseFloat(area) : null,
+        action_taken: action || null, economic_damage_reached: nde,
+        notes: notes || null,
+        gps_latitude: lat ? parseFloat(lat) : null,
+        gps_longitude: lng ? parseFloat(lng) : null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk }); toast.success("Ocorrência registrada!"); resetForm(); setOpen(false); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).rpc("soft_delete_record", { _table_name: "pest_disease_records", _record_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk }); toast.success("Removido!"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const resetForm = () => {
+    setDate(format(new Date(), "yyyy-MM-dd")); setPestName(""); setPestType("Praga");
+    setIncidence(""); setSeverity("Baixa"); setScore("1"); setStage(""); setParent("Ambos");
+    setArea(""); setAction(""); setNde(false); setNotes(""); setLat(""); setLng("");
+  };
+
+  const captureGPS = () => {
+    navigator.geolocation.getCurrentPosition(
+      (p) => { setLat(p.coords.latitude.toFixed(6)); setLng(p.coords.longitude.toFixed(6)); toast.success("GPS capturado!"); },
+      () => toast.error("Não foi possível capturar GPS")
+    );
+  };
+
+  const suggestions = COMMON_PESTS.filter(p => p.toLowerCase().includes(pestName.toLowerCase()) && pestName.length > 0);
+
+  // KPIs
+  const total = records.length;
+  const maxSev = useMemo(() => {
+    if (!records.length) return "—";
+    const order = ["Crítica", "Alta", "Moderada", "Baixa"];
+    for (const s of order) { if (records.some((r: any) => r.severity === s)) return s; }
+    return "—";
+  }, [records]);
+
+  const topPest = useMemo(() => {
+    if (!records.length) return "—";
+    const counts: { [k: string]: number } = {};
+    records.forEach((r: any) => { counts[r.pest_name] = (counts[r.pest_name] || 0) + 1; });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+  }, [records]);
+
+  const lastInspection = useMemo(() => {
+    if (!records.length) return { text: "—", alert: false };
+    const d = new Date(records[0].observation_date + "T12:00:00");
+    const days = differenceInDays(new Date(), d);
+    return { text: format(d, "dd/MM/yyyy"), alert: days > 7 };
+  }, [records]);
+
+  // Chart
+  const chartData = useMemo(() => {
+    if (records.length < 3) return null;
+    const sorted = [...records].filter((r: any) => r.incidence_pct != null)
+      .sort((a: any, b: any) => a.observation_date.localeCompare(b.observation_date));
+    if (sorted.length < 2) return null;
+    return sorted.map((r: any) => ({
+      date: format(new Date(r.observation_date + "T12:00:00"), "dd/MM"),
+      incidência: Number(r.incidence_pct),
+      nota: Number(r.severity_score),
+      nome: r.pest_name,
+    }));
+  }, [records]);
+
+  const canSave = pestName && date && score;
+
+  if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+
+  return (
+    <div className="space-y-6">
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Ocorrências</p><p className="text-2xl font-bold text-foreground">{total}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Maior Severidade</p><Badge variant="outline" className={`mt-1 ${SEV_COLORS[maxSev] || ""}`}>{maxSev}</Badge></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Principal Praga</p><p className="text-sm font-semibold text-foreground mt-1 italic truncate">{topPest}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Última Inspeção</p><div className="flex items-center gap-1 mt-1"><p className={`text-sm font-semibold ${lastInspection.alert ? "text-destructive" : "text-foreground"}`}>{lastInspection.text}</p>{lastInspection.alert && <AlertTriangle className="h-4 w-4 text-destructive" />}</div></CardContent></Card>
+      </div>
+
+      {/* Add */}
+      <div className="flex justify-end">
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Registrar Ocorrência</Button></DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Nova Ocorrência Fitossanitária</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Data *</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+                <div className="relative">
+                  <Label>Nome *</Label>
+                  <Input value={pestName} onChange={e => { setPestName(e.target.value); setShowSuggestions(true); }} placeholder="Ex: Spodoptera frugiperda"
+                    onFocus={() => setShowSuggestions(true)} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} />
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md max-h-40 overflow-y-auto">
+                      {suggestions.map(s => (
+                        <button key={s} className="w-full px-3 py-1.5 text-left text-sm hover:bg-accent" onMouseDown={() => { setPestName(s); setShowSuggestions(false); }}>{s}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div><Label>Tipo</Label>
+                  <Select value={pestType} onValueChange={setPestType}><SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{PEST_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>
+                </div>
+                <div><Label>Incidência (%)</Label><Input type="number" step="0.1" min="0" max="100" value={incidence} onChange={e => setIncidence(e.target.value)} /></div>
+                <div><Label>Severidade</Label>
+                  <Select value={severity} onValueChange={setSeverity}><SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{SEVERITIES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+                </div>
+                <div><Label>Nota (1-9) *</Label><Input type="number" min="1" max="9" value={score} onChange={e => setScore(e.target.value)} /></div>
+                <div><Label>Estádio</Label>
+                  <Select value={stage} onValueChange={setStage}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>{STAGES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+                </div>
+                <div><Label>Parental</Label>
+                  <Select value={parent} onValueChange={setParent}><SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{PARENTS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select>
+                </div>
+                <div><Label>Área (ha)</Label><Input type="number" step="0.01" value={area} onChange={e => setArea(e.target.value)} /></div>
+                <div><Label>Ação Tomada</Label><Input value={action} onChange={e => setAction(e.target.value)} placeholder="Aplicação de..." /></div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Switch checked={nde} onCheckedChange={setNde} id="nde" />
+                <Label htmlFor="nde" className="text-sm">NDE atingido (Nível de Dano Econômico)</Label>
+              </div>
+
+              <div className="flex items-end gap-3">
+                <div className="flex-1"><Label>Latitude</Label><Input value={lat} onChange={e => setLat(e.target.value)} /></div>
+                <div className="flex-1"><Label>Longitude</Label><Input value={lng} onChange={e => setLng(e.target.value)} /></div>
+                <Button type="button" variant="outline" size="sm" onClick={captureGPS}><MapPin className="h-4 w-4 mr-1" />GPS</Button>
+              </div>
+
+              <div><Label>Observações</Label><Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} /></div>
+
+              <Button className="w-full" disabled={!canSave || insertMut.isPending} onClick={() => insertMut.mutate()}>
+                {insertMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}Salvar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Chart */}
+      {chartData && (
+        <Card><CardContent className="p-4">
+          <p className="text-sm font-medium mb-3">Incidência ao Longo do Tempo</p>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+              <YAxis yAxisId="left" tick={{ fontSize: 11 }} domain={[0, 100]} unit="%" />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} domain={[1, 9]} />
+              <Tooltip />
+              <Legend />
+              <Line yAxisId="left" type="monotone" dataKey="incidência" name="Incidência %" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+              <Line yAxisId="right" type="monotone" dataKey="nota" name="Nota" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent></Card>
+      )}
+
+      {/* Table */}
+      {records.length === 0 ? (
+        <Card><CardContent className="p-8 text-center text-muted-foreground text-sm">Nenhuma ocorrência registrada.</CardContent></Card>
+      ) : (
+        <Card><div className="overflow-x-auto">
+          <Table>
+            <TableHeader><TableRow>
+              <TableHead>Data</TableHead><TableHead>Nome</TableHead><TableHead>Tipo</TableHead>
+              <TableHead>Sev.</TableHead><TableHead>Nota</TableHead><TableHead>Inc. %</TableHead>
+              <TableHead>Parental</TableHead><TableHead>Estádio</TableHead><TableHead>NDE</TableHead>
+              <TableHead>Ação</TableHead><TableHead>Fotos</TableHead><TableHead className="w-10"></TableHead>
+            </TableRow></TableHeader>
+            <TableBody>
+              {records.map((r: any) => (
+                <TableRow key={r.id} className={r.economic_damage_reached ? "bg-destructive/5" : ""}>
+                  <TableCell className="whitespace-nowrap text-xs">{format(new Date(r.observation_date + "T12:00:00"), "dd/MM/yy")}</TableCell>
+                  <TableCell className="text-xs font-medium italic">{r.pest_name}</TableCell>
+                  <TableCell><Badge variant="outline" className={TYPE_COLORS[r.pest_type] || ""}>{r.pest_type}</Badge></TableCell>
+                  <TableCell><Badge variant="outline" className={SEV_COLORS[r.severity] || ""}>{r.severity}</Badge></TableCell>
+                  <TableCell className="text-xs font-mono">{r.severity_score}</TableCell>
+                  <TableCell className="text-xs">{r.incidence_pct != null ? `${r.incidence_pct}%` : "—"}</TableCell>
+                  <TableCell className="text-xs">{r.affected_parent}</TableCell>
+                  <TableCell className="text-xs">{r.growth_stage || "—"}</TableCell>
+                  <TableCell>{r.economic_damage_reached ? <Badge variant="destructive" className="text-[10px]">NDE</Badge> : "—"}</TableCell>
+                  <TableCell className="text-xs max-w-[120px] truncate">{r.action_taken || "—"}</TableCell>
+                  <TableCell>{r.photos?.length ? <ImageIcon className="h-4 w-4 text-muted-foreground" /> : "—"}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (confirm("Remover?")) deleteMut.mutate(r.id); }}>
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div></Card>
+      )}
+    </div>
+  );
+}
