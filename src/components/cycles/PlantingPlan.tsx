@@ -41,7 +41,7 @@ function calcSeedsPerMeter(population: number, spacing: number, germination: num
 const schema = z.object({
   planned_date: z.date({ required_error: "Data é obrigatória" }),
   type: z.enum(["male", "female"], { required_error: "Tipo é obrigatório" }),
-  gleba_id: z.string().optional(),
+  gleba_name: z.string().optional(),
   planned_area: z.coerce.number().positive("Área deve ser > 0"),
   target_population: z.coerce.number().int().positive().default(62000),
   germination_rate: z.coerce.number().min(1).max(100).default(92),
@@ -99,7 +99,7 @@ export default function PlantingPlan({
       germination_rate: 92,
       row_spacing: 70,
       planting_order: 1,
-      gleba_id: "",
+      gleba_name: "",
     },
   });
 
@@ -126,7 +126,7 @@ export default function PlantingPlan({
       planned_date: undefined,
       planned_area: undefined,
       observations: "",
-      gleba_id: "",
+      gleba_name: "",
     });
     setDialogOpen(true);
   };
@@ -142,7 +142,7 @@ export default function PlantingPlan({
       row_spacing: p.row_spacing,
       planting_order: p.planting_order,
       observations: p.observations || "",
-      gleba_id: p.gleba_id || "",
+      gleba_name: p.gleba_id ? (glebas.find((g: any) => g.id === p.gleba_id)?.name || "") : "",
     });
     setDialogOpen(true);
   };
@@ -160,6 +160,29 @@ export default function PlantingPlan({
         throw new Error(`Área ${values.type === "female" ? "fêmea" : "macho"} excede o limite de ${limit} ha (atual: ${currentTypeTotal} ha + ${values.planned_area} ha = ${currentTypeTotal + values.planned_area} ha)`);
       }
 
+      // Resolve gleba: find existing or create new
+      let glebaId: string | null = null;
+      const glebaName = values.gleba_name?.trim();
+      if (glebaName) {
+        const existing = glebas.find((g: any) => g.name.toLowerCase() === glebaName.toLowerCase());
+        if (existing) {
+          glebaId = existing.id;
+        } else {
+          const { data: newGleba, error: glebaErr } = await (supabase as any)
+            .from("pivot_glebas")
+            .insert({
+              cycle_id: cycleId,
+              org_id: orgId,
+              name: glebaName,
+              parent_type: values.type,
+            })
+            .select("id")
+            .single();
+          if (glebaErr) throw glebaErr;
+          glebaId = newGleba.id;
+        }
+      }
+
       const row = {
         cycle_id: cycleId,
         org_id: orgId,
@@ -172,7 +195,7 @@ export default function PlantingPlan({
         seeds_per_meter: spm,
         planting_order: values.planting_order,
         observations: values.observations || null,
-        gleba_id: (values.gleba_id && values.gleba_id !== "none") ? values.gleba_id : null,
+        gleba_id: glebaId,
       };
 
       if (editingId) {
@@ -185,6 +208,7 @@ export default function PlantingPlan({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planting_plan", cycleId] });
+      queryClient.invalidateQueries({ queryKey: ["pivot_glebas", cycleId] });
       toast.success(editingId ? "Plantio atualizado!" : "Plantio adicionado!");
       setDialogOpen(false);
     },
@@ -322,7 +346,7 @@ export default function PlantingPlan({
                      <TableHead className="text-xs w-16">Ordem</TableHead>
                     <TableHead className="text-xs">Data</TableHead>
                     <TableHead className="text-xs">Tipo</TableHead>
-                    {glebas.length > 0 && <TableHead className="text-xs">Gleba</TableHead>}
+                    <TableHead className="text-xs">Gleba</TableHead>
                     <TableHead className="text-xs text-right">Área (ha)</TableHead>
                     <TableHead className="text-xs text-right hidden md:table-cell">População</TableHead>
                     <TableHead className="text-xs text-right hidden md:table-cell">Germ. (%)</TableHead>
@@ -349,11 +373,9 @@ export default function PlantingPlan({
                             {p.type === "female" ? "Fêmea" : "Macho"}
                           </span>
                         </TableCell>
-                        {glebas.length > 0 && (
-                          <TableCell className="text-sm">
-                            {p.gleba_id ? glebas.find((g: any) => g.id === p.gleba_id)?.name || "—" : "Geral"}
-                          </TableCell>
-                        )}
+                        <TableCell className="text-sm">
+                          {p.gleba_id ? glebas.find((g: any) => g.id === p.gleba_id)?.name || "—" : "Geral"}
+                        </TableCell>
                         <TableCell className="text-right text-sm">{p.planned_area}</TableCell>
                         <TableCell className="text-right text-sm hidden md:table-cell">{p.target_population?.toLocaleString("pt-BR")}</TableCell>
                         <TableCell className="text-right text-sm hidden md:table-cell">{p.germination_rate}%</TableCell>
@@ -429,24 +451,22 @@ export default function PlantingPlan({
             </div>
 
             {/* Gleba */}
-            {glebas.length > 0 && (
-              <div className="space-y-1.5">
-                <Label>Gleba</Label>
-                <Controller name="gleba_id" control={form.control} render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a gleba" /></SelectTrigger>
-                    <SelectContent>
-                      {glebas.map((g: any) => (
-                        <SelectItem key={g.id} value={g.id}>
-                          {g.name}{g.area_ha ? ` — ${g.area_ha} ha` : ""}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="none">Área geral (sem gleba específica)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )} />
-              </div>
-            )}
+            <div className="space-y-1.5">
+              <Label>Nome da Gleba</Label>
+              <Input
+                placeholder="Ex: Gleba A, Gleba B..."
+                {...form.register("gleba_name")}
+                list="gleba-suggestions"
+              />
+              {glebas.length > 0 && (
+                <datalist id="gleba-suggestions">
+                  {glebas.map((g: any) => (
+                    <option key={g.id} value={g.name} />
+                  ))}
+                </datalist>
+              )}
+              <p className="text-xs text-muted-foreground">Deixe vazio para área geral. Nomes existentes serão reutilizados.</p>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
