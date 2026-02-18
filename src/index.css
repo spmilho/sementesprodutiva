@@ -162,3 +162,11 @@
 .animate-fade-in {
   animation: fade-in 0.4s ease-out forwards;
 }
+
+/* Keep Leaflet map below dialogs/modals */
+.leaflet-container {
+  z-index: 0 !important;
+}
+.leaflet-pane {
+  z-index: 0 !important;
+}
