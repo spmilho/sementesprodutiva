@@ -1,0 +1,1 @@
+ALTER TABLE public.planting_plan ADD COLUMN IF NOT EXISTS gleba_id uuid REFERENCES public.pivot_glebas(id);

@@ -1797,6 +1797,7 @@ export type Database = {
           cycle_id: string
           deleted_at: string | null
           germination_rate: number
+          gleba_id: string | null
           id: string
           observations: string | null
           org_id: string
@@ -1814,6 +1815,7 @@ export type Database = {
           cycle_id: string
           deleted_at?: string | null
           germination_rate?: number
+          gleba_id?: string | null
           id?: string
           observations?: string | null
           org_id: string
@@ -1831,6 +1833,7 @@ export type Database = {
           cycle_id?: string
           deleted_at?: string | null
           germination_rate?: number
+          gleba_id?: string | null
           id?: string
           observations?: string | null
           org_id?: string
@@ -1849,6 +1852,13 @@ export type Database = {
             columns: ["cycle_id"]
             isOneToOne: false
             referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planting_plan_gleba_id_fkey"
+            columns: ["gleba_id"]
+            isOneToOne: false
+            referencedRelation: "pivot_glebas"
             referencedColumns: ["id"]
           },
           {
