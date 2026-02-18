@@ -3,12 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Plus, Loader2, Trash2, Download, FileSpreadsheet } from "lucide-react";
+import { Plus, Loader2, Trash2, FileSpreadsheet, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from "xlsx";
 import type { YieldEstimateProps, YieldEstimate, SamplePoint, EarSample } from "./types";
 import { calcPointGrossYield, calcNetYield, getPointColor, getReliability } from "./utils";
@@ -23,8 +22,7 @@ export default function YieldEstimateTab({
   femaleArea, pivotId, expectedProductivity, defaultRowSpacing,
 }: YieldEstimateProps) {
   const queryClient = useQueryClient();
-  const [formOpen, setFormOpen] = useState(false);
-  const [selectedEstimateId, setSelectedEstimateId] = useState<string>("");
+  const [expandedEstimateId, setExpandedEstimateId] = useState<string | null>(null);
 
   // Fetch pivot coordinates
   const { data: pivot } = useQuery({
@@ -51,95 +49,6 @@ export default function YieldEstimateTab({
     },
   });
 
-  const activeEstimate = useMemo(() => {
-    if (selectedEstimateId) return estimates.find((e) => e.id === selectedEstimateId);
-    return estimates[estimates.length - 1] || null;
-  }, [estimates, selectedEstimateId]);
-
-  // Fetch sample points for active estimate
-  const { data: points = [] } = useQuery({
-    queryKey: ["yield-sample-points", activeEstimate?.id],
-    queryFn: async () => {
-      if (!activeEstimate) return [];
-      const { data, error } = await (supabase as any)
-        .from("yield_sample_points")
-        .select("*")
-        .eq("yield_estimate_id", activeEstimate.id)
-        .order("point_number");
-      if (error) throw error;
-
-      // Fetch ear samples for each point
-      const pointIds = data.map((p: any) => p.id);
-      if (pointIds.length === 0) return data;
-      const { data: earData } = await (supabase as any)
-        .from("yield_ear_samples")
-        .select("*")
-        .in("sample_point_id", pointIds)
-        .order("ear_number");
-
-      return data.map((p: any) => ({
-        ...p,
-        ear_samples: (earData || []).filter((e: any) => e.sample_point_id === p.id),
-      })) as SamplePoint[];
-    },
-    enabled: !!activeEstimate,
-  });
-
-  // Parameters state from active estimate
-  const moistureRef = activeEstimate?.moisture_reference_pct ?? 13;
-  const tgw = activeEstimate?.default_tgw_g ?? 300;
-  const dehuskingLoss = activeEstimate?.dehusking_loss_pct ?? 3;
-  const classificationLoss = activeEstimate?.classification_loss_pct ?? 10;
-  const otherLoss = activeEstimate?.other_loss_pct ?? 2;
-  const bagWeight = activeEstimate?.bag_weight_kg ?? 20;
-
-  const [localMoistureRef, setLocalMoistureRef] = useState(moistureRef);
-  const [localDehusking, setLocalDehusking] = useState(dehuskingLoss);
-  const [localClassification, setLocalClassification] = useState(classificationLoss);
-  const [localOther, setLocalOther] = useState(otherLoss);
-  const [localBagWeight, setLocalBagWeight] = useState(bagWeight);
-  const [localFinalPms, setLocalFinalPms] = useState("");
-
-  // Sync local state when estimate changes
-  useMemo(() => {
-    if (activeEstimate) {
-      setLocalMoistureRef(activeEstimate.moisture_reference_pct);
-      setLocalDehusking(activeEstimate.dehusking_loss_pct);
-      setLocalClassification(activeEstimate.classification_loss_pct);
-      setLocalOther(activeEstimate.other_loss_pct);
-      setLocalBagWeight(activeEstimate.bag_weight_kg);
-      setLocalFinalPms(activeEstimate.final_pms_g ? String(activeEstimate.final_pms_g) : "");
-    }
-  }, [activeEstimate?.id]);
-
-  // Calculated aggregates
-  const aggregates = useMemo(() => {
-    if (points.length === 0) return null;
-    const avgEarsPerHa = points.reduce((s, p) => s + (p.ears_per_ha || 0), 0) / points.length;
-    const avgKernelsPerEar = points.reduce((s, p) => s + (p.avg_kernels_per_ear || 0), 0) / points.length;
-    const avgMoisture = points.reduce((s, p) => s + (p.sample_moisture_pct || 0), 0) / points.length;
-    const viableEarsPctAvg = points.reduce((s, p) => s + (p.viable_ears_pct || 0), 0) / points.length;
-    const usedTgw = parseFloat(localFinalPms) || tgw;
-
-    const grossYield = calcPointGrossYield(avgEarsPerHa, avgKernelsPerEar, usedTgw, avgMoisture, localMoistureRef);
-    const netYield = calcNetYield(grossYield, localDehusking, localClassification, localOther);
-    const totalLossPct = 100 - (100 * (1 - localDehusking / 100) * (1 - localClassification / 100) * (1 - localOther / 100));
-
-    return {
-      avgEarsPerHa,
-      avgKernelsPerEar,
-      avgMoisture,
-      viableEarsPctAvg,
-      grossYield,
-      netYield,
-      totalLossPct,
-      lostKgHa: grossYield - netYield,
-      totalTons: (netYield * femaleArea) / 1000,
-      totalBags: (netYield * femaleArea) / localBagWeight,
-      usedTgw,
-    };
-  }, [points, localMoistureRef, localDehusking, localClassification, localOther, localBagWeight, localFinalPms, tgw, femaleArea]);
-
   // Create new estimate
   const createEstimateMutation = useMutation({
     mutationFn: async () => {
@@ -155,108 +64,16 @@ export default function YieldEstimateTab({
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["yield-estimates", cycleId] });
-      setSelectedEstimateId(data.id);
+      setExpandedEstimateId(data.id);
       toast.success(`${estimates.length + 1}ª estimativa criada!`);
     },
     onError: (err: any) => toast.error(err.message),
   });
 
-  // Save sample point
-  const handleSavePoint = useCallback(async (pointData: any) => {
-    let estimateId = activeEstimate?.id;
-
-    // Auto-create first estimate if none exists
-    if (!estimateId) {
-      const { data, error } = await (supabase as any).from("yield_estimates").insert({
-        cycle_id: cycleId,
-        org_id: orgId,
-        estimate_number: 1,
-        estimate_date: new Date().toISOString().split("T")[0],
-      }).select().single();
-      if (error) throw error;
-      estimateId = data.id;
-      setSelectedEstimateId(data.id);
-    }
-
-    const usedTgw = pointData._tgw_used || tgw;
-    const grossYield = calcPointGrossYield(
-      pointData.ears_per_ha, pointData.avg_kernels_per_ear, usedTgw, pointData.sample_moisture_pct, localMoistureRef
-    );
-
-    const { ears, _tgw_used, ...pointInsert } = pointData;
-    const { data: point, error: pErr } = await (supabase as any).from("yield_sample_points").insert({
-      ...pointInsert,
-      yield_estimate_id: estimateId,
-      point_gross_yield_kg_ha: Math.round(grossYield * 100) / 100,
-    }).select().single();
-    if (pErr) throw pErr;
-
-    // Insert ear samples
-    if (ears && ears.length > 0) {
-      const earInserts = ears.map((e: EarSample) => ({
-        sample_point_id: point.id,
-        ear_number: e.ear_number,
-        kernel_rows: e.kernel_rows,
-        kernels_per_row: e.kernels_per_row,
-        total_kernels: e.total_kernels,
-        ear_length_cm: e.ear_length_cm || null,
-      }));
-      const { error: eErr } = await (supabase as any).from("yield_ear_samples").insert(earInserts);
-      if (eErr) throw eErr;
-    }
-
-    // Update estimate aggregates
-    await updateEstimateAggregates(estimateId);
-
-    queryClient.invalidateQueries({ queryKey: ["yield-estimates", cycleId] });
-    queryClient.invalidateQueries({ queryKey: ["yield-sample-points", estimateId] });
-    toast.success(`Ponto ${pointData.point_number} salvo!`);
-  }, [activeEstimate, cycleId, orgId, tgw, localMoistureRef, queryClient]);
-
-  const updateEstimateAggregates = async (estimateId: string) => {
-    const { data: pts } = await (supabase as any).from("yield_sample_points").select("*").eq("yield_estimate_id", estimateId);
-    if (!pts || pts.length === 0) return;
-
-    const avgEars = pts.reduce((s: number, p: any) => s + (p.ears_per_ha || 0), 0) / pts.length;
-    const avgKernels = pts.reduce((s: number, p: any) => s + (p.avg_kernels_per_ear || 0), 0) / pts.length;
-    const avgMoist = pts.reduce((s: number, p: any) => s + (p.sample_moisture_pct || 0), 0) / pts.length;
-    const usedTgw = parseFloat(localFinalPms) || tgw;
-    const gross = calcPointGrossYield(avgEars, avgKernels, usedTgw, avgMoist, localMoistureRef);
-    const net = calcNetYield(gross, localDehusking, localClassification, localOther);
-
-    await (supabase as any).from("yield_estimates").update({
-      avg_ears_per_ha: Math.round(avgEars),
-      avg_kernels_per_ear: Math.round(avgKernels * 100) / 100,
-      gross_yield_kg_ha: Math.round(gross * 100) / 100,
-      net_yield_kg_ha: Math.round(net * 100) / 100,
-      total_production_tons: Math.round((net * femaleArea / 1000) * 100) / 100,
-      total_production_bags: Math.round((net * femaleArea / localBagWeight) * 100) / 100,
-      total_sample_points: pts.length,
-    }).eq("id", estimateId);
-  };
-
-  // Delete point
-  const deletePointMutation = useMutation({
-    mutationFn: async (pointId: string) => {
-      const { error } = await (supabase as any).from("yield_sample_points").delete().eq("id", pointId);
-      if (error) throw error;
-      if (activeEstimate) await updateEstimateAggregates(activeEstimate.id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["yield-sample-points", activeEstimate?.id] });
-      queryClient.invalidateQueries({ queryKey: ["yield-estimates", cycleId] });
-      toast.success("Ponto removido!");
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
-
   // Export Excel
-  const exportExcel = () => {
+  const exportExcel = (estimate: YieldEstimate, points: SamplePoint[], aggregates: any) => {
     if (!aggregates || points.length === 0) return;
-
     const wb = XLSX.utils.book_new();
-
-    // Summary sheet
     const summary = [
       ["Estimativa de Produtividade"],
       ["Contrato", contractNumber || pivotName],
@@ -271,40 +88,22 @@ export default function YieldEstimateTab({
       ["Pontos amostrados", points.length],
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summary), "Resumo");
-
-    // Points sheet
     const pointsData = points.map((p) => ({
-      Ponto: p.point_number,
-      Data: p.sample_date,
-      Latitude: p.latitude,
-      Longitude: p.longitude,
-      Posição: p.pivot_position || "",
-      "Espigas/ha": Math.round(p.ears_per_ha || 0),
-      "Grãos/espiga": (p.avg_kernels_per_ear || 0).toFixed(0),
-      "Umidade %": p.sample_moisture_pct,
+      Ponto: p.point_number, Data: p.sample_date, Latitude: p.latitude, Longitude: p.longitude,
+      Posição: p.pivot_position || "", "Espigas/ha": Math.round(p.ears_per_ha || 0),
+      "Grãos/espiga": (p.avg_kernels_per_ear || 0).toFixed(0), "Umidade %": p.sample_moisture_pct,
       "Prod. bruta (kg/ha)": Math.round(p.point_gross_yield_kg_ha || 0),
-      Condição: p.plant_condition || "",
-      Obs: p.notes || "",
+      Condição: p.plant_condition || "", Obs: p.notes || "",
     }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pointsData), "Pontos");
-
-    // Ears sheet
     const earsData: any[] = [];
     points.forEach((p) => {
       (p.ear_samples || []).forEach((e) => {
-        earsData.push({
-          Ponto: p.point_number,
-          Espiga: e.ear_number,
-          Fileiras: e.kernel_rows,
-          "Grãos/fileira": e.kernels_per_row,
-          "Total grãos": e.total_kernels,
-          "Comp. (cm)": e.ear_length_cm || "",
-        });
+        earsData.push({ Ponto: p.point_number, Espiga: e.ear_number, Fileiras: e.kernel_rows, "Grãos/fileira": e.kernels_per_row, "Total grãos": e.total_kernels, "Comp. (cm)": e.ear_length_cm || "" });
       });
     });
     if (earsData.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(earsData), "Espigas");
-
-    XLSX.writeFile(wb, `estimativa_${contractNumber || pivotName}_${new Date().toISOString().split("T")[0]}.xlsx`);
+    XLSX.writeFile(wb, `estimativa_${contractNumber || pivotName}_${estimate.estimate_number}_${new Date().toISOString().split("T")[0]}.xlsx`);
     toast.success("Excel exportado!");
   };
 
@@ -330,176 +129,48 @@ export default function YieldEstimateTab({
         </CardContent>
       </Card>
 
-      {/* Estimate selector + actions */}
-      <div className="flex flex-wrap items-center gap-3">
-        {estimates.length > 0 && (
-          <Select value={activeEstimate?.id || ""} onValueChange={setSelectedEstimateId}>
-            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Estimativa" /></SelectTrigger>
-            <SelectContent>{estimates.map((e) => <SelectItem key={e.id} value={e.id}>{e.estimate_number}ª Estimativa — {e.estimate_date}</SelectItem>)}</SelectContent>
-          </Select>
-        )}
-        <Button variant="outline" onClick={() => createEstimateMutation.mutate()} disabled={createEstimateMutation.isPending}>
+      {/* Add new estimate button */}
+      <div className="flex items-center gap-3">
+        <Button onClick={() => createEstimateMutation.mutate()} disabled={createEstimateMutation.isPending}>
           <Plus className="h-4 w-4 mr-1" />Nova Estimativa
         </Button>
-        {points.length > 0 && (
-          <Button variant="outline" onClick={exportExcel}>
-            <FileSpreadsheet className="h-4 w-4 mr-1" />Exportar Excel
-          </Button>
+        {estimates.length > 0 && (
+          <span className="text-sm text-muted-foreground">{estimates.length} estimativa(s) registrada(s)</span>
         )}
       </div>
 
-      {/* Map */}
-      <YieldEstimateMap
-        points={points}
-        avgNetYield={aggregates?.netYield || 0}
-        pivotLat={pivot?.latitude}
-        pivotLng={pivot?.longitude}
-        pivotName={pivotName}
-        pivotArea={pivot?.area_ha}
-      />
-
-      {/* Add point */}
-      <div className="text-center space-y-2">
-        <Button size="lg" onClick={() => setFormOpen(true)} className="px-8">
-          <Plus className="h-5 w-5 mr-2" />Novo Ponto de Amostragem
-        </Button>
-        <p className="text-xs text-muted-foreground">Registre quantos pontos forem necessários. Recomendação: mínimo 1 ponto a cada 10-15 ha.</p>
-        {points.length > 0 && (
-          <Badge variant="secondary">{points.length} pontos registrados | Área coberta: ~{(femaleArea / Math.max(points.length, 1)).toFixed(0)} ha/ponto</Badge>
-        )}
-      </div>
-
-      <SamplePointForm
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        onSave={handleSavePoint}
-        nextPointNumber={points.length + 1}
-        defaultRowSpacing={defaultRowSpacing || 70}
-        defaultTgw={tgw}
-      />
-
-      {/* Points table */}
-      {points.length > 0 && (
+      {/* Estimates list - each is expandable */}
+      {estimates.length === 0 && (
         <Card>
-          <CardHeader><CardTitle className="text-base">Pontos Amostrados</CardTitle></CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Ponto</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Posição</TableHead>
-                    <TableHead className="text-right">Espigas/ha</TableHead>
-                    <TableHead className="text-right">Grãos/esp.</TableHead>
-                    <TableHead className="text-right">Umid.%</TableHead>
-                    <TableHead className="text-right">Prod. bruta</TableHead>
-                    <TableHead>GPS</TableHead>
-                    <TableHead className="w-10"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {points.map((p) => {
-                    const color = getPointColor(p.point_gross_yield_kg_ha || 0, aggregates?.grossYield || 0);
-                    return (
-                      <TableRow key={p.id} style={{ borderLeft: `4px solid ${color}` }}>
-                        <TableCell className="font-medium">{p.point_number}</TableCell>
-                        <TableCell>{p.sample_date ? format(new Date(p.sample_date + "T12:00:00"), "dd/MM") : "—"}</TableCell>
-                        <TableCell className="text-xs">{
-                          p.pivot_position === "near_center" ? "Torre central" :
-                          p.pivot_position === "mid_radius" ? "Meio raio" :
-                          p.pivot_position === "edge" ? "Borda" : p.pivot_position || "—"
-                        }</TableCell>
-                        <TableCell className="text-right font-mono">{Math.round(p.ears_per_ha || 0).toLocaleString()}</TableCell>
-                        <TableCell className="text-right font-mono">{(p.avg_kernels_per_ear || 0).toFixed(0)}</TableCell>
-                        <TableCell className="text-right">{p.sample_moisture_pct}%</TableCell>
-                        <TableCell className="text-right font-mono font-medium">{Math.round(p.point_gross_yield_kg_ha || 0).toLocaleString()}</TableCell>
-                        <TableCell>{p.latitude ? "✓" : "—"}</TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deletePointMutation.mutate(p.id)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {/* Footer averages */}
-                  {aggregates && (
-                    <TableRow className="bg-muted/50 font-semibold">
-                      <TableCell colSpan={3}>MÉDIAS</TableCell>
-                      <TableCell className="text-right font-mono">{Math.round(aggregates.avgEarsPerHa).toLocaleString()}</TableCell>
-                      <TableCell className="text-right font-mono">{aggregates.avgKernelsPerEar.toFixed(0)}</TableCell>
-                      <TableCell className="text-right">{aggregates.avgMoisture.toFixed(1)}%</TableCell>
-                      <TableCell className="text-right font-mono">{Math.round(aggregates.grossYield).toLocaleString()}</TableCell>
-                      <TableCell colSpan={2}></TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <p>Nenhuma estimativa criada ainda.</p>
+            <p className="text-xs mt-1">Clique em "Nova Estimativa" para iniciar a amostragem de produtividade.</p>
           </CardContent>
         </Card>
       )}
 
-      {/* Calculation */}
-      {aggregates && (
-        <YieldCalculation
-          avgEarsPerHa={aggregates.avgEarsPerHa}
-          avgKernelsPerEar={aggregates.avgKernelsPerEar}
-          avgMoisture={aggregates.avgMoisture}
-          tgw={aggregates.usedTgw}
-          pointCount={points.length}
-          moistureRef={localMoistureRef}
-          dehuskingLoss={localDehusking}
-          classificationLoss={localClassification}
-          otherLoss={localOther}
-          bagWeight={localBagWeight}
-          finalPms={localFinalPms}
+      {estimates.map((estimate) => (
+        <EstimateCard
+          key={estimate.id}
+          estimate={estimate}
+          cycleId={cycleId}
+          orgId={orgId}
+          expanded={expandedEstimateId === estimate.id}
+          onToggle={() => setExpandedEstimateId(expandedEstimateId === estimate.id ? null : estimate.id)}
+          pivot={pivot}
+          pivotName={pivotName}
           femaleArea={femaleArea}
-          onMoistureRefChange={setLocalMoistureRef}
-          onDehuskingChange={setLocalDehusking}
-          onClassificationChange={setLocalClassification}
-          onOtherChange={setLocalOther}
-          onBagWeightChange={setLocalBagWeight}
-          onFinalPmsChange={setLocalFinalPms}
-        />
-      )}
-
-      {/* Dashboard */}
-      {aggregates && (
-        <YieldDashboard
-          netYieldKgHa={aggregates.netYield}
-          grossYieldKgHa={aggregates.grossYield}
-          totalTons={aggregates.totalTons}
-          totalBags={aggregates.totalBags}
-          bagWeight={localBagWeight}
-          femaleArea={femaleArea}
-          avgEarsPerHa={aggregates.avgEarsPerHa}
-          viableEarsPctAvg={aggregates.viableEarsPctAvg}
-          totalLossPct={aggregates.totalLossPct}
-          lostKgHa={aggregates.lostKgHa}
-          pointCount={points.length}
           expectedProductivity={expectedProductivity}
+          defaultRowSpacing={defaultRowSpacing || 70}
+          defaultTgw={estimate.default_tgw_g ?? 300}
+          onExport={exportExcel}
         />
-      )}
+      ))}
 
-      {/* Charts */}
-      {aggregates && (
-        <YieldCharts
-          points={points}
-          avgNetYield={aggregates.netYield}
-          tgw={aggregates.usedTgw}
-          moistureRef={localMoistureRef}
-          dehuskingLoss={localDehusking}
-          classificationLoss={localClassification}
-          otherLoss={localOther}
-        />
-      )}
-
-      {/* History */}
+      {/* History table when multiple estimates */}
       {estimates.length > 1 && (
         <Card>
-          <CardHeader><CardTitle className="text-base">Histórico de Estimativas</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Comparativo de Estimativas</CardTitle></CardHeader>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -515,7 +186,7 @@ export default function YieldEstimateTab({
               </TableHeader>
               <TableBody>
                 {estimates.map((e) => (
-                  <TableRow key={e.id} className={e.id === activeEstimate?.id ? "bg-primary/5" : ""} onClick={() => setSelectedEstimateId(e.id)} style={{ cursor: "pointer" }}>
+                  <TableRow key={e.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setExpandedEstimateId(e.id)}>
                     <TableCell className="font-medium">{e.estimate_number}ª</TableCell>
                     <TableCell>{e.estimate_date}</TableCell>
                     <TableCell className="text-right">{e.total_sample_points}</TableCell>
@@ -531,5 +202,330 @@ export default function YieldEstimateTab({
         </Card>
       )}
     </div>
+  );
+}
+
+/* ─── Individual Estimate Card ─── */
+
+interface EstimateCardProps {
+  estimate: YieldEstimate;
+  cycleId: string;
+  orgId: string;
+  expanded: boolean;
+  onToggle: () => void;
+  pivot: any;
+  pivotName: string;
+  femaleArea: number;
+  expectedProductivity?: number;
+  defaultRowSpacing: number;
+  defaultTgw: number;
+  onExport: (estimate: YieldEstimate, points: SamplePoint[], aggregates: any) => void;
+}
+
+function EstimateCard({
+  estimate, cycleId, orgId, expanded, onToggle, pivot, pivotName,
+  femaleArea, expectedProductivity, defaultRowSpacing, defaultTgw, onExport,
+}: EstimateCardProps) {
+  const queryClient = useQueryClient();
+  const [formOpen, setFormOpen] = useState(false);
+
+  const moistureRef = estimate.moisture_reference_pct ?? 13;
+  const tgw = estimate.default_tgw_g ?? 300;
+  const dehuskingLoss = estimate.dehusking_loss_pct ?? 3;
+  const classificationLoss = estimate.classification_loss_pct ?? 10;
+  const otherLoss = estimate.other_loss_pct ?? 2;
+  const bagWeight = estimate.bag_weight_kg ?? 20;
+
+  const [localMoistureRef, setLocalMoistureRef] = useState(moistureRef);
+  const [localDehusking, setLocalDehusking] = useState(dehuskingLoss);
+  const [localClassification, setLocalClassification] = useState(classificationLoss);
+  const [localOther, setLocalOther] = useState(otherLoss);
+  const [localBagWeight, setLocalBagWeight] = useState(bagWeight);
+  const [localFinalPms, setLocalFinalPms] = useState(estimate.final_pms_g ? String(estimate.final_pms_g) : "");
+
+  // Fetch sample points
+  const { data: points = [] } = useQuery({
+    queryKey: ["yield-sample-points", estimate.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("yield_sample_points")
+        .select("*")
+        .eq("yield_estimate_id", estimate.id)
+        .order("point_number");
+      if (error) throw error;
+      const pointIds = data.map((p: any) => p.id);
+      if (pointIds.length === 0) return data;
+      const { data: earData } = await (supabase as any)
+        .from("yield_ear_samples")
+        .select("*")
+        .in("sample_point_id", pointIds)
+        .order("ear_number");
+      return data.map((p: any) => ({
+        ...p,
+        ear_samples: (earData || []).filter((e: any) => e.sample_point_id === p.id),
+      })) as SamplePoint[];
+    },
+    enabled: expanded,
+  });
+
+  const aggregates = useMemo(() => {
+    if (points.length === 0) return null;
+    const avgEarsPerHa = points.reduce((s, p) => s + (p.ears_per_ha || 0), 0) / points.length;
+    const avgKernelsPerEar = points.reduce((s, p) => s + (p.avg_kernels_per_ear || 0), 0) / points.length;
+    const avgMoisture = points.reduce((s, p) => s + (p.sample_moisture_pct || 0), 0) / points.length;
+    const viableEarsPctAvg = points.reduce((s, p) => s + (p.viable_ears_pct || 0), 0) / points.length;
+    const usedTgw = parseFloat(localFinalPms) || tgw;
+    const grossYield = calcPointGrossYield(avgEarsPerHa, avgKernelsPerEar, usedTgw, avgMoisture, localMoistureRef);
+    const netYield = calcNetYield(grossYield, localDehusking, localClassification, localOther);
+    const totalLossPct = 100 - (100 * (1 - localDehusking / 100) * (1 - localClassification / 100) * (1 - localOther / 100));
+    return {
+      avgEarsPerHa, avgKernelsPerEar, avgMoisture, viableEarsPctAvg,
+      grossYield, netYield, totalLossPct,
+      lostKgHa: grossYield - netYield,
+      totalTons: (netYield * femaleArea) / 1000,
+      totalBags: (netYield * femaleArea) / localBagWeight,
+      usedTgw,
+    };
+  }, [points, localMoistureRef, localDehusking, localClassification, localOther, localBagWeight, localFinalPms, tgw, femaleArea]);
+
+  const updateEstimateAggregates = async (estimateId: string) => {
+    const { data: pts } = await (supabase as any).from("yield_sample_points").select("*").eq("yield_estimate_id", estimateId);
+    if (!pts || pts.length === 0) return;
+    const avgEars = pts.reduce((s: number, p: any) => s + (p.ears_per_ha || 0), 0) / pts.length;
+    const avgKernels = pts.reduce((s: number, p: any) => s + (p.avg_kernels_per_ear || 0), 0) / pts.length;
+    const avgMoist = pts.reduce((s: number, p: any) => s + (p.sample_moisture_pct || 0), 0) / pts.length;
+    const usedTgw = parseFloat(localFinalPms) || tgw;
+    const gross = calcPointGrossYield(avgEars, avgKernels, usedTgw, avgMoist, localMoistureRef);
+    const net = calcNetYield(gross, localDehusking, localClassification, localOther);
+    await (supabase as any).from("yield_estimates").update({
+      avg_ears_per_ha: Math.round(avgEars),
+      avg_kernels_per_ear: Math.round(avgKernels * 100) / 100,
+      gross_yield_kg_ha: Math.round(gross * 100) / 100,
+      net_yield_kg_ha: Math.round(net * 100) / 100,
+      total_production_tons: Math.round((net * femaleArea / 1000) * 100) / 100,
+      total_production_bags: Math.round((net * femaleArea / localBagWeight) * 100) / 100,
+      total_sample_points: pts.length,
+    }).eq("id", estimateId);
+  };
+
+  const handleSavePoint = useCallback(async (pointData: any) => {
+    const usedTgw = pointData._tgw_used || tgw;
+    const grossYield = calcPointGrossYield(
+      pointData.ears_per_ha, pointData.avg_kernels_per_ear, usedTgw, pointData.sample_moisture_pct, localMoistureRef
+    );
+    const { ears, _tgw_used, ...pointInsert } = pointData;
+    const { data: point, error: pErr } = await (supabase as any).from("yield_sample_points").insert({
+      ...pointInsert,
+      yield_estimate_id: estimate.id,
+      point_gross_yield_kg_ha: Math.round(grossYield * 100) / 100,
+    }).select().single();
+    if (pErr) throw pErr;
+    if (ears && ears.length > 0) {
+      const earInserts = ears.map((e: EarSample) => ({
+        sample_point_id: point.id, ear_number: e.ear_number, kernel_rows: e.kernel_rows,
+        kernels_per_row: e.kernels_per_row, total_kernels: e.total_kernels, ear_length_cm: e.ear_length_cm || null,
+      }));
+      const { error: eErr } = await (supabase as any).from("yield_ear_samples").insert(earInserts);
+      if (eErr) throw eErr;
+    }
+    await updateEstimateAggregates(estimate.id);
+    queryClient.invalidateQueries({ queryKey: ["yield-estimates", cycleId] });
+    queryClient.invalidateQueries({ queryKey: ["yield-sample-points", estimate.id] });
+    toast.success(`Ponto ${pointData.point_number} salvo!`);
+  }, [estimate.id, cycleId, tgw, localMoistureRef, queryClient]);
+
+  const deletePointMutation = useMutation({
+    mutationFn: async (pointId: string) => {
+      const { error } = await (supabase as any).from("yield_sample_points").delete().eq("id", pointId);
+      if (error) throw error;
+      await updateEstimateAggregates(estimate.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["yield-sample-points", estimate.id] });
+      queryClient.invalidateQueries({ queryKey: ["yield-estimates", cycleId] });
+      toast.success("Ponto removido!");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  return (
+    <Card>
+      {/* Collapsed header */}
+      <CardHeader
+        className="cursor-pointer hover:bg-muted/30 transition-colors"
+        onClick={onToggle}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-base">{estimate.estimate_number}ª Estimativa</CardTitle>
+            <Badge variant="outline" className="text-xs">{estimate.estimate_date}</Badge>
+            <Badge variant="secondary" className="text-xs">{estimate.total_sample_points || 0} pontos</Badge>
+            {(estimate.net_yield_kg_ha ?? 0) > 0 && (
+              <Badge className="bg-green-100 text-green-700 text-xs">{Math.round(estimate.net_yield_kg_ha || 0).toLocaleString()} kg/ha</Badge>
+            )}
+          </div>
+          {expanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
+        </div>
+      </CardHeader>
+
+      {/* Expanded content */}
+      {expanded && (
+        <CardContent className="space-y-6 pt-0">
+          {/* Map */}
+          <YieldEstimateMap
+            points={points}
+            avgNetYield={aggregates?.netYield || 0}
+            pivotLat={pivot?.latitude}
+            pivotLng={pivot?.longitude}
+            pivotName={pivotName}
+            pivotArea={pivot?.area_ha}
+          />
+
+          {/* Add point */}
+          <div className="text-center space-y-2">
+            <Button size="lg" onClick={() => setFormOpen(true)} className="px-8">
+              <Plus className="h-5 w-5 mr-2" />Novo Ponto de Amostragem
+            </Button>
+            <p className="text-xs text-muted-foreground">Recomendação: mínimo 1 ponto a cada 10-15 ha.</p>
+            {points.length > 0 && (
+              <Badge variant="secondary">{points.length} pontos | ~{(femaleArea / Math.max(points.length, 1)).toFixed(0)} ha/ponto</Badge>
+            )}
+          </div>
+
+          <SamplePointForm
+            open={formOpen}
+            onOpenChange={setFormOpen}
+            onSave={handleSavePoint}
+            nextPointNumber={points.length + 1}
+            defaultRowSpacing={defaultRowSpacing}
+            defaultTgw={defaultTgw}
+          />
+
+          {/* Points table */}
+          {points.length > 0 && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-base">Pontos Amostrados</CardTitle>
+                {aggregates && (
+                  <Button variant="outline" size="sm" onClick={() => onExport(estimate, points, aggregates)}>
+                    <FileSpreadsheet className="h-4 w-4 mr-1" />Excel
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ponto</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Posição</TableHead>
+                        <TableHead className="text-right">Espigas/ha</TableHead>
+                        <TableHead className="text-right">Grãos/esp.</TableHead>
+                        <TableHead className="text-right">Umid.%</TableHead>
+                        <TableHead className="text-right">Prod. bruta</TableHead>
+                        <TableHead>GPS</TableHead>
+                        <TableHead className="w-10"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {points.map((p) => {
+                        const color = getPointColor(p.point_gross_yield_kg_ha || 0, aggregates?.grossYield || 0);
+                        return (
+                          <TableRow key={p.id} style={{ borderLeft: `4px solid ${color}` }}>
+                            <TableCell className="font-medium">{p.point_number}</TableCell>
+                            <TableCell>{p.sample_date ? format(new Date(p.sample_date + "T12:00:00"), "dd/MM") : "—"}</TableCell>
+                            <TableCell className="text-xs">{
+                              p.pivot_position === "near_center" ? "Torre central" :
+                              p.pivot_position === "mid_radius" ? "Meio raio" :
+                              p.pivot_position === "edge" ? "Borda" : p.pivot_position || "—"
+                            }</TableCell>
+                            <TableCell className="text-right font-mono">{Math.round(p.ears_per_ha || 0).toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-mono">{(p.avg_kernels_per_ear || 0).toFixed(0)}</TableCell>
+                            <TableCell className="text-right">{p.sample_moisture_pct}%</TableCell>
+                            <TableCell className="text-right font-mono font-medium">{Math.round(p.point_gross_yield_kg_ha || 0).toLocaleString()}</TableCell>
+                            <TableCell>{p.latitude ? "✓" : "—"}</TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deletePointMutation.mutate(p.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {aggregates && (
+                        <TableRow className="bg-muted/50 font-semibold">
+                          <TableCell colSpan={3}>MÉDIAS</TableCell>
+                          <TableCell className="text-right font-mono">{Math.round(aggregates.avgEarsPerHa).toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-mono">{aggregates.avgKernelsPerEar.toFixed(0)}</TableCell>
+                          <TableCell className="text-right">{aggregates.avgMoisture.toFixed(1)}%</TableCell>
+                          <TableCell className="text-right font-mono">{Math.round(aggregates.grossYield).toLocaleString()}</TableCell>
+                          <TableCell colSpan={2}></TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Calculation */}
+          {aggregates && (
+            <YieldCalculation
+              avgEarsPerHa={aggregates.avgEarsPerHa}
+              avgKernelsPerEar={aggregates.avgKernelsPerEar}
+              avgMoisture={aggregates.avgMoisture}
+              tgw={aggregates.usedTgw}
+              pointCount={points.length}
+              moistureRef={localMoistureRef}
+              dehuskingLoss={localDehusking}
+              classificationLoss={localClassification}
+              otherLoss={localOther}
+              bagWeight={localBagWeight}
+              finalPms={localFinalPms}
+              femaleArea={femaleArea}
+              onMoistureRefChange={setLocalMoistureRef}
+              onDehuskingChange={setLocalDehusking}
+              onClassificationChange={setLocalClassification}
+              onOtherChange={setLocalOther}
+              onBagWeightChange={setLocalBagWeight}
+              onFinalPmsChange={setLocalFinalPms}
+            />
+          )}
+
+          {/* Dashboard */}
+          {aggregates && (
+            <YieldDashboard
+              netYieldKgHa={aggregates.netYield}
+              grossYieldKgHa={aggregates.grossYield}
+              totalTons={aggregates.totalTons}
+              totalBags={aggregates.totalBags}
+              bagWeight={localBagWeight}
+              femaleArea={femaleArea}
+              avgEarsPerHa={aggregates.avgEarsPerHa}
+              viableEarsPctAvg={aggregates.viableEarsPctAvg}
+              totalLossPct={aggregates.totalLossPct}
+              lostKgHa={aggregates.lostKgHa}
+              pointCount={points.length}
+              expectedProductivity={expectedProductivity}
+            />
+          )}
+
+          {/* Charts */}
+          {aggregates && (
+            <YieldCharts
+              points={points}
+              avgNetYield={aggregates.netYield}
+              tgw={aggregates.usedTgw}
+              moistureRef={localMoistureRef}
+              dehuskingLoss={localDehusking}
+              classificationLoss={localClassification}
+              otherLoss={localOther}
+            />
+          )}
+        </CardContent>
+      )}
+    </Card>
   );
 }
