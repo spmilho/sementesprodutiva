@@ -1,4 +1,15 @@
-import { MoistureSample, GlebaStatus, PivotGleba } from "./types";
+import { MoistureSample, GlebaStatus, PivotGleba, GROWTH_STAGE_LABELS } from "./types";
+
+export function getPredominantStage(samples: MoistureSample[]): string | null {
+  const counts = new Map<string, number>();
+  samples.forEach((s) => {
+    if (s.growth_stage) counts.set(s.growth_stage, (counts.get(s.growth_stage) || 0) + 1);
+  });
+  if (counts.size === 0) return null;
+  let max = 0, best = "";
+  counts.forEach((c, k) => { if (c > max) { max = c; best = k; } });
+  return best;
+}
 
 export function getMoistureColor(pct: number, target: number): string {
   if (pct <= target) return "green";
@@ -38,6 +49,7 @@ export function calcGlebaStatus(
       status: "no_data",
       dryingRate: null,
       daysEstimated: null,
+      predominantStage: null,
     };
   }
 
@@ -83,7 +95,7 @@ export function calcGlebaStatus(
   else if (pctBelow >= 50) status = "almost";
   else status = "not_ready";
 
-  return { gleba, samples, avg, min, max, count: samples.length, lastDate, pctBelowTarget: pctBelow, status, dryingRate, daysEstimated };
+  return { gleba, samples, avg, min, max, count: samples.length, lastDate, pctBelowTarget: pctBelow, status, dryingRate, daysEstimated, predominantStage: getPredominantStage(samples) };
 }
 
 export function daysSince(dateStr: string | null): number | null {

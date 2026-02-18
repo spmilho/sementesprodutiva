@@ -1,0 +1,1 @@
+ALTER TABLE public.moisture_samples ADD COLUMN IF NOT EXISTS growth_stage text;

@@ -1019,6 +1019,7 @@ export type Database = {
           field_position: string | null
           gleba_id: string | null
           grain_temperature_c: number | null
+          growth_stage: string | null
           id: string
           latitude: number
           longitude: number
@@ -1039,6 +1040,7 @@ export type Database = {
           field_position?: string | null
           gleba_id?: string | null
           grain_temperature_c?: number | null
+          growth_stage?: string | null
           id?: string
           latitude: number
           longitude: number
@@ -1059,6 +1061,7 @@ export type Database = {
           field_position?: string | null
           gleba_id?: string | null
           grain_temperature_c?: number | null
+          growth_stage?: string | null
           id?: string
           latitude?: number
           longitude?: number

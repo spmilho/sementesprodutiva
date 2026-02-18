@@ -8,6 +8,7 @@ export interface MoistureSample {
   sample_time: string;
   moisture_pct: number;
   method: string;
+  growth_stage: string | null;
   grain_temperature_c: number | null;
   field_position: string | null;
   latitude: number;
@@ -45,7 +46,7 @@ export interface MoistureTabProps {
 }
 
 export interface GlebaStatus {
-  gleba: PivotGleba | null; // null = "general" / no glebas
+  gleba: PivotGleba | null;
   samples: MoistureSample[];
   avg: number;
   min: number;
@@ -56,6 +57,7 @@ export interface GlebaStatus {
   status: "ready" | "almost" | "not_ready" | "no_data";
   dryingRate: number | null;
   daysEstimated: number | null;
+  predominantStage: string | null;
 }
 
 export const METHOD_LABELS: Record<string, string> = {
@@ -71,6 +73,15 @@ export const POSITION_LABELS: Record<string, string> = {
   near_tower: "Próximo à torre",
   pivot_tip: "Ponta do pivô",
   other: "Outro",
+};
+
+export const GROWTH_STAGE_LABELS: Record<string, string> = {
+  R3: "R3 — Grão leitoso",
+  R4: "R4 — Grão pastoso",
+  R5: "R5 — Formação de dente",
+  "R5.5": "R5.5 — Dente completo (½ linha do leite)",
+  R6: "R6 — Maturidade fisiológica (camada negra)",
+  post_maturity: "Pós-maturidade (secagem em campo)",
 };
 
 export const GLEBA_COLORS = [
