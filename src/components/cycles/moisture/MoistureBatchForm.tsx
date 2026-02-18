@@ -9,11 +9,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, MapPin, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { PivotGleba, METHOD_LABELS, POSITION_LABELS } from "./types";
+import { PivotGleba, METHOD_LABELS, POSITION_LABELS, GROWTH_STAGE_LABELS } from "./types";
 import { toast } from "sonner";
 
 interface BatchRow {
   time: string;
+  glebaId: string;
+  growthStage: string;
   moisture: string;
   method: string;
   lat: string;
@@ -31,8 +33,10 @@ interface Props {
   saving: boolean;
 }
 
-const emptyRow = (): BatchRow => ({
+const emptyRow = (defaultGleba: string): BatchRow => ({
   time: format(new Date(), "HH:mm"),
+  glebaId: defaultGleba,
+  growthStage: "",
   moisture: "",
   method: "portable_digital",
   lat: "",
@@ -42,12 +46,17 @@ const emptyRow = (): BatchRow => ({
 });
 
 export default function MoistureBatchForm({ open, onOpenChange, glebas, nextPointNumber, onSaveBatch, saving }: Props) {
-  const [glebaId, setGlebaId] = useState("");
+  const [defaultGleba, setDefaultGleba] = useState("");
   const [date, setDate] = useState<Date>(new Date());
-  const [rows, setRows] = useState<BatchRow[]>([emptyRow(), emptyRow(), emptyRow()]);
+  const [rows, setRows] = useState<BatchRow[]>([emptyRow(""), emptyRow(""), emptyRow("")]);
 
   const updateRow = (idx: number, field: keyof BatchRow, val: string) => {
     setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, [field]: val } : r)));
+  };
+
+  const handleDefaultGlebaChange = (val: string) => {
+    setDefaultGleba(val);
+    setRows((prev) => prev.map((r) => ({ ...r, glebaId: r.glebaId || val })));
   };
 
   const captureGPS = (idx: number) => {
@@ -69,18 +78,24 @@ export default function MoistureBatchForm({ open, onOpenChange, glebas, nextPoin
   };
 
   const handleSave = () => {
-    if (glebas.length > 0 && !glebaId) { toast.error("Selecione a gleba"); return; }
     if (!date) { toast.error("Data obrigatória"); return; }
 
     const valid = rows.filter((r) => r.moisture && r.lat && r.lng);
     if (valid.length === 0) { toast.error("Preencha ao menos 1 ponto com umidade e GPS"); return; }
 
+    const missingGleba = glebas.length > 0 && valid.some((r) => !r.glebaId);
+    if (missingGleba) { toast.error("Selecione a gleba para todos os pontos"); return; }
+
+    const missingStage = valid.some((r) => !r.growthStage);
+    if (missingStage) { toast.error("Selecione o estádio para todos os pontos"); return; }
+
     const data = valid.map((r, i) => ({
-      gleba_id: glebaId === "__none__" ? null : glebaId || null,
+      gleba_id: r.glebaId === "__none__" ? null : r.glebaId || null,
       point_identifier: `P${nextPointNumber + i}`,
       sample_date: format(date, "yyyy-MM-dd"),
       sample_time: r.time || "00:00",
       moisture_pct: parseFloat(r.moisture),
+      growth_stage: r.growthStage,
       method: r.method,
       field_position: r.position || null,
       latitude: parseFloat(r.lat),
@@ -93,7 +108,7 @@ export default function MoistureBatchForm({ open, onOpenChange, glebas, nextPoin
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Registrar Vários Pontos (Lote)</DialogTitle>
         </DialogHeader>
@@ -102,8 +117,8 @@ export default function MoistureBatchForm({ open, onOpenChange, glebas, nextPoin
           <div className="grid grid-cols-2 gap-3">
             {glebas.length > 0 && (
               <div className="space-y-1">
-                <Label>Gleba *</Label>
-                <Select value={glebaId} onValueChange={setGlebaId}>
+                <Label>Gleba padrão (pré-preenche linhas)</Label>
+                <Select value={defaultGleba} onValueChange={handleDefaultGlebaChange}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {glebas.map((g) => (
@@ -136,6 +151,8 @@ export default function MoistureBatchForm({ open, onOpenChange, glebas, nextPoin
                 <tr className="text-xs text-muted-foreground border-b">
                   <th className="p-1 text-left">#</th>
                   <th className="p-1 text-left">Hora</th>
+                  {glebas.length > 0 && <th className="p-1 text-left">Gleba</th>}
+                  <th className="p-1 text-left">Estádio</th>
                   <th className="p-1 text-left">Umidade %</th>
                   <th className="p-1 text-left">Método</th>
                   <th className="p-1 text-left">GPS</th>
@@ -148,6 +165,25 @@ export default function MoistureBatchForm({ open, onOpenChange, glebas, nextPoin
                   <tr key={i} className="border-b">
                     <td className="p-1 text-muted-foreground">{i + 1}</td>
                     <td className="p-1"><Input type="time" value={r.time} onChange={(e) => updateRow(i, "time", e.target.value)} className="h-8 w-24" /></td>
+                    {glebas.length > 0 && (
+                      <td className="p-1">
+                        <Select value={r.glebaId} onValueChange={(v) => updateRow(i, "glebaId", v)}>
+                          <SelectTrigger className="h-8 w-32"><SelectValue placeholder="—" /></SelectTrigger>
+                          <SelectContent>
+                            {glebas.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                            <SelectItem value="__none__">Geral</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                    )}
+                    <td className="p-1">
+                      <Select value={r.growthStage} onValueChange={(v) => updateRow(i, "growthStage", v)}>
+                        <SelectTrigger className="h-8 w-28"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(GROWTH_STAGE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </td>
                     <td className="p-1"><Input type="number" step="0.1" value={r.moisture} onChange={(e) => updateRow(i, "moisture", e.target.value)} className="h-8 w-20" placeholder="18.5" /></td>
                     <td className="p-1">
                       <Select value={r.method} onValueChange={(v) => updateRow(i, "method", v)}>
@@ -186,7 +222,7 @@ export default function MoistureBatchForm({ open, onOpenChange, glebas, nextPoin
             </table>
           </div>
 
-          <Button variant="outline" size="sm" onClick={() => setRows((prev) => [...prev, emptyRow()])}>
+          <Button variant="outline" size="sm" onClick={() => setRows((prev) => [...prev, emptyRow(defaultGleba)])}>
             <Plus className="h-3 w-3 mr-1" /> Adicionar ponto
           </Button>
 

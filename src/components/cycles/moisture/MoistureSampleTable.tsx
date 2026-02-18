@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
-import { MoistureSample, PivotGleba, METHOD_LABELS, POSITION_LABELS, GLEBA_COLORS } from "./types";
-import { getMoistureBgClass, getStatusBadge, calcGlebaStatus } from "./utils";
+import { MoistureSample, PivotGleba, METHOD_LABELS, POSITION_LABELS, GLEBA_COLORS, GROWTH_STAGE_LABELS } from "./types";
+import { getMoistureBgClass, getStatusBadge, calcGlebaStatus, getPredominantStage } from "./utils";
 
 interface Props {
   samples: MoistureSample[];
@@ -19,6 +19,7 @@ interface Props {
 export default function MoistureSampleTable({ samples, glebas, target, onDelete }: Props) {
   const [glebaFilter, setGlebaFilter] = useState("__all__");
   const [moistureFilter, setMoistureFilter] = useState("__all__");
+  const [stageFilter, setStageFilter] = useState("__all__");
   const [grouped, setGrouped] = useState(false);
 
   const filtered = useMemo(() => {
@@ -26,11 +27,14 @@ export default function MoistureSampleTable({ samples, glebas, target, onDelete 
     if (glebaFilter !== "__all__") {
       s = s.filter((x) => (glebaFilter === "__none__" ? !x.gleba_id : x.gleba_id === glebaFilter));
     }
+    if (stageFilter !== "__all__") {
+      s = s.filter((x) => x.growth_stage === stageFilter);
+    }
     if (moistureFilter === "below") s = s.filter((x) => Number(x.moisture_pct) <= target);
     else if (moistureFilter === "above") s = s.filter((x) => Number(x.moisture_pct) > target);
     else if (moistureFilter === "high") s = s.filter((x) => Number(x.moisture_pct) > target + 7);
     return s.sort((a, b) => `${b.sample_date}${b.sample_time}`.localeCompare(`${a.sample_date}${a.sample_time}`));
-  }, [samples, glebaFilter, moistureFilter, target]);
+  }, [samples, glebaFilter, moistureFilter, stageFilter, target]);
 
   const glebaColorMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -50,7 +54,6 @@ export default function MoistureSampleTable({ samples, glebas, target, onDelete 
   const overallMax = overallVals.length ? Math.max(...overallVals) : 0;
   const overallBelow = overallVals.filter((v) => v <= target).length;
 
-  // Group by gleba
   const groups = useMemo(() => {
     if (!grouped) return null;
     const map = new Map<string, MoistureSample[]>();
@@ -64,6 +67,8 @@ export default function MoistureSampleTable({ samples, glebas, target, onDelete 
       return { key, gleba, samples: samps, status: calcGlebaStatus(gleba, samps, target) };
     });
   }, [grouped, filtered, glebas, target]);
+
+  const colCount = 9 + (glebas.length > 0 ? 1 : 0);
 
   const renderRow = (s: MoistureSample) => (
     <tr key={s.id} className="border-b text-xs">
@@ -79,13 +84,16 @@ export default function MoistureSampleTable({ samples, glebas, target, onDelete 
       )}
       <td className="p-2">{s.point_identifier ?? "—"}</td>
       <td className="p-2">
+        {s.growth_stage ? (
+          <Badge variant="secondary" className="text-xs">{s.growth_stage}</Badge>
+        ) : "—"}
+      </td>
+      <td className="p-2">
         <span className={`px-2 py-0.5 rounded text-xs font-medium ${getMoistureBgClass(Number(s.moisture_pct), target)}`}>
           {Number(s.moisture_pct).toFixed(1)}%
         </span>
       </td>
       <td className="p-2">{METHOD_LABELS[s.method] ?? s.method}</td>
-      <td className="p-2">{s.field_position ? POSITION_LABELS[s.field_position] ?? s.field_position : "—"}</td>
-      <td className="p-2">{s.grain_temperature_c ? `${s.grain_temperature_c}°C` : "—"}</td>
       <td className="p-2">{s.latitude ? "✓" : "—"}</td>
       <td className="p-2">
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDelete(s.id)}>
@@ -111,6 +119,15 @@ export default function MoistureSampleTable({ samples, glebas, target, onDelete 
                 </SelectContent>
               </Select>
             )}
+            <Select value={stageFilter} onValueChange={setStageFilter}>
+              <SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todos estádios</SelectItem>
+                {Object.entries(GROWTH_STAGE_LABELS).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{k}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={moistureFilter} onValueChange={setMoistureFilter}>
               <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -137,10 +154,9 @@ export default function MoistureSampleTable({ samples, glebas, target, onDelete 
                 <th className="p-2 text-left">Data/Hora</th>
                 {glebas.length > 0 && <th className="p-2 text-left">Gleba</th>}
                 <th className="p-2 text-left">Ponto</th>
+                <th className="p-2 text-left">Estádio</th>
                 <th className="p-2 text-left">Umidade %</th>
                 <th className="p-2 text-left">Método</th>
-                <th className="p-2 text-left">Posição</th>
-                <th className="p-2 text-left">Temp °C</th>
                 <th className="p-2 text-left">GPS</th>
                 <th className="p-2 text-left">Ações</th>
               </tr>
@@ -149,14 +165,16 @@ export default function MoistureSampleTable({ samples, glebas, target, onDelete 
               {grouped && groups
                 ? groups.map((g) => {
                     const badge = getStatusBadge(g.status.status);
+                    const stage = g.status.predominantStage;
                     return (
                       <tr key={g.key}>
-                        <td colSpan={glebas.length > 0 ? 9 : 8} className="p-0">
-                          <div className="bg-muted/50 px-3 py-1.5 text-xs font-semibold border-b flex items-center gap-2">
+                        <td colSpan={colCount} className="p-0">
+                          <div className="bg-muted/50 px-3 py-1.5 text-xs font-semibold border-b flex items-center gap-2 flex-wrap">
                             <span>{g.gleba ? `GLEBA ${g.gleba.name}` : "ÁREA GERAL"}</span>
                             {g.gleba?.area_ha && <span className="text-muted-foreground">({g.gleba.area_ha} ha)</span>}
                             <span>— Média: {g.status.avg.toFixed(1)}%</span>
                             <span>| {g.status.count} amostras</span>
+                            {stage && <Badge variant="secondary" className="text-xs">{stage}</Badge>}
                             <Badge className={`text-xs ${badge.className}`}>{badge.emoji} {badge.label}</Badge>
                           </div>
                           <table className="w-full">

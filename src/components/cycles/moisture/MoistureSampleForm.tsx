@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { PivotGleba, METHOD_LABELS, POSITION_LABELS } from "./types";
+import { PivotGleba, METHOD_LABELS, POSITION_LABELS, GROWTH_STAGE_LABELS } from "./types";
 import { getMoistureStatusLabel } from "./utils";
 import { toast } from "sonner";
 
@@ -30,6 +30,7 @@ export default function MoistureSampleForm({ open, onOpenChange, glebas, target,
   const [date, setDate] = useState<Date>(new Date());
   const [time, setTime] = useState(format(new Date(), "HH:mm"));
   const [moisture, setMoisture] = useState("");
+  const [growthStage, setGrowthStage] = useState("");
   const [method, setMethod] = useState("portable_digital");
   const [temperature, setTemperature] = useState("");
   const [position, setPosition] = useState("");
@@ -53,7 +54,7 @@ export default function MoistureSampleForm({ open, onOpenChange, glebas, target,
         setCapturing(false);
         setGpsManual(false);
       },
-      (err) => {
+      () => {
         toast.error("Não foi possível capturar GPS. Digite manualmente.");
         setGpsManual(true);
         setCapturing(false);
@@ -71,6 +72,7 @@ export default function MoistureSampleForm({ open, onOpenChange, glebas, target,
     if (!moisture || isNaN(moistureVal)) { toast.error("Umidade obrigatória"); return; }
     if (!lat || !lng) { toast.error("GPS é obrigatório para amostras de umidade"); return; }
     if (glebas.length > 0 && !glebaId) { toast.error("Selecione a gleba"); return; }
+    if (!growthStage) { toast.error("Estádio fenológico é obrigatório"); return; }
 
     onSave({
       gleba_id: glebaId === "__none__" ? null : glebaId || null,
@@ -78,6 +80,7 @@ export default function MoistureSampleForm({ open, onOpenChange, glebas, target,
       sample_date: format(date, "yyyy-MM-dd"),
       sample_time: time,
       moisture_pct: moistureVal,
+      growth_stage: growthStage,
       method,
       grain_temperature_c: temperature ? parseFloat(temperature) : null,
       field_position: position || null,
@@ -93,6 +96,7 @@ export default function MoistureSampleForm({ open, onOpenChange, glebas, target,
     setDate(new Date());
     setTime(format(new Date(), "HH:mm"));
     setMoisture("");
+    setGrowthStage("");
     setMethod("portable_digital");
     setTemperature("");
     setPosition("");
@@ -110,31 +114,9 @@ export default function MoistureSampleForm({ open, onOpenChange, glebas, target,
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Location */}
+          {/* GPS */}
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-muted-foreground">Localização</h4>
-
-            {glebas.length > 0 && (
-              <div className="space-y-1">
-                <Label>Gleba *</Label>
-                <Select value={glebaId} onValueChange={setGlebaId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione a gleba" /></SelectTrigger>
-                  <SelectContent>
-                    {glebas.map((g) => (
-                      <SelectItem key={g.id} value={g.id}>
-                        {g.name} — {g.area_ha ?? "?"} ha — {g.parent_type === "female" ? "Fêmea" : "Macho"}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="__none__">Área geral (sem gleba específica)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <Label>Identificação do ponto</Label>
-              <Input value={pointId} onChange={(e) => setPointId(e.target.value)} placeholder="P1" />
-            </div>
 
             <div className="flex items-end gap-2">
               <Button type="button" variant="outline" onClick={captureGPS} disabled={capturing} className="shrink-0">
@@ -156,6 +138,29 @@ export default function MoistureSampleForm({ open, onOpenChange, glebas, target,
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Gleba + Point ID */}
+          {glebas.length > 0 && (
+            <div className="space-y-1">
+              <Label>Gleba *</Label>
+              <Select value={glebaId} onValueChange={setGlebaId}>
+                <SelectTrigger><SelectValue placeholder="Selecione a gleba" /></SelectTrigger>
+                <SelectContent>
+                  {glebas.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.name} — {g.area_ha ?? "?"} ha — {g.parent_type === "female" ? "Fêmea" : "Macho"}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="__none__">Área geral (sem gleba específica)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <Label>Identificação do ponto</Label>
+            <Input value={pointId} onChange={(e) => setPointId(e.target.value)} placeholder="P1" />
           </div>
 
           {/* Measurement */}
@@ -191,6 +196,18 @@ export default function MoistureSampleForm({ open, onOpenChange, glebas, target,
                   {moistureStatus.emoji} {moistureStatus.label}
                 </p>
               )}
+            </div>
+
+            <div className="space-y-1">
+              <Label>Estádio Fenológico *</Label>
+              <Select value={growthStage} onValueChange={setGrowthStage}>
+                <SelectTrigger><SelectValue placeholder="Selecione o estádio" /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(GROWTH_STAGE_LABELS).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-2">

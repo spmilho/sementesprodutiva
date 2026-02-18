@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { GlebaStatus } from "./types";
+import { GlebaStatus, GROWTH_STAGE_LABELS } from "./types";
 import { daysSince, getStatusBadge, getStatusBorderClass } from "./utils";
 
 interface Props {
@@ -110,6 +110,9 @@ export default function MoistureDashboard({ allSamples, glebaStatuses, target, h
                       <>
                         <p className="text-xs">Média: <span className="font-medium">{gs.avg.toFixed(1)}%</span></p>
                         <p className="text-xs">Amostras: {gs.count}</p>
+                        {gs.predominantStage && (
+                          <p className="text-xs">Estádio: <span className="font-medium">{gs.predominantStage}</span></p>
+                        )}
                         <p className="text-xs">
                           Última: {gs.lastDate ? new Date(gs.lastDate + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
                         </p>

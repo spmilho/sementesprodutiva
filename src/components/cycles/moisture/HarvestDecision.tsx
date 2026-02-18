@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { GlebaStatus } from "./types";
+import { GlebaStatus, GROWTH_STAGE_LABELS } from "./types";
 import { getStatusBadge, getRecommendation, daysSince } from "./utils";
 
 interface Props {
@@ -39,6 +39,7 @@ export default function HarvestDecision({ glebaStatuses, target, femaleArea }: P
                 <th className="p-2 text-left">Gleba</th>
                 <th className="p-2 text-left">Área</th>
                 <th className="p-2 text-left">Amostras</th>
+                <th className="p-2 text-left">Estádio</th>
                 <th className="p-2 text-left">Última</th>
                 <th className="p-2 text-left">Média %</th>
                 <th className="p-2 text-left">Min %</th>
@@ -57,6 +58,7 @@ export default function HarvestDecision({ glebaStatuses, target, femaleArea }: P
                     <td className="p-2 font-medium">{gs.gleba?.name ?? "Geral"}</td>
                     <td className="p-2">{gs.gleba?.area_ha ?? femaleArea} ha</td>
                     <td className="p-2">{gs.count}</td>
+                    <td className="p-2">{gs.predominantStage ? <Badge variant="secondary" className="text-xs">{gs.predominantStage}</Badge> : "—"}</td>
                     <td className="p-2">
                       {gs.lastDate ? new Date(gs.lastDate + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
                       {daysSince(gs.lastDate) !== null && (daysSince(gs.lastDate) ?? 0) > 3 && (

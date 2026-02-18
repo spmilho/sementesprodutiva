@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MoistureSample, PivotGleba, METHOD_LABELS, POSITION_LABELS } from "./types";
+import { MoistureSample, PivotGleba, METHOD_LABELS, POSITION_LABELS, GROWTH_STAGE_LABELS } from "./types";
 import { getMoistureColor } from "./utils";
 
 interface Props {
@@ -102,8 +102,9 @@ export default function MoistureMap({ samples, glebas, target, pivotLat, pivotLn
               >
                 <Popup>
                   <div className="text-xs space-y-0.5">
-                    <p className="font-semibold">{s.point_identifier ?? "Ponto"} — {new Date(s.sample_date + "T00:00:00").toLocaleDateString("pt-BR")}</p>
+                    <p className="font-semibold">{s.point_identifier ?? "Ponto"} — {new Date(s.sample_date + "T00:00:00").toLocaleDateString("pt-BR")} {s.sample_time?.slice(0, 5)}</p>
                     <p>Umidade: <strong>{Number(s.moisture_pct).toFixed(1)}%</strong></p>
+                    {s.growth_stage && <p>Estádio: {GROWTH_STAGE_LABELS[s.growth_stage] ?? s.growth_stage}</p>}
                     <p>Método: {METHOD_LABELS[s.method] ?? s.method}</p>
                     {s.field_position && <p>Posição: {POSITION_LABELS[s.field_position] ?? s.field_position}</p>}
                     {s.gleba_name && <p>Gleba: {s.gleba_name}</p>}
