@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Settings2, Pencil, Calendar, Wheat, BarChart3, Clock, Target, Package } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import ActualHarvest from "./ActualHarvest";
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend, Tooltip as RTooltip, ReferenceLine } from "recharts";
 import { buildGlebaRows, buildSchedule, formatDateBR, GLEBA_COLORS } from "./utils";
 import type { GlebaHarvestRow, HarvestParams, ScheduleRow } from "./types";
@@ -450,54 +452,7 @@ export default function HarvestTab({
           </Card>
         )}
 
-        {/* SECTION 5 — Chart */}
-        {chartData.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Planejado × Realizado</CardTitle>
-                <div className="flex gap-1">
-                  <Button size="sm" variant={chartView === "general" ? "default" : "outline"} className="text-xs h-7" onClick={() => setChartView("general")}>Visão geral</Button>
-                  <Button size="sm" variant={chartView === "gleba" ? "default" : "outline"} className="text-xs h-7" onClick={() => setChartView("gleba")}>Visão por gleba</Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground italic mb-3">
-                Registre a colheita realizada para comparar com o planejamento.
-              </p>
-              <ResponsiveContainer width="100%" height={400}>
-                <ComposedChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                  <YAxis yAxisId="left" tick={{ fontSize: 10 }} label={{ value: "ha/dia", angle: -90, position: "insideLeft", style: { fontSize: 10 } }} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} label={{ value: "ha acum.", angle: 90, position: "insideRight", style: { fontSize: 10 } }} />
-                  <RTooltip contentStyle={{ fontSize: 12 }} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  {chartView === "general" ? (
-                    <Bar yAxisId="left" dataKey="planejado" fill="#BDBDBD" name="Planejado/dia" radius={[2, 2, 0, 0]} />
-                  ) : (
-                    <Bar
-                      yAxisId="left"
-                      dataKey="planejado"
-                      name="Planejado/dia"
-                      radius={[2, 2, 0, 0]}
-                      fill="#BDBDBD"
-                      // Color by gleba
-                      shape={(props: any) => {
-                        const glebaIdx = glebaRows.findIndex(g => g.glebaName === props.payload?.glebaName);
-                        const color = GLEBA_COLORS[glebaIdx % GLEBA_COLORS.length];
-                        return <rect {...props} fill={color} />;
-                      }}
-                    />
-                  )}
-                  <Line yAxisId="right" type="monotone" dataKey="acumuladoPlanejado" stroke="#9E9E9E" strokeDasharray="5 5" name="Acumulado plan." dot={false} />
-                  <ReferenceLine yAxisId="right" y={totalArea} stroke="#000" strokeDasharray="3 3" label={{ value: `${totalArea} ha`, position: "right", style: { fontSize: 10 } }} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
+        {/* SECTION 5 — Chart: Moved to ActualHarvest */}
 
         {/* SECTION 6 — Gantt Timeline */}
         {glebaRows.filter(r => r.updatedHarvestDate).length > 0 && (
@@ -510,6 +465,24 @@ export default function HarvestTab({
             </CardContent>
           </Card>
         )}
+
+        {/* ═══ SEPARADOR ═══ */}
+        <div className="relative py-4">
+          <Separator />
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
+            <span className="bg-background px-4 text-sm font-semibold text-foreground">🌾 Colheita Realizada</span>
+          </div>
+        </div>
+
+        {/* SECTION — Actual Harvest */}
+        <ActualHarvest
+          cycleId={cycleId}
+          orgId={orgId}
+          femaleArea={femaleArea}
+          glebas={glebas}
+          schedule={schedule}
+          bagWeightKg={localBagWeight}
+        />
       </div>
     </TooltipProvider>
   );
