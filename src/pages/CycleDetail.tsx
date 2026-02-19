@@ -10,10 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import PlantingPlan from "@/components/cycles/PlantingPlan";
-import ActualPlanting from "@/components/cycles/ActualPlanting";
+import UnifiedPlantingTab from "@/components/cycles/planting/UnifiedPlantingTab";
 import Phenology from "@/components/cycles/Phenology";
-import EmergenceStandCount from "@/components/cycles/EmergenceStandCount";
 import NickingSync from "@/components/cycles/NickingSync";
 import SementeBasica from "@/components/cycles/SementeBasica";
 import Nutrition from "@/components/cycles/Nutrition";
@@ -35,7 +33,7 @@ const tabItems = [
   { value: "resumo", label: "Resumo" }, { value: "planejamento", label: "Planejamento" },
   { value: "semente-basica", label: "Semente Básica" },
   { value: "plantio", label: "Plantio" }, { value: "nutricao", label: "Nutrição" }, { value: "fenologia", label: "Fenologia" },
-  { value: "emergencia", label: "Emergência" }, { value: "nicking", label: "Nicking" },
+  { value: "nicking", label: "Nicking" },
   { value: "despendoamento", label: "Despendoamento" }, { value: "roguing", label: "Roguing" },
   { value: "manejo", label: "Manejo" }, { value: "pragas", label: "Pragas" },
   { value: "agua", label: "Água" }, { value: "umidade", label: "Umidade" },
@@ -227,22 +225,22 @@ export default function CycleDetail() {
         </TabsContent>
 
         <TabsContent value="planejamento">
-          <PlantingPlan cycleId={id!} femaleArea={cycle.female_area} maleArea={cycle.male_area} orgId={cycle.org_id}
-            malePlantingFinished={cycle.male_planting_finished ?? false} femalePlantingFinished={cycle.female_planting_finished ?? false}
-            pivotName={cycle.field_name} contractNumber={cycle.contract_number}
-            onFinishToggle={(type, finished) => finishMutation.mutate({ type, finished })} />
+          <div className="text-center py-12 text-sm text-muted-foreground">O planejamento de plantio agora está integrado na aba "Plantio".</div>
         </TabsContent>
 
         <TabsContent value="plantio">
-          <ActualPlanting
+          <UnifiedPlantingTab
             cycleId={id!}
+            orgId={cycle.org_id}
             femaleArea={cycle.female_area}
             maleArea={cycle.male_area}
-            orgId={cycle.org_id}
             pivotName={cycle.field_name}
             contractNumber={cycle.contract_number}
             cooperatorName={(cycle as any).cooperators?.name}
-            farmName={(cycle as any).farms?.name}
+            hybridName={cycle.hybrid_name}
+            malePlantingFinished={cycle.male_planting_finished ?? false}
+            femalePlantingFinished={cycle.female_planting_finished ?? false}
+            onFinishToggle={(type, finished) => finishMutation.mutate({ type, finished })}
           />
         </TabsContent>
 
