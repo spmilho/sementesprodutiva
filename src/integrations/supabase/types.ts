@@ -730,6 +730,88 @@ export type Database = {
           },
         ]
       }
+      harvest_plan: {
+        Row: {
+          bag_weight_kg: number
+          created_at: string
+          created_by: string | null
+          cycle_days_used: number
+          cycle_id: string
+          deleted_at: string | null
+          gleba_id: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          planned_harvest_end: string | null
+          planned_harvest_start: string | null
+          planting_date_used: string | null
+          planting_source: string
+          target_ha_per_day: number | null
+          target_moisture_pct: number | null
+          updated_at: string
+        }
+        Insert: {
+          bag_weight_kg?: number
+          created_at?: string
+          created_by?: string | null
+          cycle_days_used: number
+          cycle_id: string
+          deleted_at?: string | null
+          gleba_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          planned_harvest_end?: string | null
+          planned_harvest_start?: string | null
+          planting_date_used?: string | null
+          planting_source?: string
+          target_ha_per_day?: number | null
+          target_moisture_pct?: number | null
+          updated_at?: string
+        }
+        Update: {
+          bag_weight_kg?: number
+          created_at?: string
+          created_by?: string | null
+          cycle_days_used?: number
+          cycle_id?: string
+          deleted_at?: string | null
+          gleba_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          planned_harvest_end?: string | null
+          planned_harvest_start?: string | null
+          planting_date_used?: string | null
+          planting_source?: string
+          target_ha_per_day?: number | null
+          target_moisture_pct?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "harvest_plan_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "harvest_plan_gleba_id_fkey"
+            columns: ["gleba_id"]
+            isOneToOne: false
+            referencedRelation: "pivot_glebas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "harvest_plan_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspection_counting_points: {
         Row: {
           created_at: string
