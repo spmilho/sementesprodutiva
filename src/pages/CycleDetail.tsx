@@ -266,6 +266,7 @@ export default function CycleDetail() {
             cooperatorName={(cycle as any).cooperators?.name}
             farmName={(cycle as any).farms?.name}
             hybridName={cycle.hybrid_name}
+            pivotId={cycle.pivot_id}
           />
         </TabsContent>
 
