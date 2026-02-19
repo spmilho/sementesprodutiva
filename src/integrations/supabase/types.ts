@@ -812,6 +812,91 @@ export type Database = {
           },
         ]
       }
+      harvest_records: {
+        Row: {
+          area_harvested_ha: number
+          avg_moisture_pct: number
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          delivery_destination: string | null
+          gleba_id: string | null
+          harvest_date: string
+          harvester_id: string | null
+          id: string
+          loads_count: number
+          notes: string | null
+          org_id: string
+          ticket_number: string | null
+          total_weight_tons: number
+          transport_vehicle: string | null
+          weight_per_load_tons: number | null
+        }
+        Insert: {
+          area_harvested_ha: number
+          avg_moisture_pct: number
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          delivery_destination?: string | null
+          gleba_id?: string | null
+          harvest_date: string
+          harvester_id?: string | null
+          id?: string
+          loads_count: number
+          notes?: string | null
+          org_id: string
+          ticket_number?: string | null
+          total_weight_tons: number
+          transport_vehicle?: string | null
+          weight_per_load_tons?: number | null
+        }
+        Update: {
+          area_harvested_ha?: number
+          avg_moisture_pct?: number
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          delivery_destination?: string | null
+          gleba_id?: string | null
+          harvest_date?: string
+          harvester_id?: string | null
+          id?: string
+          loads_count?: number
+          notes?: string | null
+          org_id?: string
+          ticket_number?: string | null
+          total_weight_tons?: number
+          transport_vehicle?: string | null
+          weight_per_load_tons?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "harvest_records_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "harvest_records_gleba_id_fkey"
+            columns: ["gleba_id"]
+            isOneToOne: false
+            referencedRelation: "pivot_glebas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "harvest_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspection_counting_points: {
         Row: {
           created_at: string
