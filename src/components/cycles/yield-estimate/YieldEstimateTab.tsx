@@ -16,6 +16,7 @@ import YieldEstimateMap from "./YieldEstimateMap";
 import YieldCalculation from "./YieldCalculation";
 import YieldDashboard from "./YieldDashboard";
 import YieldCharts from "./YieldCharts";
+import YieldWaterfallChart from "./YieldWaterfallChart";
 
 export default function YieldEstimateTab({
   cycleId, orgId, contractNumber, pivotName, hybridName, cooperatorName,
@@ -348,6 +349,25 @@ function EstimateCard({
     onError: (err: any) => toast.error(err.message),
   });
 
+  const deleteEstimateMutation = useMutation({
+    mutationFn: async () => {
+      // Delete ear samples for all points
+      const { data: pts } = await (supabase as any).from("yield_sample_points").select("id").eq("yield_estimate_id", estimate.id);
+      if (pts && pts.length > 0) {
+        const ids = pts.map((p: any) => p.id);
+        await (supabase as any).from("yield_ear_samples").delete().in("sample_point_id", ids);
+        await (supabase as any).from("yield_sample_points").delete().eq("yield_estimate_id", estimate.id);
+      }
+      const { error } = await (supabase as any).from("yield_estimates").delete().eq("id", estimate.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["yield-estimates", cycleId] });
+      toast.success("Estimativa excluída!");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   return (
     <Card>
       {/* Collapsed header */}
@@ -364,7 +384,23 @@ function EstimateCard({
               <Badge className="bg-green-100 text-green-700 text-xs">{Math.round(estimate.net_yield_kg_ha || 0).toLocaleString()} kg/ha</Badge>
             )}
           </div>
-          {expanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (confirm("Excluir esta estimativa e todos os seus pontos?")) {
+                  deleteEstimateMutation.mutate();
+                }
+              }}
+              disabled={deleteEstimateMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            {expanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
+          </div>
         </div>
       </CardHeader>
 
@@ -518,6 +554,20 @@ function EstimateCard({
               points={points}
               avgNetYield={aggregates.netYield}
               tgw={aggregates.usedTgw}
+              moistureRef={localMoistureRef}
+              dehuskingLoss={localDehusking}
+              classificationLoss={localClassification}
+              otherLoss={localOther}
+            />
+          )}
+
+          {/* Waterfall Chart */}
+          {aggregates && (
+            <YieldWaterfallChart
+              avgEarsPerHa={aggregates.avgEarsPerHa}
+              avgKernelsPerEar={aggregates.avgKernelsPerEar}
+              tgw={aggregates.usedTgw}
+              avgMoisture={aggregates.avgMoisture}
               moistureRef={localMoistureRef}
               dehuskingLoss={localDehusking}
               classificationLoss={localClassification}
