@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      attachments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          document_category: string
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id: string
+          org_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          document_category: string
+          entity_id: string
+          entity_type?: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id?: string
+          org_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          document_category?: string
+          entity_id?: string
+          entity_type?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          id?: string
+          org_id?: string
+        }
+        Relationships: []
+      }
       chemical_applications: {
         Row: {
           active_ingredient: string | null
