@@ -255,10 +255,10 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
               <div className="space-y-1.5">
                 <Label>Lote de semente</Label>
                 <Controller name="seed_lot_id" control={form.control} render={({ field }) => (
-                  <Select value={field.value ?? ""} onValueChange={handleLotChange}>
+                  <Select value={field.value ?? "__none__"} onValueChange={(v) => handleLotChange(v === "__none__" ? "" : v)}>
                     <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
                       {filteredLots.map((l: any) => (
                         <SelectItem key={l.id} value={l.id}>
                           {l.seed_lot_treatments?.length > 0 ? "🟢" : "⚠️"} {l.lot_number} — {l.origin_season} — Germ {l.germination_pct}%
@@ -271,10 +271,10 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
               <div className="space-y-1.5">
                 <Label>Gleba</Label>
                 <Controller name="gleba_id" control={form.control} render={({ field }) => (
-                  <Select value={field.value ?? ""} onValueChange={handleGlebaChange}>
+                  <Select value={field.value ?? "__none__"} onValueChange={(v) => handleGlebaChange(v === "__none__" ? "" : v)}>
                     <SelectTrigger><SelectValue placeholder="Geral" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Geral</SelectItem>
+                      <SelectItem value="__none__">Geral</SelectItem>
                       {filteredGlebas.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.name} — {g.area_ha ?? "?"} ha</SelectItem>)}
                     </SelectContent>
                   </Select>

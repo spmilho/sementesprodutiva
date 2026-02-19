@@ -416,10 +416,10 @@ export default function StandCountSection({ cycleId, orgId, standCounts, standPo
               <div className="space-y-1.5">
                 <Label>Gleba</Label>
                 <Controller name="gleba_id" control={form.control} render={({ field }) => (
-                  <Select value={field.value ?? ""} onValueChange={(v) => field.onChange(v || undefined)}>
+                  <Select value={field.value ?? "__none__"} onValueChange={(v) => field.onChange(v === "__none__" ? undefined : v)}>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">—</SelectItem>
+                      <SelectItem value="__none__">—</SelectItem>
                       {glebas.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
