@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Pencil, Trash2, Loader2, CalendarIcon, MapPin, Camera, Image as ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, CalendarIcon, MapPin, Camera, Image as ImageIcon, Satellite } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import NdviSection from "@/components/cycles/ndvi/NdviSection";
+import { Separator } from "@/components/ui/separator";
 
 const STAGES = ["VE", "V2", "V4", "V6", "V8", "V10", "V12", "VT", "R1", "R2", "R3", "R4", "R5", "R6"] as const;
 
@@ -29,6 +31,7 @@ interface PhenologyProps {
   cooperatorName?: string;
   farmName?: string;
   hybridName?: string;
+  pivotId?: string;
 }
 
 const schema = z.object({
@@ -119,7 +122,7 @@ function StageTimeline({ records, stages }: { records: any[]; stages: readonly s
 }
 
 export default function Phenology({
-  cycleId, orgId, pivotName, contractNumber, cooperatorName, farmName, hybridName,
+  cycleId, orgId, pivotName, contractNumber, cooperatorName, farmName, hybridName, pivotId,
 }: PhenologyProps) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -460,6 +463,24 @@ export default function Phenology({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* ── NDVI Section ── */}
+      <Separator className="my-8" />
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Satellite className="h-5 w-5" /> 🛰️ NDVI — Monitoramento por Satélite
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Acompanhe o desenvolvimento vegetativo do campo por imagens de satélite. O NDVI é correlacionado com os estádios fenológicos registrados acima.
+        </p>
+        <NdviSection
+          cycleId={cycleId}
+          orgId={orgId}
+          pivotId={pivotId}
+          pivotName={pivotName || "Campo"}
+          phenologyRecords={records}
+        />
+      </div>
     </div>
   );
 }

@@ -1180,6 +1180,60 @@ export type Database = {
           },
         ]
       }
+      ndvi_polygons: {
+        Row: {
+          agro_polygon_id: string
+          area_ha: number | null
+          created_at: string
+          cycle_id: string
+          deleted_at: string | null
+          id: string
+          org_id: string
+          polygon_geo: Json
+          polygon_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          agro_polygon_id: string
+          area_ha?: number | null
+          created_at?: string
+          cycle_id: string
+          deleted_at?: string | null
+          id?: string
+          org_id: string
+          polygon_geo: Json
+          polygon_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agro_polygon_id?: string
+          area_ha?: number | null
+          created_at?: string
+          cycle_id?: string
+          deleted_at?: string | null
+          id?: string
+          org_id?: string
+          polygon_geo?: Json
+          polygon_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ndvi_polygons_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: true
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ndvi_polygons_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nicking_fixed_points: {
         Row: {
           active: boolean
