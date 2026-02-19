@@ -269,9 +269,6 @@ export default function CycleDetail() {
           />
         </TabsContent>
 
-        <TabsContent value="emergencia">
-          <EmergenceStandCount cycleId={id!} orgId={cycle.org_id} />
-        </TabsContent>
 
         <TabsContent value="nicking">
           <NickingSync
