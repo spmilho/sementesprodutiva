@@ -279,10 +279,10 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
               <div className="space-y-1.5">
                 <Label>Lote de semente</Label>
                 <Controller name="seed_lot_id" control={form.control} render={({ field }) => (
-                  <Select value={field.value ?? ""} onValueChange={(v) => field.onChange(v || undefined)}>
+                  <Select value={field.value ?? "__none__"} onValueChange={(v) => field.onChange(v === "__none__" ? undefined : v)}>
                     <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
                       {filteredLots.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.lot_number} — {l.origin_season}</SelectItem>)}
                     </SelectContent>
                   </Select>
@@ -291,10 +291,10 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
               <div className="space-y-1.5">
                 <Label>Gleba</Label>
                 <Controller name="gleba_id" control={form.control} render={({ field }) => (
-                  <Select value={field.value ?? ""} onValueChange={(v) => field.onChange(v || undefined)}>
+                  <Select value={field.value ?? "__none__"} onValueChange={(v) => field.onChange(v === "__none__" ? undefined : v)}>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">—</SelectItem>
+                      <SelectItem value="__none__">—</SelectItem>
                       {filteredGlebas.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.name} — {g.area_ha ?? "?"} ha</SelectItem>)}
                     </SelectContent>
                   </Select>
@@ -306,10 +306,10 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
               <div className="space-y-1.5">
                 <Label>Vincular ao planejamento</Label>
                 <Controller name="planting_plan_id" control={form.control} render={({ field }) => (
-                  <Select value={field.value ?? ""} onValueChange={(v) => field.onChange(v || undefined)}>
+                  <Select value={field.value ?? "__none__"} onValueChange={(v) => field.onChange(v === "__none__" ? undefined : v)}>
                     <SelectTrigger><SelectValue placeholder="Nenhum (opcional)" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
                       {filteredPlans.map((p: any) => (
                         <SelectItem key={p.id} value={p.id}>{format(new Date(p.planned_date + "T12:00:00"), "dd/MM/yyyy")} — {p.planned_area} ha</SelectItem>
                       ))}
@@ -347,10 +347,10 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
               <div className="space-y-1.5">
                 <Label>Condição do solo</Label>
                 <Controller name="soil_condition" control={form.control} render={({ field }) => (
-                  <Select value={field.value ?? ""} onValueChange={(v) => field.onChange(v || undefined)}>
+                  <Select value={field.value ?? "__none__"} onValueChange={(v) => field.onChange(v === "__none__" ? undefined : v)}>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">—</SelectItem>
+                      <SelectItem value="__none__">—</SelectItem>
                       <SelectItem value="excellent">Ótima</SelectItem>
                       <SelectItem value="good">Boa</SelectItem>
                       <SelectItem value="regular">Regular</SelectItem>
