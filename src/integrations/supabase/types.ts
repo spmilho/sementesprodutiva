@@ -1988,51 +1988,78 @@ export type Database = {
         Row: {
           actual_area: number
           created_at: string
+          created_by: string | null
           cv_percent: number | null
           cycle_id: string
           deleted_at: string | null
+          gleba_id: string | null
+          gps_latitude: number | null
+          gps_longitude: number | null
           id: string
           observations: string | null
           org_id: string
+          photos: string[] | null
           planter_speed: number | null
           planting_date: string
           planting_plan_id: string | null
           row_spacing: number | null
+          seed_lot_id: string | null
           seeds_per_meter: number | null
+          seeds_per_meter_actual: number | null
+          soil_condition: string | null
+          sowing_depth_cm: number | null
           type: string
           updated_at: string
         }
         Insert: {
           actual_area: number
           created_at?: string
+          created_by?: string | null
           cv_percent?: number | null
           cycle_id: string
           deleted_at?: string | null
+          gleba_id?: string | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
           id?: string
           observations?: string | null
           org_id: string
+          photos?: string[] | null
           planter_speed?: number | null
           planting_date: string
           planting_plan_id?: string | null
           row_spacing?: number | null
+          seed_lot_id?: string | null
           seeds_per_meter?: number | null
+          seeds_per_meter_actual?: number | null
+          soil_condition?: string | null
+          sowing_depth_cm?: number | null
           type: string
           updated_at?: string
         }
         Update: {
           actual_area?: number
           created_at?: string
+          created_by?: string | null
           cv_percent?: number | null
           cycle_id?: string
           deleted_at?: string | null
+          gleba_id?: string | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
           id?: string
           observations?: string | null
           org_id?: string
+          photos?: string[] | null
           planter_speed?: number | null
           planting_date?: string
           planting_plan_id?: string | null
           row_spacing?: number | null
+          seed_lot_id?: string | null
           seeds_per_meter?: number | null
+          seeds_per_meter_actual?: number | null
+          soil_condition?: string | null
+          sowing_depth_cm?: number | null
           type?: string
           updated_at?: string
         }
@@ -2042,6 +2069,13 @@ export type Database = {
             columns: ["cycle_id"]
             isOneToOne: false
             referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planting_actual_gleba_id_fkey"
+            columns: ["gleba_id"]
+            isOneToOne: false
+            referencedRelation: "pivot_glebas"
             referencedColumns: ["id"]
           },
           {
@@ -2056,6 +2090,51 @@ export type Database = {
             columns: ["planting_plan_id"]
             isOneToOne: false
             referencedRelation: "planting_plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planting_actual_seed_lot_id_fkey"
+            columns: ["seed_lot_id"]
+            isOneToOne: false
+            referencedRelation: "seed_lots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planting_cv_points: {
+        Row: {
+          created_at: string
+          id: string
+          planting_actual_id: string
+          point_number: number
+          sample_length_m: number
+          seeds_counted: number
+          seeds_per_meter: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          planting_actual_id: string
+          point_number: number
+          sample_length_m?: number
+          seeds_counted: number
+          seeds_per_meter?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          planting_actual_id?: string
+          point_number?: number
+          sample_length_m?: number
+          seeds_counted?: number
+          seeds_per_meter?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planting_cv_points_planting_actual_id_fkey"
+            columns: ["planting_actual_id"]
+            isOneToOne: false
+            referencedRelation: "planting_actual"
             referencedColumns: ["id"]
           },
         ]
@@ -2074,6 +2153,7 @@ export type Database = {
           planned_date: string
           planting_order: number
           row_spacing: number
+          seed_lot_id: string | null
           seeds_per_meter: number
           target_population: number
           type: string
@@ -2092,6 +2172,7 @@ export type Database = {
           planned_date: string
           planting_order?: number
           row_spacing?: number
+          seed_lot_id?: string | null
           seeds_per_meter: number
           target_population?: number
           type: string
@@ -2110,6 +2191,7 @@ export type Database = {
           planned_date?: string
           planting_order?: number
           row_spacing?: number
+          seed_lot_id?: string | null
           seeds_per_meter?: number
           target_population?: number
           type?: string
@@ -2135,6 +2217,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planting_plan_seed_lot_id_fkey"
+            columns: ["seed_lot_id"]
+            isOneToOne: false
+            referencedRelation: "seed_lots"
             referencedColumns: ["id"]
           },
         ]
@@ -2761,6 +2850,147 @@ export type Database = {
             columns: ["seed_treatment_id"]
             isOneToOne: false
             referencedRelation: "seed_treatment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stand_count_points: {
+        Row: {
+          created_at: string
+          gps_latitude: number | null
+          gps_longitude: number | null
+          id: string
+          plants_counted: number
+          plants_per_ha: number | null
+          plants_per_meter: number | null
+          point_number: number
+          row_spacing_cm: number
+          sample_length_m: number
+          stand_count_id: string
+        }
+        Insert: {
+          created_at?: string
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          id?: string
+          plants_counted: number
+          plants_per_ha?: number | null
+          plants_per_meter?: number | null
+          point_number: number
+          row_spacing_cm?: number
+          sample_length_m?: number
+          stand_count_id: string
+        }
+        Update: {
+          created_at?: string
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          id?: string
+          plants_counted?: number
+          plants_per_ha?: number | null
+          plants_per_meter?: number | null
+          point_number?: number
+          row_spacing_cm?: number
+          sample_length_m?: number
+          stand_count_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stand_count_points_stand_count_id_fkey"
+            columns: ["stand_count_id"]
+            isOneToOne: false
+            referencedRelation: "stand_counts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stand_counts: {
+        Row: {
+          avg_plants_per_ha: number | null
+          avg_plants_per_meter: number | null
+          count_date: string
+          count_type: string
+          created_at: string
+          created_by: string | null
+          cv_stand_pct: number | null
+          cycle_id: string
+          days_after_planting: number | null
+          deleted_at: string | null
+          emergence_pct: number | null
+          gleba_id: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          parent_type: string
+          photos: string[] | null
+          planned_population_ha: number | null
+          row_spacing_cm: number
+          std_plants_per_ha: number | null
+        }
+        Insert: {
+          avg_plants_per_ha?: number | null
+          avg_plants_per_meter?: number | null
+          count_date: string
+          count_type?: string
+          created_at?: string
+          created_by?: string | null
+          cv_stand_pct?: number | null
+          cycle_id: string
+          days_after_planting?: number | null
+          deleted_at?: string | null
+          emergence_pct?: number | null
+          gleba_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          parent_type: string
+          photos?: string[] | null
+          planned_population_ha?: number | null
+          row_spacing_cm?: number
+          std_plants_per_ha?: number | null
+        }
+        Update: {
+          avg_plants_per_ha?: number | null
+          avg_plants_per_meter?: number | null
+          count_date?: string
+          count_type?: string
+          created_at?: string
+          created_by?: string | null
+          cv_stand_pct?: number | null
+          cycle_id?: string
+          days_after_planting?: number | null
+          deleted_at?: string | null
+          emergence_pct?: number | null
+          gleba_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          parent_type?: string
+          photos?: string[] | null
+          planned_population_ha?: number | null
+          row_spacing_cm?: number
+          std_plants_per_ha?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stand_counts_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stand_counts_gleba_id_fkey"
+            columns: ["gleba_id"]
+            isOneToOne: false
+            referencedRelation: "pivot_glebas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stand_counts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
