@@ -24,6 +24,7 @@ import PestDiseaseRecords from "@/components/cycles/PestDiseaseRecords";
 import YieldEstimateTab from "@/components/cycles/yield-estimate/YieldEstimateTab";
 import MoistureTab from "@/components/cycles/moisture/MoistureTab";
 import HarvestTab from "@/components/cycles/harvest/HarvestTab";
+import DocumentsTab from "@/components/cycles/DocumentsTab";
 
 const statusLabels: Record<string, string> = {
   planning: "Planejamento", planting: "Plantio", growing: "Crescimento",
@@ -355,7 +356,11 @@ export default function CycleDetail() {
           />
         </TabsContent>
 
-        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento", "roguing", "manejo", "pragas", "estimativa", "umidade", "colheita"].includes(t.value)).map((t) => (
+        <TabsContent value="documentos">
+          <DocumentsTab cycleId={id!} orgId={cycle.org_id} />
+        </TabsContent>
+
+        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento", "roguing", "manejo", "pragas", "estimativa", "umidade", "colheita", "documentos"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>
