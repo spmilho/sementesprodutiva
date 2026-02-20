@@ -19,6 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useOfflineSyncContext } from "@/components/Layout";
 import "leaflet/dist/leaflet.css";
 
 // ═══════════════════════════════════
@@ -354,6 +355,7 @@ function TrendKPI({ value, prevValue, label, color }: { value: number | null; pr
 export default function InspectionImport({ cycleId, orgId }: InspectionImportProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { addRecordGroup } = useOfflineSyncContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [parsing, setParsing] = useState(false);
   const [expandedInsp, setExpandedInsp] = useState<number | null>(null);
@@ -416,29 +418,37 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
         return;
       }
 
-      // Upload file to storage
+      // Upload file to storage (requires online)
       const filePath = `${orgId}/${cycleId}/inspection-${crypto.randomUUID()}.xlsx`;
       await supabase.storage.from("cycle-media").upload(filePath, file);
 
-      // Create import record
-      const { data: importRec, error: impErr } = await (supabase as any)
-        .from("inspection_imports").insert({
-          cycle_id: cycleId, org_id: orgId,
-          file_name: file.name, file_url: filePath,
-          field_code: header.field_code, hybrid_name: header.hybrid_name,
-          endosperm: header.endosperm, isolation: header.isolation,
-          technician: header.technician, leader: header.leader,
-          area_ha: header.area_ha,
-          total_inspections: inspections.length,
-          imported_by: user?.id || null,
-        }).select("id").single();
-      if (impErr) throw impErr;
+      // Build group records for offline-capable insert
+      const localImportId = crypto.randomUUID();
+      const groupRecords: any[] = [
+        {
+          table: "inspection_imports",
+          data: {
+            id: localImportId,
+            cycle_id: cycleId, org_id: orgId,
+            file_name: file.name, file_url: filePath,
+            field_code: header.field_code, hybrid_name: header.hybrid_name,
+            endosperm: header.endosperm, isolation: header.isolation,
+            technician: header.technician, leader: header.leader,
+            area_ha: header.area_ha,
+            total_inspections: inspections.length,
+            imported_by: user?.id || null,
+          },
+          localId: localImportId,
+        },
+      ];
 
-      // Insert inspection data
       for (const insp of inspections) {
-        const { data: inspRec, error: inspErr } = await (supabase as any)
-          .from("inspection_data").insert({
-            import_id: importRec.id,
+        const localInspId = crypto.randomUUID();
+        groupRecords.push({
+          table: "inspection_data",
+          data: {
+            id: localInspId,
+            import_id: localImportId,
             inspection_number: insp.inspection_number,
             inspection_date: insp.inspection_date,
             pct_detasseled: insp.pct_detasseled,
@@ -461,16 +471,28 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
             pct_volunteer_male: insp.pct_volunteer_male,
             total_atypical_pollinating: insp.total_atypical_pollinating,
             observations: insp.observations,
-          }).select("id").single();
-        if (inspErr) throw inspErr;
+          },
+          localId: localInspId,
+          parentLocalId: localImportId,
+          fkField: "import_id",
+        });
 
-        // Insert counting points
+        // Insert counting points for this inspection
         const pts = countingPoints.get(insp.inspection_number);
         if (pts && pts.length > 0) {
-          const rows = pts.map(pt => ({ ...pt, inspection_data_id: inspRec.id }));
-          await (supabase as any).from("inspection_counting_points").insert(rows);
+          for (const pt of pts) {
+            groupRecords.push({
+              table: "inspection_counting_points",
+              data: { ...pt, inspection_data_id: localInspId },
+              parentLocalId: localInspId,
+              fkField: "inspection_data_id",
+            });
+          }
         }
       }
+
+      const { error } = await addRecordGroup(groupRecords, cycleId);
+      if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ["inspection_imports", cycleId] });
       queryClient.invalidateQueries({ queryKey: ["inspection_data"] });

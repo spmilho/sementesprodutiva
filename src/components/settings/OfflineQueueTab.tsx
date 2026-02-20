@@ -29,6 +29,16 @@ const TABLE_LABELS: Record<string, string> = {
   harvest_records: "Colheita",
   pest_disease_records: "Pragas/Doenças",
   yield_estimates: "Est. Produtividade",
+  yield_sample_points: "Ponto Amostragem",
+  yield_ear_samples: "Espigas",
+  stand_counts: "Stand Count",
+  stand_count_points: "Pontos Stand",
+  seed_lots: "Semente Básica",
+  seed_lot_treatments: "Tratamento Semente",
+  seed_lot_treatment_products: "Produto TS",
+  inspection_imports: "Importação Inspeção",
+  inspection_data: "Dados Inspeção",
+  inspection_counting_points: "Pontos Contagem",
 };
 
 export default function OfflineQueueTab() {

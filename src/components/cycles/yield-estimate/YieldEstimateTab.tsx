@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useOfflineSyncContext } from "@/components/Layout";
 import { format } from "date-fns";
 import { Plus, Loader2, Trash2, FileSpreadsheet, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,18 +51,25 @@ export default function YieldEstimateTab({
     },
   });
 
+  const { addRecordGroup } = useOfflineSyncContext();
+
   // Create new estimate
   const createEstimateMutation = useMutation({
     mutationFn: async () => {
       const nextNum = estimates.length + 1;
-      const { data, error } = await (supabase as any).from("yield_estimates").insert({
+      const localId = crypto.randomUUID();
+      const estimateData = {
+        id: localId,
         cycle_id: cycleId,
         org_id: orgId,
         estimate_number: nextNum,
         estimate_date: new Date().toISOString().split("T")[0],
-      }).select().single();
+      };
+      const { error } = await addRecordGroup([
+        { table: "yield_estimates", data: estimateData, localId },
+      ], cycleId);
       if (error) throw error;
-      return data;
+      return { id: localId };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["yield-estimates", cycleId] });
@@ -309,31 +317,56 @@ function EstimateCard({
     }).eq("id", estimateId);
   };
 
+  const { addRecordGroup } = useOfflineSyncContext();
+
   const handleSavePoint = useCallback(async (pointData: any) => {
     const usedTgw = pointData._tgw_used || tgw;
     const grossYield = calcPointGrossYield(
       pointData.ears_per_ha, pointData.avg_kernels_per_ear, usedTgw, pointData.sample_moisture_pct, localMoistureRef
     );
     const { ears, _tgw_used, ...pointInsert } = pointData;
-    const { data: point, error: pErr } = await (supabase as any).from("yield_sample_points").insert({
+
+    const localPointId = crypto.randomUUID();
+    const pointRecord = {
+      id: localPointId,
       ...pointInsert,
       yield_estimate_id: estimate.id,
       point_gross_yield_kg_ha: Math.round(grossYield * 100) / 100,
-    }).select().single();
-    if (pErr) throw pErr;
+    };
+
+    const groupRecords: any[] = [
+      { table: "yield_sample_points", data: pointRecord, localId: localPointId },
+    ];
+
     if (ears && ears.length > 0) {
-      const earInserts = ears.map((e: EarSample) => ({
-        sample_point_id: point.id, ear_number: e.ear_number, kernel_rows: e.kernel_rows,
-        kernels_per_row: e.kernels_per_row, total_kernels: e.total_kernels, ear_length_cm: e.ear_length_cm || null,
-      }));
-      const { error: eErr } = await (supabase as any).from("yield_ear_samples").insert(earInserts);
-      if (eErr) throw eErr;
+      for (const e of ears as EarSample[]) {
+        groupRecords.push({
+          table: "yield_ear_samples",
+          data: {
+            sample_point_id: localPointId,
+            ear_number: e.ear_number,
+            kernel_rows: e.kernel_rows,
+            kernels_per_row: e.kernels_per_row,
+            total_kernels: e.total_kernels,
+            ear_length_cm: e.ear_length_cm || null,
+          },
+          parentLocalId: localPointId,
+          fkField: "sample_point_id",
+        });
+      }
     }
-    await updateEstimateAggregates(estimate.id);
+
+    const { error } = await addRecordGroup(groupRecords, cycleId);
+    if (error) throw error;
+
+    // Update aggregates if online
+    if (navigator.onLine) {
+      await updateEstimateAggregates(estimate.id);
+    }
     queryClient.invalidateQueries({ queryKey: ["yield-estimates", cycleId] });
     queryClient.invalidateQueries({ queryKey: ["yield-sample-points", estimate.id] });
     toast.success(`Ponto ${pointData.point_number} salvo!`);
-  }, [estimate.id, cycleId, tgw, localMoistureRef, queryClient]);
+  }, [estimate.id, cycleId, tgw, localMoistureRef, queryClient, addRecordGroup]);
 
   const deletePointMutation = useMutation({
     mutationFn: async (pointId: string) => {
