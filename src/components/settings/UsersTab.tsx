@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, UserPlus, Pencil, Power, KeyRound } from "lucide-react";
+import { Search, UserPlus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 const ROLE_BADGE: Record<AppRole, { label: string; className: string }> = {
@@ -36,6 +36,14 @@ export default function UsersTab() {
   const [editUser, setEditUser] = useState<UserRow | null>(null);
   const [editRole, setEditRole] = useState<AppRole>("field_user");
   const [editClientId, setEditClientId] = useState("");
+
+  // Create user dialog state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState<AppRole>("field_user");
+  const [newClientId, setNewClientId] = useState("");
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["settings-users"],
@@ -90,6 +98,36 @@ export default function UsersTab() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const createUser = useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Não autenticado");
+
+      const res = await supabase.functions.invoke("admin-create-user", {
+        body: {
+          email: newEmail,
+          password: newPassword,
+          full_name: newName,
+          role: newRole,
+          client_id: newRole === "client" && newClientId ? newClientId : null,
+        },
+      });
+      if (res.error) throw new Error(res.error.message || "Erro ao criar usuário");
+      if (res.data?.error) throw new Error(res.data.error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings-users"] });
+      toast.success("Usuário criado com sucesso");
+      setCreateOpen(false);
+      setNewName("");
+      setNewEmail("");
+      setNewPassword("");
+      setNewRole("field_user");
+      setNewClientId("");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
     return u.email.toLowerCase().includes(q) || (u.full_name?.toLowerCase().includes(q) ?? false);
@@ -111,6 +149,9 @@ export default function UsersTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar por nome ou email..." className="pl-9 h-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
+        <Button size="sm" className="gap-1.5" onClick={() => setCreateOpen(true)}>
+          <UserPlus className="h-4 w-4" /> Criar Usuário
+        </Button>
       </div>
 
       <Card>
@@ -159,6 +200,7 @@ export default function UsersTab() {
         </CardContent>
       </Card>
 
+      {/* Edit role dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
@@ -197,6 +239,62 @@ export default function UsersTab() {
               disabled={updateRole.isPending}
             >
               {updateRole.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create user dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Criar Novo Usuário</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Nome completo</Label>
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nome do usuário" />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="email@exemplo.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>Senha temporária</Label>
+              <Input type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
+            </div>
+            <div className="space-y-2">
+              <Label>Perfil</Label>
+              <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="field_user">Campo</SelectItem>
+                  <SelectItem value="client">Cliente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {newRole === "client" && (
+              <div className="space-y-2">
+                <Label>Vincular ao cliente</Label>
+                <Select value={newClientId} onValueChange={setNewClientId}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar cliente" /></SelectTrigger>
+                  <SelectContent>
+                    {clients.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => createUser.mutate()}
+              disabled={createUser.isPending || !newName || !newEmail || !newPassword}
+            >
+              {createUser.isPending ? "Criando..." : "Criar Usuário"}
             </Button>
           </DialogFooter>
         </DialogContent>
