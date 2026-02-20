@@ -5,7 +5,7 @@ import L from "leaflet";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-republish";
 import {
   ComposedChart, LineChart, BarChart, AreaChart, Line, Bar, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
