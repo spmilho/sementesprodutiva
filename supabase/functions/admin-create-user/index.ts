@@ -11,7 +11,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify caller is admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization");
 
@@ -19,7 +18,6 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
 
-    // Use anon client to verify the caller
     const anonClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -34,17 +32,46 @@ Deno.serve(async (req) => {
       .single();
     if (roleData?.role !== "admin") throw new Error("Access denied: admin role required");
 
-    const { email, password, full_name, role, client_id } = await req.json();
-    if (!email || !password || !full_name || !role) {
-      throw new Error("Missing required fields: email, password, full_name, role");
-    }
+    const body = await req.json();
+    const action = body.action || "create";
 
-    // Use service role client to create user
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Create auth user
+    // ── RESET PASSWORD ──
+    if (action === "reset_password") {
+      const { user_id, password } = body;
+      if (!user_id || !password) throw new Error("Missing user_id or password");
+      const { error } = await adminClient.auth.admin.updateUserById(user_id, { password });
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── DELETE USER ──
+    if (action === "delete_user") {
+      const { user_id } = body;
+      if (!user_id) throw new Error("Missing user_id");
+      if (user_id === caller.id) throw new Error("Não é possível remover a si mesmo");
+      // Delete role first, then auth user
+      await adminClient.from("user_roles").delete().eq("user_id", user_id);
+      const { error } = await adminClient.auth.admin.deleteUser(user_id);
+      if (error) throw error;
+      // Soft-delete profile
+      await adminClient.from("profiles").update({ full_name: "[removido]" }).eq("id", user_id);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── CREATE USER ──
+    const { email, password, full_name, role, client_id } = body;
+    if (!email || !password || !full_name || !role) {
+      throw new Error("Missing required fields: email, password, full_name, role");
+    }
+
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
       password,
@@ -63,7 +90,7 @@ Deno.serve(async (req) => {
       .single();
     if (!callerProfile?.org_id) throw new Error("Caller has no org_id");
 
-    // Update profile with correct org_id (profile was auto-created by trigger)
+    // Update profile with correct org_id
     await adminClient
       .from("profiles")
       .update({ org_id: callerProfile.org_id, full_name })
