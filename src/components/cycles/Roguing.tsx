@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOfflineSyncContext } from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +54,7 @@ interface Props {
 
 export default function Roguing({ cycleId, orgId }: Props) {
   const qc = useQueryClient();
+  const { addRecord } = useOfflineSyncContext();
   const [formOpen, setFormOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -107,13 +109,13 @@ export default function Roguing({ cycleId, orgId }: Props) {
     }
     setSaving(true);
     try {
-      const { error } = await (supabase as any).from("roguing_records").insert({
+      const { error } = await addRecord("roguing_records", {
         cycle_id: cycleId, org_id: orgId, observation_date: date, off_type: offType,
         affected_parent: parent, description: description.trim(),
         affected_area_m2: areaM2 ? parseFloat(areaM2) : null,
         plants_removed: parseInt(plantsRemoved), corrective_action: corrective || null,
         growth_stage: stage || null, gps_latitude: lat, gps_longitude: lng,
-      });
+      }, cycleId);
       if (error) throw error;
       toast.success("Registro salvo!"); qc.invalidateQueries({ queryKey: ["roguing", cycleId] });
       setFormOpen(false); resetForm();

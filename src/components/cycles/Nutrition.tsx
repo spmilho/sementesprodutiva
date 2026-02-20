@@ -20,6 +20,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, BarChart } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useOfflineSyncContext } from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 
 // ═══════════ CONSTANTS ═══════════
@@ -163,6 +164,7 @@ export default function Nutrition({
 }: NutritionProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { addRecord } = useOfflineSyncContext();
   const [showForm, setShowForm] = useState(false);
   const [showTargets, setShowTargets] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
@@ -330,7 +332,7 @@ export default function Nutrition({
         const { error } = await (supabase as any).from("fertilization_records").update(payload).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await (supabase as any).from("fertilization_records").insert(payload);
+        const { error } = await addRecord("fertilization_records", payload, cycleId);
         if (error) throw error;
       }
     },
@@ -371,7 +373,7 @@ export default function Nutrition({
         const { error } = await (supabase as any).from("nutrition_targets").update(payload).eq("id", targets.id);
         if (error) throw error;
       } else {
-        const { error } = await (supabase as any).from("nutrition_targets").insert(payload);
+        const { error } = await addRecord("nutrition_targets", payload, cycleId);
         if (error) throw error;
       }
     },

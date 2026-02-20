@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useOfflineSyncContext } from "@/components/Layout";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer, Cell,
 } from "recharts";
@@ -71,6 +72,7 @@ function getBarFill(pct: number, type: string) {
 
 export default function EmergenceStandCount({ cycleId, orgId }: EmergenceProps) {
   const queryClient = useQueryClient();
+  const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [capturingGps, setCapturingGps] = useState(false);
@@ -220,7 +222,7 @@ export default function EmergenceStandCount({ cycleId, orgId }: EmergenceProps) 
         const { error } = await (supabase as any).from("emergence_counts").update(row).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await (supabase as any).from("emergence_counts").insert(row);
+        const { error } = await addRecord("emergence_counts", row, cycleId);
         if (error) throw error;
       }
     },

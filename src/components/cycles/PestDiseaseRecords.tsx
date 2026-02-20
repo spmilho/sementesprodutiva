@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOfflineSyncContext } from "@/components/Layout";
 import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
 import { Plus, Trash2, ImageIcon, Loader2, MapPin, AlertTriangle } from "lucide-react";
@@ -49,6 +50,7 @@ interface Props { cycleId: string; orgId: string; }
 
 export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
   const queryClient = useQueryClient();
+  const { addRecord } = useOfflineSyncContext();
   const [open, setOpen] = useState(false);
   const [nameFilter, setNameFilter] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -84,7 +86,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
 
   const insertMut = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any).from("pest_disease_records").insert({
+      const { error } = await addRecord("pest_disease_records", {
         cycle_id: cycleId, org_id: orgId, observation_date: date,
         pest_name: pestName, pest_type: pestType,
         incidence_pct: incidence ? parseFloat(incidence) : null,
@@ -95,7 +97,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
         notes: notes || null,
         gps_latitude: lat ? parseFloat(lat) : null,
         gps_longitude: lng ? parseFloat(lng) : null,
-      });
+      }, cycleId);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk }); toast.success("Ocorrência registrada!"); resetForm(); setOpen(false); },

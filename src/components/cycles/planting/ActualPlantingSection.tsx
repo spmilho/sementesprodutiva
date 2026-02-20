@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useOfflineSyncContext } from "@/components/Layout";
 import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, calcStats, getCvLabel } from "./planting-utils";
 import PlantingCvPoints from "./PlantingCvPoints";
 import {
@@ -54,6 +55,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, glebas, seedLots, cvPoints }: Props) {
   const queryClient = useQueryClient();
+  const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -134,7 +136,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
         const { error } = await (supabase as any).from("planting_actual").update(row).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await (supabase as any).from("planting_actual").insert(row);
+        const { error } = await addRecord("planting_actual", row, cycleId);
         if (error) throw error;
       }
     },

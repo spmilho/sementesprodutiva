@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useOfflineSyncContext } from "@/components/Layout";
 import { format, parseISO, differenceInDays, startOfDay, addDays, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,7 @@ export default function HarvestTab({
   femaleArea, materialCycleDays, targetMoisture = 18, expectedProductivity,
 }: HarvestTabProps) {
   const queryClient = useQueryClient();
+  const { addRecord } = useOfflineSyncContext();
   const [editingParams, setEditingParams] = useState(false);
   const [editCycleDays, setEditCycleDays] = useState(false);
   const [localCycleDays, setLocalCycleDays] = useState(materialCycleDays || 130);
@@ -165,9 +167,7 @@ export default function HarvestTab({
           .eq("id", savedParams.id);
         if (error) throw error;
       } else {
-        const { error } = await (supabase as any)
-          .from("harvest_plan")
-          .insert({
+        const { error } = await addRecord("harvest_plan", {
             cycle_id: cycleId,
             org_id: orgId,
             cycle_days_used: localCycleDays,
@@ -175,7 +175,7 @@ export default function HarvestTab({
             target_ha_per_day: localHaPerDay,
             bag_weight_kg: localBagWeight,
             planting_source: "planned",
-          });
+          }, cycleId);
         if (error) throw error;
       }
     },
