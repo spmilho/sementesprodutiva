@@ -59,8 +59,8 @@ export default function Cycles() {
   const deleteMutation = useMutation({
     mutationFn: async (cycleId: string) => {
       const { error } = await (supabase as any).rpc("soft_delete_record", {
-        p_table_name: "production_cycles",
-        p_record_id: cycleId,
+        _table_name: "production_cycles",
+        _record_id: cycleId,
       });
       if (error) throw error;
     },
