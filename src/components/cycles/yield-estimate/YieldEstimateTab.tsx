@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-republish";
 import type { YieldEstimateProps, YieldEstimate, SamplePoint, EarSample } from "./types";
 import { calcPointGrossYield, calcNetYield, getPointColor, getReliability } from "./utils";
 import SamplePointForm from "./SamplePointForm";
