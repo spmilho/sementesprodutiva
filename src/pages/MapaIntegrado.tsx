@@ -1,195 +1,420 @@
-import { useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, LayersControl } from "react-leaflet";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { MapContainer, TileLayer, CircleMarker, Popup, Tooltip, useMap } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Droplets, Eye, FlaskConical } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Search, List, X, ExternalLink, MapPin } from "lucide-react";
+import { format } from "date-fns";
 
-// Fix default marker icon
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+// ── Status config ──
+const STATUS_CONFIG: Record<string, { color: string; label: string; emoji: string }> = {
+  planning:    { color: "#3b82f6", label: "Planejado",       emoji: "🔵" },
+  planting:    { color: "#22c55e", label: "Em plantio",      emoji: "🟢" },
+  growing:     { color: "#22c55e", label: "Crescimento",     emoji: "🟢" },
+  detasseling: { color: "#eab308", label: "Florescimento",   emoji: "🟡" },
+  harvest:     { color: "#f97316", label: "Colheita",        emoji: "🟠" },
+  completed:   { color: "#9ca3af", label: "Concluído",       emoji: "✅" },
+  cancelled:   { color: "#6b7280", label: "Cancelado",       emoji: "⚪" },
+};
 
-function coloredIcon(color: string) {
+function getStatusColor(status: string) {
+  return STATUS_CONFIG[status]?.color ?? "#6b7280";
+}
+
+function getMarkerRadius(areaHa: number | null) {
+  if (!areaHa || areaHa <= 0) return 12;
+  if (areaHa <= 20) return 12;
+  if (areaHa <= 50) return 16;
+  if (areaHa <= 100) return 20;
+  if (areaHa <= 200) return 24;
+  return 28;
+}
+
+// ── Tile layers ──
+const TILES = {
+  satellite: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: "Tiles &copy; Esri",
+  },
+  osm: {
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  },
+  labels: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+    attribution: "Labels &copy; Esri",
+  },
+};
+
+type TileMode = "satellite" | "osm" | "satellite_labels";
+
+// ── FitBounds component ──
+function FitBoundsToMarkers({ positions }: { positions: [number, number][] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (positions.length === 0) return;
+    if (positions.length === 1) {
+      map.setView(positions[0], 14);
+    } else {
+      const bounds = L.latLngBounds(positions.map(p => L.latLng(p[0], p[1])));
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+    }
+  }, [positions, map]);
+  return null;
+}
+
+// ── Cluster icon ──
+function createClusterIcon(cluster: any) {
+  const children = cluster.getAllChildMarkers();
+  const count = children.length;
+  let worstColor = "#22c55e";
+  const priority: Record<string, number> = { cancelled: 0, completed: 1, planning: 2, planting: 3, growing: 4, detasseling: 5, harvest: 6 };
+  let worstPriority = -1;
+  children.forEach((m: any) => {
+    const s = m.options?.data?.status;
+    const p = priority[s] ?? 0;
+    if (p > worstPriority) { worstPriority = p; worstColor = getStatusColor(s); }
+  });
   return L.divIcon({
+    html: `<div style="background:${worstColor};color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.4);">${count}</div>`,
     className: "",
-    html: `<div style="width:24px;height:24px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.35);"></div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    popupAnchor: [0, -14],
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
   });
 }
 
-function getMoistureColor(pct: number): string {
-  if (pct > 25) return "hsl(0, 70%, 50%)";
-  if (pct > 20) return "hsl(25, 85%, 55%)";
-  if (pct > 18) return "hsl(50, 85%, 50%)";
-  return "hsl(130, 55%, 40%)";
-}
-
-function getMoistureLabel(pct: number): string {
-  if (pct > 25) return "Alta (> 25%)";
-  if (pct > 20) return "Moderada (20–25%)";
-  if (pct > 18) return "Quase pronta (18–20%)";
-  return "Pronta (< 18%)";
-}
-
-const FARM_CENTER: [number, number] = [-15.82, -47.92];
-
-const moistureSamples = [
-  { id: 1, lat: -15.815, lng: -47.915, moisture: 28.4, date: "10/02/2026", method: "Medidor portátil", cycle: "Pivô A1 — P3456H", sampler: "Carlos Silva" },
-  { id: 2, lat: -15.822, lng: -47.925, moisture: 21.3, date: "12/02/2026", method: "NIR", cycle: "Pivô B3 — SYN7205", sampler: "Ana Souza" },
-  { id: 3, lat: -15.828, lng: -47.910, moisture: 17.5, date: "14/02/2026", method: "Medidor portátil", cycle: "Pivô C2 — ADV9012", sampler: "João Lima" },
-  { id: 4, lat: -15.812, lng: -47.930, moisture: 23.8, date: "13/02/2026", method: "Estufa", cycle: "Pivô D1 — GDM4510", sampler: "Maria Santos" },
-  { id: 5, lat: -15.835, lng: -47.918, moisture: 19.2, date: "15/02/2026", method: "Medidor portátil", cycle: "Pivô E4 — P4020Y", sampler: "Pedro Alves" },
-];
-
-const visitRecords = [
-  { id: 1, lat: -15.818, lng: -47.920, date: "14/02/2026", type: "Rotina", visitor: "Carlos Silva", condition: "Bom", observations: "Desenvolvimento uniforme, sem pragas visíveis.", cycle: "Pivô A1 — P3456H" },
-  { id: 2, lat: -15.825, lng: -47.912, date: "15/02/2026", type: "Inspeção do cliente", visitor: "Dr. Roberto (Corteva)", condition: "Excelente", observations: "Cliente satisfeito com o stand. Elogiou o despendoamento.", cycle: "Pivô C2 — ADV9012" },
-  { id: 3, lat: -15.830, lng: -47.928, date: "16/02/2026", type: "Auditoria de qualidade", visitor: "Ana Souza", condition: "Regular", observations: "Algumas plantas fora de tipo identificadas no setor norte. Roguing recomendado.", cycle: "Pivô D1 — GDM4510" },
-];
-
-const applicationRecords = [
-  { id: 1, lat: -15.820, lng: -47.917, date: "08/02/2026", product: "Engeo Pleno S", target: "Inseticida", dose: "0,25 L/ha", area: 45, cycle: "Pivô A1 — P3456H", pest: "Spodoptera frugiperda" },
-  { id: 2, lat: -15.827, lng: -47.922, date: "10/02/2026", product: "Nativo", target: "Fungicida", dose: "0,75 L/ha", area: 38, cycle: "Pivô B3 — SYN7205", pest: "Cercospora zeae-maydis" },
-  { id: 3, lat: -15.833, lng: -47.908, date: "12/02/2026", product: "Roundup Original DI", target: "Herbicida", dose: "2,0 L/ha", area: 52, cycle: "Pivô C2 — ADV9012", pest: "Plantas daninhas" },
-];
-
-const visitIcon = coloredIcon("hsl(215, 70%, 55%)");
-const applicationIcon = coloredIcon("hsl(280, 60%, 55%)");
-
-const visitTypeBadge: Record<string, string> = {
-  Rotina: "bg-blue-100 text-blue-800",
-  "Inspeção do cliente": "bg-amber-100 text-amber-800",
-  "Auditoria de qualidade": "bg-purple-100 text-purple-800",
-  Emergência: "bg-red-100 text-red-800",
-};
-
-const targetColors: Record<string, string> = {
-  Inseticida: "bg-red-100 text-red-800",
-  Fungicida: "bg-violet-100 text-violet-800",
-  Herbicida: "bg-emerald-100 text-emerald-800",
-};
-
 export default function MapaIntegrado() {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const [filterSeason, setFilterSeason] = useState("all");
+  const [filterClient, setFilterClient] = useState("all");
+  const [filterCooperator, setFilterCooperator] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [tileMode, setTileMode] = useState<TileMode>("satellite");
+  const [showPanel, setShowPanel] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const { data: cycles = [], isLoading } = useQuery({
+    queryKey: ["map-cycles"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("production_cycles")
+        .select("*, clients(name), farms(name), cooperators(name), pivots(name, latitude, longitude, area_ha)")
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const seasons = useMemo(() => {
+    const s = new Set<string>();
+    cycles.forEach((c: any) => s.add(c.season));
+    return Array.from(s).sort().reverse();
+  }, [cycles]);
+
+  const clients = useMemo(() => {
+    const m = new Map<string, string>();
+    cycles.forEach((c: any) => { if (c.clients?.name) m.set(c.client_id, c.clients.name); });
+    return Array.from(m, ([id, name]) => ({ id, name }));
+  }, [cycles]);
+
+  const cooperators = useMemo(() => {
+    const m = new Map<string, string>();
+    cycles.forEach((c: any) => { if (c.cooperators?.name) m.set(c.cooperator_id, c.cooperators.name); });
+    return Array.from(m, ([id, name]) => ({ id, name }));
+  }, [cycles]);
+
+  const filtered = useMemo(() => {
+    return cycles.filter((c: any) => {
+      if (filterSeason !== "all" && c.season !== filterSeason) return false;
+      if (filterClient !== "all" && c.client_id !== filterClient) return false;
+      if (filterCooperator !== "all" && c.cooperator_id !== filterCooperator) return false;
+      if (filterStatus !== "all" && c.status !== filterStatus) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        const match =
+          c.hybrid_name?.toLowerCase().includes(q) ||
+          c.field_name?.toLowerCase().includes(q) ||
+          c.contract_number?.toLowerCase().includes(q) ||
+          c.clients?.name?.toLowerCase().includes(q) ||
+          c.cooperators?.name?.toLowerCase().includes(q) ||
+          c.farms?.name?.toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [cycles, filterSeason, filterClient, filterCooperator, filterStatus, search]);
+
+  const withCoords = useMemo(() =>
+    filtered.filter((c: any) => c.pivots?.latitude != null && c.pivots?.longitude != null),
+  [filtered]);
+
+  const positions = useMemo<[number, number][]>(() =>
+    withCoords.map((c: any) => [c.pivots.latitude, c.pivots.longitude]),
+  [withCoords]);
+
+  const totalArea = useMemo(() =>
+    withCoords.reduce((sum: number, c: any) => sum + (c.total_area || 0), 0),
+  [withCoords]);
+
+  const clearFilters = () => {
+    setSearch(""); setFilterSeason("all"); setFilterClient("all");
+    setFilterCooperator("all"); setFilterStatus("all");
+  };
+
+  const hasFilters = search || filterSeason !== "all" || filterClient !== "all" ||
+    filterCooperator !== "all" || filterStatus !== "all";
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-4">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Mapa Integrado</h1>
-        <p className="text-sm text-muted-foreground">Visualização georreferenciada de todas as operações de campo</p>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">🗺️ Mapa de Campos</h1>
+        <p className="text-sm text-muted-foreground">Visualização georreferenciada de todos os campos de produção</p>
       </div>
 
-      {/* Legend */}
-      <Card>
-        <CardContent className="py-3 px-4">
-          <div className="flex flex-wrap gap-4 text-xs">
-            <span className="font-semibold text-muted-foreground">Legenda Umidade:</span>
-            {[
-              { color: "hsl(0, 70%, 50%)", label: "> 25%" },
-              { color: "hsl(25, 85%, 55%)", label: "20–25%" },
-              { color: "hsl(50, 85%, 50%)", label: "18–20%" },
-              { color: "hsl(130, 55%, 40%)", label: "< 18%" },
-            ].map((item) => (
-              <span key={item.label} className="inline-flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full inline-block" style={{ background: item.color }} />
-                {item.label}
-              </span>
-            ))}
-            <span className="border-l border-border pl-4 inline-flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full inline-block" style={{ background: "hsl(215, 70%, 55%)" }} />
-              Visitas
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full inline-block" style={{ background: "hsl(280, 60%, 55%)" }} />
-              Aplicações
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-2 flex-wrap items-end">
+        <div className="relative flex-1 min-w-[180px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Buscar campo..." className="pl-9 h-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <Select value={filterSeason} onValueChange={setFilterSeason}>
+          <SelectTrigger className="w-[130px] h-9 text-sm"><SelectValue placeholder="Safra" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas Safras</SelectItem>
+            {seasons.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterClient} onValueChange={setFilterClient}>
+          <SelectTrigger className="w-[130px] h-9 text-sm"><SelectValue placeholder="Cliente" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterCooperator} onValueChange={setFilterCooperator}>
+          <SelectTrigger className="w-[130px] h-9 text-sm"><SelectValue placeholder="Cooperado" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {cooperators.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-[130px] h-9 text-sm"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {Object.entries(STATUS_CONFIG).map(([k, v]) => <SelectItem key={k} value={k}>{v.emoji} {v.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {hasFilters && <Button variant="ghost" size="sm" className="h-9" onClick={clearFilters}>Limpar</Button>}
+      </div>
 
-      {/* Map */}
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          <div className="h-[calc(100vh-280px)] min-h-[400px]">
-            <MapContainer center={FARM_CENTER} zoom={14} className="h-full w-full z-0">
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <LayersControl position="topright">
-                {/* Moisture */}
-                <LayersControl.Overlay checked name="💧 Umidade">
-                  <>
-                    {moistureSamples.map((s) => (
-                      <Marker key={`m-${s.id}`} position={[s.lat, s.lng]} icon={coloredIcon(getMoistureColor(s.moisture))}>
-                        <Popup maxWidth={280}>
-                          <div className="text-sm space-y-1">
-                            <div className="font-bold flex items-center gap-1"><Droplets className="h-3.5 w-3.5" /> Amostra de Umidade</div>
-                            <div><strong>Ciclo:</strong> {s.cycle}</div>
-                            <div><strong>Data:</strong> {s.date}</div>
-                            <div><strong>Umidade:</strong> <span className="font-semibold">{s.moisture.toFixed(1).replace(".", ",")}%</span></div>
-                            <div><strong>Status:</strong> {getMoistureLabel(s.moisture)}</div>
-                            <div><strong>Método:</strong> {s.method}</div>
-                            <div><strong>Coletado por:</strong> {s.sampler}</div>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    ))}
-                  </>
-                </LayersControl.Overlay>
+      {/* Map + Panel */}
+      <div className="flex gap-0 relative">
+        {/* Side panel */}
+        {showPanel && (
+          <Card className="w-[300px] shrink-0 overflow-hidden rounded-r-none border-r-0 z-10">
+            <CardContent className="p-0">
+              <div className="p-3 border-b border-border flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground">{withCoords.length} campos | {totalArea.toFixed(0)} ha</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowPanel(false)}><X className="h-3.5 w-3.5" /></Button>
+              </div>
+              <div className="overflow-y-auto max-h-[calc(100vh-360px)]">
+                {withCoords.map((c: any) => (
+                  <button
+                    key={c.id}
+                    className={`w-full text-left px-3 py-2.5 border-b border-border hover:bg-muted/50 transition-colors ${selectedId === c.id ? "bg-muted" : ""}`}
+                    onClick={() => setSelectedId(c.id)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: getStatusColor(c.status) }} />
+                      <span className="text-sm font-medium truncate">{c.contract_number || c.field_name}</span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                      {c.hybrid_name} • {c.total_area} ha • {c.clients?.name || "—"}
+                    </div>
+                  </button>
+                ))}
+                {withCoords.length === 0 && (
+                  <div className="p-4 text-center text-sm text-muted-foreground">Nenhum campo com coordenadas</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-                {/* Visits */}
-                <LayersControl.Overlay checked name="👁️ Visitas">
-                  <>
-                    {visitRecords.map((v) => (
-                      <Marker key={`v-${v.id}`} position={[v.lat, v.lng]} icon={visitIcon}>
-                        <Popup maxWidth={300}>
-                          <div className="text-sm space-y-1">
-                            <div className="font-bold flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> Visita de Campo</div>
-                            <div><strong>Ciclo:</strong> {v.cycle}</div>
-                            <div><strong>Data:</strong> {v.date}</div>
-                            <div><strong>Tipo:</strong> {v.type}</div>
-                            <div><strong>Visitante:</strong> {v.visitor}</div>
-                            <div><strong>Condição:</strong> {v.condition}</div>
-                            <div><strong>Obs:</strong> {v.observations}</div>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    ))}
-                  </>
-                </LayersControl.Overlay>
+        {/* Map */}
+        <Card className={`flex-1 overflow-hidden ${showPanel ? "rounded-l-none" : ""}`}>
+          <CardContent className="p-0 relative">
+            {isLoading ? (
+              <div className="h-[calc(100vh-280px)] min-h-[400px] flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="h-[calc(100vh-280px)] min-h-[400px]">
+                <MapContainer center={[-15.8, -47.9]} zoom={5} className="h-full w-full z-0" minZoom={4} maxZoom={18}>
+                  {/* Tiles */}
+                  {(tileMode === "satellite" || tileMode === "satellite_labels") && (
+                    <TileLayer url={TILES.satellite.url} attribution={TILES.satellite.attribution} />
+                  )}
+                  {tileMode === "osm" && (
+                    <TileLayer url={TILES.osm.url} attribution={TILES.osm.attribution} />
+                  )}
+                  {tileMode === "satellite_labels" && (
+                    <TileLayer url={TILES.labels.url} attribution={TILES.labels.attribution} />
+                  )}
 
-                {/* Applications */}
-                <LayersControl.Overlay checked name="🧪 Aplicações">
-                  <>
-                    {applicationRecords.map((a) => (
-                      <Marker key={`a-${a.id}`} position={[a.lat, a.lng]} icon={applicationIcon}>
-                        <Popup maxWidth={280}>
-                          <div className="text-sm space-y-1">
-                            <div className="font-bold flex items-center gap-1"><FlaskConical className="h-3.5 w-3.5" /> Aplicação Química</div>
-                            <div><strong>Ciclo:</strong> {a.cycle}</div>
-                            <div><strong>Data:</strong> {a.date}</div>
-                            <div><strong>Produto:</strong> {a.product}</div>
-                            <div><strong>Tipo:</strong> {a.target}</div>
-                            <div><strong>Dose:</strong> {a.dose}</div>
-                            <div><strong>Área:</strong> {a.area} ha</div>
-                            <div><strong>Alvo:</strong> {a.pest}</div>
-                          </div>
-                        </Popup>
-                      </Marker>
+                  <FitBoundsToMarkers positions={positions} />
+
+                  <MarkerClusterGroup
+                    chunkedLoading
+                    iconCreateFunction={createClusterIcon}
+                    maxClusterRadius={60}
+                  >
+                    {withCoords.map((c: any) => {
+                      const radius = getMarkerRadius(c.pivots?.area_ha || c.total_area);
+                      const color = getStatusColor(c.status);
+                      const isPlanned = c.status === "planning";
+                      return (
+                        <CircleMarker
+                          key={c.id}
+                          center={[c.pivots.latitude, c.pivots.longitude]}
+                          radius={radius}
+                          pathOptions={{
+                            color: "white",
+                            weight: isPlanned ? 2 : 3,
+                            fillColor: color,
+                            fillOpacity: 0.85,
+                            dashArray: isPlanned ? "6 4" : undefined,
+                          }}
+                          eventHandlers={{ click: () => setSelectedId(c.id) }}
+                        >
+                          <Tooltip
+                            permanent
+                            direction="center"
+                            className="leaflet-label-pivot"
+                          >
+                            <span style={{
+                              color: "white",
+                              fontWeight: 700,
+                              fontSize: "10px",
+                              textShadow: "0 1px 3px rgba(0,0,0,.8)",
+                            }}>
+                              {c.pivots?.name || c.field_name}
+                            </span>
+                          </Tooltip>
+
+                          <Popup maxWidth={340} minWidth={280}>
+                            <div className="text-sm space-y-2 p-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-base">🌽</span>
+                                <span className="font-bold">{c.contract_number || c.field_name} — {c.hybrid_name}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span>Status:</span>
+                                <span className="w-2 h-2 rounded-full" style={{ background: color }} />
+                                <span className="font-medium">{STATUS_CONFIG[c.status]?.label || c.status}</span>
+                              </div>
+                              <hr className="border-border" />
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                                <div><span className="text-muted-foreground">Cliente:</span> {c.clients?.name || "—"}</div>
+                                <div><span className="text-muted-foreground">Cooperado:</span> {c.cooperators?.name || "—"}</div>
+                                <div><span className="text-muted-foreground">Fazenda:</span> {c.farms?.name || "—"}</div>
+                                <div><span className="text-muted-foreground">Pivô:</span> {c.pivots?.name || c.field_name}</div>
+                                <div className="col-span-2"><span className="text-muted-foreground">Área:</span> {c.total_area} ha (F: {c.female_area} ha | M: {c.male_area} ha)</div>
+                                <div><span className="text-muted-foreground">Safra:</span> {c.season}</div>
+                                {c.contract_number && <div><span className="text-muted-foreground">Contrato:</span> {c.contract_number}</div>}
+                              </div>
+                              <hr className="border-border" />
+                              <div className="text-[11px] text-muted-foreground">
+                                Última atualização: {format(new Date(c.updated_at), "dd/MM/yyyy")}
+                              </div>
+                              <Button
+                                size="sm"
+                                className="w-full gap-1.5 mt-1"
+                                onClick={() => navigate(`/ciclos/${c.id}`)}
+                              >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                                Abrir Ciclo de Produção
+                              </Button>
+                            </div>
+                          </Popup>
+                        </CircleMarker>
+                      );
+                    })}
+                  </MarkerClusterGroup>
+                </MapContainer>
+
+                {/* Map controls overlay */}
+                <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1">
+                  {([
+                    ["satellite", "🛰️ Satélite"],
+                    ["osm", "🗺️ Mapa"],
+                    ["satellite_labels", "🛰️+🏷️"],
+                  ] as [TileMode, string][]).map(([mode, label]) => (
+                    <button
+                      key={mode}
+                      onClick={() => setTileMode(mode)}
+                      className={`px-2.5 py-1.5 text-xs font-medium rounded shadow-md transition-colors ${
+                        tileMode === mode
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-background/90 text-foreground hover:bg-background"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Panel toggle */}
+                {!showPanel && (
+                  <button
+                    onClick={() => setShowPanel(true)}
+                    className="absolute top-3 left-3 z-[1000] px-2.5 py-1.5 text-xs font-medium rounded shadow-md bg-background/90 text-foreground hover:bg-background flex items-center gap-1.5"
+                  >
+                    <List className="h-3.5 w-3.5" /> Lista
+                  </button>
+                )}
+
+                {/* Legend */}
+                <div className="absolute bottom-3 left-3 z-[1000] bg-background/85 backdrop-blur-sm rounded-lg p-2.5 shadow-md">
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px]">
+                    {Object.entries(STATUS_CONFIG).filter(([k]) => k !== "cancelled").map(([key, cfg]) => (
+                      <span key={key} className="inline-flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: cfg.color }} />
+                        {cfg.label}
+                      </span>
                     ))}
-                  </>
-                </LayersControl.Overlay>
-              </LayersControl>
-            </MapContainer>
-          </div>
-        </CardContent>
-      </Card>
+                  </div>
+                </div>
+
+                {/* No coords message */}
+                {!isLoading && withCoords.length === 0 && filtered.length > 0 && (
+                  <div className="absolute inset-0 z-[999] flex items-center justify-center pointer-events-none">
+                    <Card className="pointer-events-auto">
+                      <CardContent className="p-6 text-center">
+                        <MapPin className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm font-medium">Nenhum campo com coordenadas</p>
+                        <p className="text-xs text-muted-foreground mt-1">Cadastre latitude/longitude nos pivôs para visualizar no mapa.</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
