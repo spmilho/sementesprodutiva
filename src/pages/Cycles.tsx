@@ -1,14 +1,17 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search as SearchIcon, Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Plus, Search as SearchIcon, Loader2, Trash2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useRole } from "@/hooks/useRole";
+import { toast } from "sonner";
 import { format } from "date-fns";
 
 const statusLabels: Record<string, string> = {
@@ -45,11 +48,28 @@ function ContractIdentifier({ contractNumber, fieldName }: { contractNumber?: st
 
 export default function Cycles() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { isAdmin } = useRole();
   const [search, setSearch] = useState("");
   const [filterSeason, setFilterSeason] = useState("all");
   const [filterClient, setFilterClient] = useState("all");
   const [filterCooperator, setFilterCooperator] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+
+  const deleteMutation = useMutation({
+    mutationFn: async (cycleId: string) => {
+      const { error } = await (supabase as any).rpc("soft_delete_record", {
+        p_table_name: "production_cycles",
+        p_record_id: cycleId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["production_cycles"] });
+      toast.success("Ciclo excluído com sucesso!");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
 
   const { data: cycles = [], isLoading } = useQuery({
     queryKey: ["production_cycles"],
@@ -173,11 +193,12 @@ export default function Cycles() {
                     <TableHead className="text-xs hidden md:table-cell">Híbrido</TableHead>
                     <TableHead className="text-xs text-right">Área (ha)</TableHead>
                     <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs text-right hidden sm:table-cell">Atualização</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((c: any) => (
+                     <TableHead className="text-xs text-right hidden sm:table-cell">Atualização</TableHead>
+                     {isAdmin && <TableHead className="text-xs w-10"></TableHead>}
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {filtered.map((c: any) => (
                     <TableRow
                       key={c.id}
                       className={`cursor-pointer hover:bg-muted/50 ${!c.contract_number ? "bg-amber-50/40 dark:bg-amber-950/20" : ""}`}
@@ -193,10 +214,39 @@ export default function Cycles() {
                       <TableCell className="text-sm font-mono hidden md:table-cell">{c.hybrid_name}</TableCell>
                       <TableCell className="text-right text-sm font-medium">{c.total_area}</TableCell>
                       <TableCell><StatusBadge status={c.status} /></TableCell>
-                      <TableCell className="text-right text-sm text-muted-foreground hidden sm:table-cell">
-                        {format(new Date(c.updated_at), "dd/MM/yyyy")}
-                      </TableCell>
-                    </TableRow>
+                       <TableCell className="text-right text-sm text-muted-foreground hidden sm:table-cell">
+                         {format(new Date(c.updated_at), "dd/MM/yyyy")}
+                       </TableCell>
+                       {isAdmin && (
+                         <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                           <AlertDialog>
+                             <AlertDialogTrigger asChild>
+                               <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                                 <Trash2 className="h-4 w-4" />
+                               </Button>
+                             </AlertDialogTrigger>
+                             <AlertDialogContent>
+                               <AlertDialogHeader>
+                                 <AlertDialogTitle>Excluir ciclo?</AlertDialogTitle>
+                                 <AlertDialogDescription>
+                                   Tem certeza que deseja excluir o ciclo <strong>{c.contract_number || c.field_name}</strong> ({c.hybrid_name})?
+                                   Esta ação não pode ser desfeita.
+                                 </AlertDialogDescription>
+                               </AlertDialogHeader>
+                               <AlertDialogFooter>
+                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                 <AlertDialogAction
+                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                   onClick={() => deleteMutation.mutate(c.id)}
+                                 >
+                                   Excluir
+                                 </AlertDialogAction>
+                               </AlertDialogFooter>
+                             </AlertDialogContent>
+                           </AlertDialog>
+                         </TableCell>
+                       )}
+                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
