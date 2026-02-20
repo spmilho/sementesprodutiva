@@ -170,3 +170,11 @@
 .leaflet-pane {
   z-index: 0 !important;
 }
+
+/* Hide default leaflet tooltip styling for pivot labels */
+.leaflet-label-pivot {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
