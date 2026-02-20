@@ -1,35 +1,81 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Users, WifiOff } from "lucide-react";
-import ClientsTab from "@/components/settings/ClientsTab";
+import { Building2, Users, Layers, FileText, Download, WifiOff } from "lucide-react";
+import { useRole } from "@/hooks/useRole";
+import { Navigate } from "react-router-dom";
+import OrganizationTab from "@/components/settings/OrganizationTab";
+import UsersTab from "@/components/settings/UsersTab";
+import CycleTeamTab from "@/components/settings/CycleTeamTab";
+import ReportSettingsTab from "@/components/settings/ReportSettingsTab";
+import ExportDataTab from "@/components/settings/ExportDataTab";
 import CooperadosTab from "@/components/settings/CooperadosTab";
+import ClientsTab from "@/components/settings/ClientsTab";
 import OfflineQueueTab from "@/components/settings/OfflineQueueTab";
 
 export default function Configuracoes() {
+  const { isAdmin, isManager, loading } = useRole();
+
+  if (loading) return <div className="p-8 text-muted-foreground">Carregando...</div>;
+  if (!isAdmin && !isManager) return <Navigate to="/" replace />;
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
-        <p className="text-sm text-muted-foreground">Gerencie clientes, cooperados, fazendas e pivôs</p>
+        <p className="text-sm text-muted-foreground">Gerencie organização, usuários, equipes, relatórios e dados</p>
       </div>
 
-      <Tabs defaultValue="cooperados" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="cooperados" className="gap-2">
-            <Users className="h-4 w-4" /> Cooperados
+      <Tabs defaultValue="organization" className="space-y-4">
+        <TabsList className="flex-wrap h-auto gap-1">
+          <TabsTrigger value="organization" className="gap-1.5 text-xs">
+            <Building2 className="h-3.5 w-3.5" /> Organização
           </TabsTrigger>
-          <TabsTrigger value="clients" className="gap-2">
-            <Building2 className="h-4 w-4" /> Clientes
+          {isAdmin && (
+            <TabsTrigger value="users" className="gap-1.5 text-xs">
+              <Users className="h-3.5 w-3.5" /> Usuários
+            </TabsTrigger>
+          )}
+          <TabsTrigger value="team" className="gap-1.5 text-xs">
+            <Layers className="h-3.5 w-3.5" /> Equipe dos Ciclos
           </TabsTrigger>
-          <TabsTrigger value="offline" className="gap-2">
-            <WifiOff className="h-4 w-4" /> Fila Offline
+          <TabsTrigger value="cooperados" className="gap-1.5 text-xs">
+            <Users className="h-3.5 w-3.5" /> Cooperados
+          </TabsTrigger>
+          <TabsTrigger value="clients" className="gap-1.5 text-xs">
+            <Building2 className="h-3.5 w-3.5" /> Clientes
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="gap-1.5 text-xs">
+            <FileText className="h-3.5 w-3.5" /> Relatórios
+          </TabsTrigger>
+          <TabsTrigger value="export" className="gap-1.5 text-xs">
+            <Download className="h-3.5 w-3.5" /> Exportar
+          </TabsTrigger>
+          <TabsTrigger value="offline" className="gap-1.5 text-xs">
+            <WifiOff className="h-3.5 w-3.5" /> Fila Offline
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="organization">
+          <OrganizationTab />
+        </TabsContent>
+        {isAdmin && (
+          <TabsContent value="users">
+            <UsersTab />
+          </TabsContent>
+        )}
+        <TabsContent value="team">
+          <CycleTeamTab />
+        </TabsContent>
         <TabsContent value="cooperados">
           <CooperadosTab />
         </TabsContent>
         <TabsContent value="clients">
           <ClientsTab />
+        </TabsContent>
+        <TabsContent value="reports">
+          <ReportSettingsTab />
+        </TabsContent>
+        <TabsContent value="export">
+          <ExportDataTab />
         </TabsContent>
         <TabsContent value="offline">
           <OfflineQueueTab />

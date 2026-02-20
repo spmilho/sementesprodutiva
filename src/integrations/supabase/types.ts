@@ -330,6 +330,48 @@ export type Database = {
           },
         ]
       }
+      cycle_team: {
+        Row: {
+          created_at: string
+          cycle_id: string
+          id: string
+          org_id: string
+          role_in_cycle: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_id: string
+          id?: string
+          org_id: string
+          role_in_cycle?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cycle_id?: string
+          id?: string
+          org_id?: string
+          role_in_cycle?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cycle_team_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycle_team_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       detasseling_records: {
         Row: {
           area_worked_ha: number
@@ -1690,21 +1732,68 @@ export type Database = {
           },
         ]
       }
-      organizations: {
+      organization_settings: {
         Row: {
           created_at: string
           id: string
-          name: string
+          org_id: string
+          report_cover_url: string | null
+          report_footer_text: string | null
+          report_logo_url: string | null
+          updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
-          name: string
+          org_id: string
+          report_cover_url?: string | null
+          report_footer_text?: string | null
+          report_logo_url?: string | null
+          updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          org_id?: string
+          report_cover_url?: string | null
+          report_footer_text?: string | null
+          report_logo_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          slogan: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          slogan?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
           name?: string
+          slogan?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
