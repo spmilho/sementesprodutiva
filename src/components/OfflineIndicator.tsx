@@ -16,12 +16,12 @@ const config: Record<SyncStatus, { icon: typeof Wifi; label: string; className: 
   offline: {
     icon: WifiOff,
     label: "Offline",
-    className: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+    className: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
   },
   syncing: {
     icon: CloudUpload,
     label: "Sincronizando…",
-    className: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+    className: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
   },
   synced: {
     icon: CheckCircle2,
@@ -33,15 +33,17 @@ const config: Record<SyncStatus, { icon: typeof Wifi; label: string; className: 
 export function OfflineIndicator({ syncStatus, pendingCount }: OfflineIndicatorProps) {
   const { icon: Icon, label, className } = config[syncStatus];
 
+  const displayLabel =
+    syncStatus === "offline" && pendingCount > 0
+      ? `Offline (${pendingCount} pendente${pendingCount > 1 ? "s" : ""})`
+      : syncStatus === "synced"
+        ? "Online (sincronizado)"
+        : label;
+
   return (
     <div className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors", className)}>
-      <Icon className={cn("h-3.5 w-3.5", syncStatus === "syncing" && "animate-pulse")} />
-      <span>{label}</span>
-      {pendingCount > 0 && syncStatus !== "synced" && (
-        <span className="ml-0.5 rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] leading-none dark:bg-white/10">
-          {pendingCount}
-        </span>
-      )}
+      <Icon className={cn("h-3.5 w-3.5", syncStatus === "syncing" && "animate-spin")} />
+      <span>{displayLabel}</span>
     </div>
   );
 }
