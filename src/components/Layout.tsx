@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { useOfflineSync } from "@/hooks/use-offline-sync";
 import { createContext, useContext } from "react";
 
@@ -21,6 +22,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="min-h-screen flex w-full">
           <AppSidebar />
           <main className="flex-1 flex flex-col min-w-0">
+            <OfflineBanner
+              syncStatus={offlineSync.syncStatus}
+              syncMessage={offlineSync.syncMessage}
+              pendingCount={offlineSync.pendingCount}
+            />
             <header className="h-14 flex items-center gap-3 border-b border-border px-4 bg-card shrink-0">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
               <div className="h-5 w-px bg-border" />
