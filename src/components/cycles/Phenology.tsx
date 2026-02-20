@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useOfflineSyncContext } from "@/components/Layout";
 import NdviSection from "@/components/cycles/ndvi/NdviSection";
 import { Separator } from "@/components/ui/separator";
 
@@ -125,6 +126,7 @@ export default function Phenology({
   cycleId, orgId, pivotName, contractNumber, cooperatorName, farmName, hybridName, pivotId,
 }: PhenologyProps) {
   const queryClient = useQueryClient();
+  const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -240,7 +242,7 @@ export default function Phenology({
           const { error } = await (supabase as any).from("phenology_records").update(update).eq("id", editingId);
           if (error) throw error;
         } else {
-          const { error } = await (supabase as any).from("phenology_records").insert(row);
+          const { error } = await addRecord("phenology_records", row, cycleId);
           if (error) throw error;
         }
       }

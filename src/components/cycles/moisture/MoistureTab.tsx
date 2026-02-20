@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useOfflineSyncContext } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, List } from "lucide-react";
@@ -19,6 +20,7 @@ export default function MoistureTab({
   cycleId, orgId, contractNumber, pivotName, hybridName, cooperatorName, femaleArea, targetMoisture, pivotId,
 }: MoistureTabProps) {
   const queryClient = useQueryClient();
+  const { addRecord } = useOfflineSyncContext();
   const [showForm, setShowForm] = useState(false);
   const [showBatch, setShowBatch] = useState(false);
 
@@ -74,13 +76,14 @@ export default function MoistureTab({
   // Insert mutation
   const insertMutation = useMutation({
     mutationFn: async (records: any[]) => {
-      const toInsert = records.map((r) => ({
-        ...r,
-        cycle_id: cycleId,
-        org_id: orgId,
-      }));
-      const { error } = await (supabase as any).from("moisture_samples").insert(toInsert);
-      if (error) throw error;
+      for (const r of records) {
+        const { error } = await addRecord("moisture_samples", {
+          ...r,
+          cycle_id: cycleId,
+          org_id: orgId,
+        }, cycleId);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["moisture_samples", cycleId] });

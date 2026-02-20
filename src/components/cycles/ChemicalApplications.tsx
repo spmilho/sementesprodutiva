@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOfflineSyncContext } from "@/components/Layout";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Plus, Trash2, ImageIcon, Loader2, MapPin } from "lucide-react";
@@ -43,6 +44,7 @@ interface Props {
 
 export default function ChemicalApplications({ cycleId, orgId }: Props) {
   const queryClient = useQueryClient();
+  const { addRecord } = useOfflineSyncContext();
   const [open, setOpen] = useState(false);
 
   // Form state
@@ -83,7 +85,7 @@ export default function ChemicalApplications({ cycleId, orgId }: Props) {
 
   const insertMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any).from("chemical_applications").insert({
+      const { error } = await addRecord("chemical_applications", {
         cycle_id: cycleId,
         org_id: orgId,
         application_date: date,
@@ -105,7 +107,7 @@ export default function ChemicalApplications({ cycleId, orgId }: Props) {
         notes: notes || null,
         gps_latitude: lat ? parseFloat(lat) : null,
         gps_longitude: lng ? parseFloat(lng) : null,
-      });
+      }, cycleId);
       if (error) throw error;
     },
     onSuccess: () => {

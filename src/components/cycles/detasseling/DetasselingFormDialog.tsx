@@ -11,6 +11,7 @@ import { MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useOfflineSyncContext } from "@/components/Layout";
 import {
   PASS_TYPES, SHIFTS, METHODS, TASSEL_HEIGHTS, DIFFICULTIES_OPTIONS,
   isManualMethod, isMechanicalMethod,
@@ -39,6 +40,7 @@ function remainColor(val: number) {
 
 export default function DetasselingFormDialog({ open, onOpenChange, cycleId, orgId }: Props) {
   const qc = useQueryClient();
+  const { addRecord } = useOfflineSyncContext();
   const [saving, setSaving] = useState(false);
 
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -91,7 +93,7 @@ export default function DetasselingFormDialog({ open, onOpenChange, cycleId, org
     setSaving(true);
     try {
       const area = parseFloat(areaWorked);
-      const { error } = await (supabase as any).from("detasseling_records").insert({
+      const { error } = await addRecord("detasseling_records", {
         cycle_id: cycleId,
         org_id: orgId,
         operation_date: date,
@@ -113,7 +115,7 @@ export default function DetasselingFormDialog({ open, onOpenChange, cycleId, org
         notes: notes || null,
         gps_latitude: lat,
         gps_longitude: lng,
-      });
+      }, cycleId);
       if (error) throw error;
       toast.success("Operação registrada!");
       qc.invalidateQueries({ queryKey: ["detasseling", cycleId] });

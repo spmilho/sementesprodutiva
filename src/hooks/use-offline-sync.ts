@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface OfflineRecord {
   id: string;
@@ -39,11 +40,8 @@ export function useOfflineSync() {
   const pendingRecords = queue.filter((r) => !r.synced);
   const pendingCount = pendingRecords.length;
 
-  // Listen for online/offline events
   useEffect(() => {
-    const goOnline = () => {
-      setIsOnline(true);
-    };
+    const goOnline = () => setIsOnline(true);
     const goOffline = () => {
       setIsOnline(false);
       setSyncStatus("offline");
@@ -74,7 +72,6 @@ export function useOfflineSync() {
     let failCount = 0;
     const allRecords = loadQueue();
 
-    // Process in chronological order
     const sorted = [...current].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
     for (const record of sorted) {
@@ -86,9 +83,7 @@ export function useOfflineSync() {
         const idx = allRecords.findIndex((r) => r.id === record.id);
         if (error) {
           failCount++;
-          if (idx >= 0) {
-            allRecords[idx].error = error.message;
-          }
+          if (idx >= 0) allRecords[idx].error = error.message;
         } else {
           successCount++;
           if (idx >= 0) {
@@ -99,13 +94,10 @@ export function useOfflineSync() {
       } catch (err: any) {
         failCount++;
         const idx = allRecords.findIndex((r) => r.id === record.id);
-        if (idx >= 0) {
-          allRecords[idx].error = err?.message || "Erro desconhecido";
-        }
+        if (idx >= 0) allRecords[idx].error = err?.message || "Erro desconhecido";
       }
     }
 
-    // Remove synced records from queue
     const remaining = allRecords.filter((r) => !r.synced);
     saveQueue(remaining);
     setQueue(remaining);
@@ -137,8 +129,48 @@ export function useOfflineSync() {
     }
   }, [isOnline, pendingCount]);
 
+  /**
+   * Insert a record. When online, inserts directly via Supabase.
+   * When offline, queues locally for later sync.
+   * Returns { error } compatible with Supabase response.
+   */
   const addRecord = useCallback(
-    (table: string, data: Record<string, unknown>, cycleId?: string) => {
+    async (table: string, data: Record<string, unknown>, cycleId?: string): Promise<{ error: any }> => {
+      if (navigator.onLine) {
+        // Try direct insert
+        const { error } = await supabase.from(table as any).insert(data as any);
+        if (error) {
+          // If it's a network error, queue locally
+          if (error.message?.includes("fetch") || error.message?.includes("network") || error.message?.includes("Failed")) {
+            return queueLocally(table, data, cycleId);
+          }
+          return { error };
+        }
+        return { error: null };
+      } else {
+        return queueLocally(table, data, cycleId);
+      }
+    },
+    []
+  );
+
+  /**
+   * Insert a record and return the inserted data (with select).
+   * Only works when online. When offline, returns an error.
+   */
+  const addRecordWithReturn = useCallback(
+    async (table: string, data: Record<string, unknown>): Promise<{ data: any; error: any }> => {
+      if (!navigator.onLine) {
+        return { data: null, error: { message: "Este formulário requer conexão com a internet." } };
+      }
+      const { data: result, error } = await supabase.from(table as any).insert(data as any).select().single();
+      return { data: result, error };
+    },
+    []
+  );
+
+  const queueLocally = useCallback(
+    (table: string, data: Record<string, unknown>, cycleId?: string): { error: any } => {
       const record: OfflineRecord = {
         id: crypto.randomUUID(),
         table,
@@ -150,15 +182,12 @@ export function useOfflineSync() {
       const updated = [...loadQueue(), record];
       saveQueue(updated);
       setQueue(updated);
-
-      if (navigator.onLine) {
-        // Try syncing immediately
-        setTimeout(syncRecords, 200);
-      }
-
-      return record.id;
+      toast.success("✅ Salvo localmente. Será enviado ao reconectar.", {
+        icon: "📱",
+      });
+      return { error: null };
     },
-    [syncRecords]
+    []
   );
 
   const clearQueue = useCallback(() => {
@@ -183,6 +212,7 @@ export function useOfflineSync() {
     pending: pendingRecords,
     pendingCount,
     addRecord,
+    addRecordWithReturn,
     syncRecords,
     forceSync,
     clearQueue,
