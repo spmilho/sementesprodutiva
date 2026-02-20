@@ -21,6 +21,7 @@ import { CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useOfflineSyncContext } from "@/components/Layout";
 
 // ═══════════ TYPES & CONSTANTS ═══════════
 
@@ -215,6 +216,7 @@ export default function SementeBasica({
   cycleId, orgId, contractNumber, pivotName, hybridName, clientName, femaleLine, maleLine, totalArea,
 }: SementeBasicaProps) {
   const { user } = useAuth();
+  const { addRecordGroup } = useOfflineSyncContext();
   const queryClient = useQueryClient();
   const [lotDialogOpen, setLotDialogOpen] = useState(false);
   const [tsDialogOpen, setTsDialogOpen] = useState(false);
@@ -317,16 +319,13 @@ export default function SementeBasica({
   // ─── MUTATIONS ───
   const saveLotMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any).from("seed_lots").insert({
-        cycle_id: cycleId,
-        org_id: orgId,
+      const lotData = {
+        cycle_id: cycleId, org_id: orgId,
         parent_type: lotForm.parent_type,
         designated_male_planting: lotForm.parent_type === "male" && lotForm.designated_male_planting ? lotForm.designated_male_planting : null,
-        lot_number: lotForm.lot_number,
-        origin_season: lotForm.origin_season,
+        lot_number: lotForm.lot_number, origin_season: lotForm.origin_season,
         received_date: lotForm.received_date ? format(lotForm.received_date, "yyyy-MM-dd") : null,
-        quantity: parseFloat(lotForm.quantity),
-        quantity_unit: lotForm.quantity_unit,
+        quantity: parseFloat(lotForm.quantity), quantity_unit: lotForm.quantity_unit,
         quantity_kg: lotForm.quantity_kg ? parseFloat(lotForm.quantity_kg) : null,
         thousand_seed_weight_g: lotForm.thousand_seed_weight_g ? parseFloat(lotForm.thousand_seed_weight_g) : null,
         sieve_classification: lotForm.sieve_classification || null,
@@ -345,7 +344,10 @@ export default function SementeBasica({
         pest_presence: lotForm.pest_presence || null,
         reception_notes: lotForm.reception_notes || null,
         created_by: user?.id,
-      });
+      };
+      const { error } = await addRecordGroup([
+        { table: "seed_lots", data: lotData },
+      ], cycleId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -360,7 +362,9 @@ export default function SementeBasica({
   const saveTsMutation = useMutation({
     mutationFn: async () => {
       if (!selectedLotForTS) return;
-      const { data: ts, error: tsErr } = await (supabase as any).from("seed_lot_treatments").insert({
+      const localTsId = crypto.randomUUID();
+      const tsData = {
+        id: localTsId,
         seed_lot_id: selectedLotForTS.id,
         treatment_origin: tsForm.treatment_origin,
         treatment_date: tsForm.treatment_date ? format(tsForm.treatment_date, "yyyy-MM-dd") : null,
@@ -373,14 +377,18 @@ export default function SementeBasica({
         no_treatment_reason: tsForm.no_treatment_reason || null,
         notes: tsForm.notes || null,
         created_by: user?.id,
-      }).select().single();
-      if (tsErr) throw tsErr;
+      };
+
+      const groupRecords: any[] = [
+        { table: "seed_lot_treatments", data: tsData, localId: localTsId },
+      ];
 
       const validProducts = tsForm.products.filter(p => p.product_name && p.dose);
-      if (validProducts.length > 0) {
-        const { error: prodErr } = await (supabase as any).from("seed_lot_treatment_products").insert(
-          validProducts.map(p => ({
-            seed_lot_treatment_id: ts.id,
+      for (const p of validProducts) {
+        groupRecords.push({
+          table: "seed_lot_treatment_products",
+          data: {
+            seed_lot_treatment_id: localTsId,
             product_name: p.product_name,
             active_ingredient: p.active_ingredient || null,
             product_type: p.product_type || null,
@@ -388,10 +396,14 @@ export default function SementeBasica({
             dose: parseFloat(p.dose),
             dose_unit: p.dose_unit,
             application_order: p.application_order ? parseInt(p.application_order) : null,
-          }))
-        );
-        if (prodErr) throw prodErr;
+          },
+          parentLocalId: localTsId,
+          fkField: "seed_lot_treatment_id",
+        });
       }
+
+      const { error } = await addRecordGroup(groupRecords, cycleId);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["seed_lot_treatments", cycleId] });

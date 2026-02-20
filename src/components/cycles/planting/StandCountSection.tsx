@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { calcStats, getCvLabel, getEmergenceColor, isFemaleType } from "./planting-utils";
+import { useOfflineSyncContext } from "@/components/Layout";
 
 interface Props {
   cycleId: string;
@@ -45,6 +46,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function StandCountSection({ cycleId, orgId, standCounts, standPoints, plans, actuals, glebas }: Props) {
   const queryClient = useQueryClient();
+  const { addRecordGroup } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -123,14 +125,12 @@ export default function StandCountSection({ cycleId, orgId, standCounts, standPo
         dap = Math.round((countDate.getTime() - plantDate.getTime()) / (1000 * 60 * 60 * 24));
       }
 
-      // Get planned population
       const matchingPlan = plans.find((p: any) =>
         (values.parent_type === "female" ? isFemaleType(p.type) : !isFemaleType(p.type)) &&
         (!values.gleba_id || p.gleba_id === values.gleba_id)
       );
       const plannedPop = matchingPlan?.target_population || null;
 
-      // Calculate stats from points
       const pointsData = validPoints.map(p => {
         const count = parseFloat(p.seeds);
         const length = parseFloat(p.length);
@@ -145,48 +145,63 @@ export default function StandCountSection({ cycleId, orgId, standCounts, standPo
       const ppmStats = calcStats(ppmValues);
       const emergPct = plannedPop && s.mean > 0 ? (s.mean / plannedPop) * 100 : null;
 
-      // Save header
-      const headerRow: any = {
-        cycle_id: cycleId, org_id: orgId,
-        count_date: format(values.count_date, "yyyy-MM-dd"),
-        count_type: values.count_type,
-        parent_type: values.parent_type,
-        gleba_id: values.gleba_id || null,
-        row_spacing_cm: values.row_spacing_cm,
-        days_after_planting: dap,
-        avg_plants_per_meter: Math.round(ppmStats.mean * 100) / 100,
-        avg_plants_per_ha: Math.round(s.mean),
-        std_plants_per_ha: Math.round(s.std),
-        cv_stand_pct: Math.round(s.cv * 10) / 10,
-        planned_population_ha: plannedPop,
-        emergence_pct: emergPct ? Math.round(emergPct * 10) / 10 : null,
-        notes: values.notes || null,
-      };
-
-      let headerId: string;
       if (editingId) {
+        // Editing still uses direct Supabase (needs update + delete)
+        const headerRow: any = {
+          cycle_id: cycleId, org_id: orgId,
+          count_date: format(values.count_date, "yyyy-MM-dd"),
+          count_type: values.count_type, parent_type: values.parent_type,
+          gleba_id: values.gleba_id || null, row_spacing_cm: values.row_spacing_cm,
+          days_after_planting: dap, avg_plants_per_meter: Math.round(ppmStats.mean * 100) / 100,
+          avg_plants_per_ha: Math.round(s.mean), std_plants_per_ha: Math.round(s.std),
+          cv_stand_pct: Math.round(s.cv * 10) / 10, planned_population_ha: plannedPop,
+          emergence_pct: emergPct ? Math.round(emergPct * 10) / 10 : null,
+          notes: values.notes || null,
+        };
         const { error } = await (supabase as any).from("stand_counts").update(headerRow).eq("id", editingId);
         if (error) throw error;
-        headerId = editingId;
-        // Delete existing points
         await (supabase as any).from("stand_count_points").delete().eq("stand_count_id", editingId);
+        const pointRows = validPoints.map((p, i) => ({
+          stand_count_id: editingId, point_number: i + 1,
+          plants_counted: parseInt(p.seeds), sample_length_m: parseFloat(p.length),
+          row_spacing_cm: values.row_spacing_cm,
+        }));
+        const { error: ptErr } = await (supabase as any).from("stand_count_points").insert(pointRows);
+        if (ptErr) throw ptErr;
       } else {
-        const { data, error } = await (supabase as any).from("stand_counts").insert(headerRow).select("id").single();
+        // New record: use offline-capable group insert
+        const localHeaderId = crypto.randomUUID();
+        const headerRow: any = {
+          id: localHeaderId, cycle_id: cycleId, org_id: orgId,
+          count_date: format(values.count_date, "yyyy-MM-dd"),
+          count_type: values.count_type, parent_type: values.parent_type,
+          gleba_id: values.gleba_id || null, row_spacing_cm: values.row_spacing_cm,
+          days_after_planting: dap, avg_plants_per_meter: Math.round(ppmStats.mean * 100) / 100,
+          avg_plants_per_ha: Math.round(s.mean), std_plants_per_ha: Math.round(s.std),
+          cv_stand_pct: Math.round(s.cv * 10) / 10, planned_population_ha: plannedPop,
+          emergence_pct: emergPct ? Math.round(emergPct * 10) / 10 : null,
+          notes: values.notes || null,
+        };
+
+        const groupRecords: any[] = [
+          { table: "stand_counts", data: headerRow, localId: localHeaderId },
+        ];
+        validPoints.forEach((p, i) => {
+          groupRecords.push({
+            table: "stand_count_points",
+            data: {
+              stand_count_id: localHeaderId, point_number: i + 1,
+              plants_counted: parseInt(p.seeds), sample_length_m: parseFloat(p.length),
+              row_spacing_cm: values.row_spacing_cm,
+            },
+            parentLocalId: localHeaderId,
+            fkField: "stand_count_id",
+          });
+        });
+
+        const { error } = await addRecordGroup(groupRecords, cycleId);
         if (error) throw error;
-        headerId = data.id;
       }
-
-      // Insert points
-      const pointRows = validPoints.map((p, i) => ({
-        stand_count_id: headerId,
-        point_number: i + 1,
-        plants_counted: parseInt(p.seeds),
-        sample_length_m: parseFloat(p.length),
-        row_spacing_cm: values.row_spacing_cm,
-      }));
-
-      const { error: ptErr } = await (supabase as any).from("stand_count_points").insert(pointRows);
-      if (ptErr) throw ptErr;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stand_counts", cycleId] });
