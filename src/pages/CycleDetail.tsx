@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
 import UnifiedPlantingTab from "@/components/cycles/planting/UnifiedPlantingTab";
 import Phenology from "@/components/cycles/Phenology";
@@ -55,6 +57,7 @@ export default function CycleDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { isAdmin } = useRole();
   const [editingContract, setEditingContract] = useState(false);
   const contractInputRef = useRef<HTMLInputElement>(null);
 
@@ -124,6 +127,22 @@ export default function CycleDetail() {
 
   const handleContractSave = () => { contractMutation.mutate((contractInputRef.current?.value ?? "").trim()); };
 
+  const deleteCycleMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase as any).rpc("soft_delete_record", {
+        p_table_name: "production_cycles",
+        p_record_id: id!,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["production_cycles"] });
+      toast.success("Ciclo excluído com sucesso!");
+      navigate("/ciclos");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
@@ -165,6 +184,34 @@ export default function CycleDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {isAdmin && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                  <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir ciclo?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja excluir o ciclo <strong>{cycle.contract_number || cycle.field_name}</strong> ({cycle.hybrid_name})?
+                    Todos os dados associados ficarão inacessíveis. Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => deleteCycleMutation.mutate()}
+                    disabled={deleteCycleMutation.isPending}
+                  >
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <Select value={cycle.status} onValueChange={(v) => statusMutation.mutate(v)}>
             <SelectTrigger className="w-[160px] h-9"><SelectValue /></SelectTrigger>
             <SelectContent>{Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
