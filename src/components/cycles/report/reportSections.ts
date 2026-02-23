@@ -189,6 +189,7 @@ export function drawExecutiveSummary(doc: jsPDF, data: ReportData) {
     ...(c.spacing_female_male_cm ? [["Espaçam. F×M", `${c.spacing_female_male_cm} cm`]] : []),
     ...(c.spacing_male_male_cm ? [["Espaçam. M×M", `${c.spacing_male_male_cm} cm`]] : []),
     ...(c.material_cycle_days ? [["Ciclo material", `${c.material_cycle_days} dias`]] : []),
+    ...(c.detasseling_dap ? [["DAP Despendoamento", `${c.detasseling_dap} dias`]] : []),
     ["Sistema irrigação", c.irrigation_system],
     ...(c.target_moisture ? [["Umidade alvo", `${fmtNum(c.target_moisture)}%`]] : []),
     ...(c.cooperator_name ? [["Cooperado", c.cooperator_name]] : []),
@@ -595,10 +596,49 @@ export function drawNicking(doc: jsPDF, data: ReportData) {
 // ═══════════════════════════════════════
 
 export function drawDetasseling(doc: jsPDF, data: ReportData) {
-  if (data.detasseling.length === 0) return;
+  if (data.detasseling.length === 0 && !data.cycle.detasseling_dap) return;
   doc.addPage();
   drawHeader(doc, data);
   let y = sectionTitle(doc, "Despendoamento", MARGIN.top);
+
+  // Forecast table if DAP configured
+  if (data.cycle.detasseling_dap && data.glebas.length > 0) {
+    const dap = data.cycle.detasseling_dap;
+    const femaleGlebas = data.glebas.filter((g: any) => g.parent_type === "female");
+    if (femaleGlebas.length > 0) {
+      y = subTitle(doc, "Previsão de Despendoamento por Gleba", y);
+      const forecastBody = femaleGlebas.map((g: any) => {
+        const actual = data.plantingActual.find((p: any) => p.pivot_glebas?.name === g.name && p.type === "female");
+        const plantDate = actual?.planting_date || null;
+        const estDate = plantDate ? (() => {
+          const d = new Date(plantDate);
+          d.setDate(d.getDate() + dap);
+          return d.toISOString().slice(0, 10);
+        })() : null;
+        const hasRec = data.detasseling.some((d: any) => d.pivot_glebas?.name === g.name);
+        return [
+          g.name, fmtNum(g.area_ha),
+          plantDate ? fmtDate(plantDate) : "—",
+          estDate ? fmtDate(estDate) : "—",
+          hasRec ? "✅ Iniciado" : "⏳ Aguardando",
+        ];
+      });
+      autoTable(doc, {
+        startY: y,
+        head: [["Gleba", "Área(ha)", "Plantio Real", "Desp. Estimado", "Status"]],
+        body: forecastBody,
+        headStyles: { fillColor: BLUE, fontSize: 8 },
+        bodyStyles: { fontSize: 8 },
+        alternateRowStyles: { fillColor: ALT_ROW },
+        margin: { left: MARGIN.left, right: MARGIN.right },
+      });
+      y = getLastY(doc) + 10;
+    }
+  }
+
+  if (data.detasseling.length === 0) return;
+
+  y = subTitle(doc, "Registros Operacionais", y);
 
   const methodLabel = (m: string) => {
     if (m === "manual") return "Manual";

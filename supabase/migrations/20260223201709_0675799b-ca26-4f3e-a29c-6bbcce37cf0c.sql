@@ -1,0 +1,1 @@
+ALTER TABLE public.production_cycles ADD COLUMN IF NOT EXISTS detasseling_dap integer;

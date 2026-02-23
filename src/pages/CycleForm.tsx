@@ -95,6 +95,7 @@ const schema = z.object({
   isolation_distance: z.coerce.number().min(0).optional(),
   temporal_isolation_days: z.coerce.number().int().min(0).optional(),
   material_split: z.string().min(1, "Split do material é obrigatório"),
+  detasseling_dap: z.coerce.number().int().positive("Informe os dias para despendoamento").optional(),
   spacing_female_female_cm: z.coerce.number().int().min(1, "Espaçamento F×F é obrigatório"),
   spacing_female_male_cm: z.coerce.number().int().min(1, "Espaçamento F×M é obrigatório"),
   spacing_male_male_cm: z.coerce.number().int().min(1, "Espaçamento M×M é obrigatório"),
@@ -240,6 +241,7 @@ export default function CycleForm() {
         spacing_female_female_cm: values.spacing_female_female_cm || null,
         spacing_female_male_cm: values.spacing_female_male_cm || null,
         spacing_male_male_cm: values.spacing_male_male_cm || null,
+        detasseling_dap: values.detasseling_dap || null,
       });
       if (error) throw error;
     },
@@ -469,6 +471,12 @@ export default function CycleForm() {
             <div className="space-y-1.5">
               <Label>Ciclo do Material (dias)</Label>
               <Input type="number" {...register("material_cycle_days")} placeholder="Ex: 130" />
+            </div>
+            <div className="space-y-1.5">
+              <Label title="Dias após plantio da fêmea para início do despendoamento">Dias para despendoamento</Label>
+              <Input type="number" {...register("detasseling_dap")} placeholder="Ex: 55" />
+              <p className="text-xs text-muted-foreground">Típico: 50-65 dias após plantio da fêmea</p>
+              {errors.detasseling_dap && <p className="text-xs text-destructive">{errors.detasseling_dap.message}</p>}
             </div>
           </CardContent>
         </Card>

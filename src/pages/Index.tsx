@@ -279,9 +279,25 @@ export default function Dashboard() {
           list.push({ type: "warning", message: `${c.contract_number || c.field_name}: em fase de colheita mas sem registros` });
         }
       }
+
+      // Detasseling DAP overdue
+      if (c.detasseling_dap) {
+        const cycleActuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && a.parent_type === "female");
+        if (cycleActuals.length > 0) {
+          const earliestPlanting = cycleActuals.map((a: any) => a.planting_date).sort()[0];
+          if (earliestPlanting) {
+            const expectedDetDate = new Date(parseISO(earliestPlanting).getTime() + c.detasseling_dap * 86400000);
+            const detRecs2 = detasseling.filter((d: any) => d.cycle_id === c.id);
+            if (detRecs2.length === 0 && differenceInDays(now, expectedDetDate) > 0) {
+              const overdueDays = differenceInDays(now, expectedDetDate);
+              list.push({ type: "error", message: `${c.contract_number || c.field_name}: despendoamento atrasado ${overdueDays} dias!` });
+            }
+          }
+        }
+      }
     }
     return list;
-  }, [filtered, detasseling, nicking, harvestRecords]);
+  }, [filtered, detasseling, nicking, harvestRecords, plantingActuals]);
 
   // ═══ TABLE enrichments ═══
   const tableData = useMemo(() => {
