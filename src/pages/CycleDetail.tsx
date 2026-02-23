@@ -118,16 +118,6 @@ export default function CycleDetail() {
     onError: (err: any) => toast.error(err.message),
   });
 
-  const expectedProduction = useMemo(() => {
-    if (!cycle?.expected_productivity || !cycle?.female_area) return "—";
-    return `${((cycle.female_area * cycle.expected_productivity) / 1000).toFixed(2)} ton`;
-  }, [cycle]);
-
-  if (isLoading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
-  if (!cycle) return <div className="p-8 text-center text-muted-foreground"><p>Ciclo não encontrado.</p><Button variant="link" onClick={() => navigate("/ciclos")}>Voltar</Button></div>;
-
-  const handleContractSave = () => { contractMutation.mutate((contractInputRef.current?.value ?? "").trim()); };
-
   const deleteCycleMutation = useMutation({
     mutationFn: async () => {
       const { error } = await (supabase as any).rpc("soft_delete_record", {
@@ -143,6 +133,16 @@ export default function CycleDetail() {
     },
     onError: (err: any) => toast.error(err.message),
   });
+
+  const expectedProduction = useMemo(() => {
+    if (!cycle?.expected_productivity || !cycle?.female_area) return "—";
+    return `${((cycle.female_area * cycle.expected_productivity) / 1000).toFixed(2)} ton`;
+  }, [cycle]);
+
+  if (isLoading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (!cycle) return <div className="p-8 text-center text-muted-foreground"><p>Ciclo não encontrado.</p><Button variant="link" onClick={() => navigate("/ciclos")}>Voltar</Button></div>;
+
+  const handleContractSave = () => { contractMutation.mutate((contractInputRef.current?.value ?? "").trim()); };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
