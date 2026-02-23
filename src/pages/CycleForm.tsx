@@ -32,6 +32,7 @@ const irrigationLabels: Record<string, string> = {
   sprinkler: "Aspersão",
 };
 const irrigationOptions = ["Pivô Central", "Sequeiro", "Gotejamento", "Aspersão"];
+const spacingOptions = [40, 45, 50, 55, 60, 65, 70];
 const statusOptions = [
   { value: "planning", label: "Planejamento" },
   { value: "planting", label: "Plantio" },
@@ -79,6 +80,9 @@ const schema = z.object({
   isolation_distance: z.coerce.number().min(0).optional(),
   temporal_isolation_days: z.coerce.number().int().min(0).optional(),
   material_split: z.string().min(1, "Split do material é obrigatório"),
+  spacing_female_female_cm: z.coerce.number().int().min(1, "Espaçamento F×F é obrigatório"),
+  spacing_female_male_cm: z.coerce.number().int().min(1, "Espaçamento F×M é obrigatório"),
+  spacing_male_male_cm: z.coerce.number().int().min(1, "Espaçamento M×M é obrigatório"),
   status: z.string().default("planning"),
 });
 
@@ -215,6 +219,9 @@ export default function CycleForm() {
         isolation_distance: values.isolation_distance ?? 300,
         temporal_isolation_days: values.temporal_isolation_days ?? 30,
         material_split: values.material_split || null,
+        spacing_female_female_cm: values.spacing_female_female_cm || null,
+        spacing_female_male_cm: values.spacing_female_male_cm || null,
+        spacing_male_male_cm: values.spacing_male_male_cm || null,
       });
       if (error) throw error;
     },
@@ -360,6 +367,38 @@ export default function CycleForm() {
                 </Popover>
               )} />
               {errors.material_split && <p className="text-xs text-destructive">{errors.material_split.message}</p>}
+            </div>
+            <div className="col-span-full grid grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label title="Distância entre linhas de fêmea">Espaçam. F×F *</Label>
+                <Controller name="spacing_female_female_cm" control={control} render={({ field }) => (
+                  <Select value={field.value ? String(field.value) : undefined} onValueChange={(v) => field.onChange(Number(v))}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>{spacingOptions.map(s => <SelectItem key={s} value={String(s)}>{s} cm</SelectItem>)}</SelectContent>
+                  </Select>
+                )} />
+                {errors.spacing_female_female_cm && <p className="text-xs text-destructive">{errors.spacing_female_female_cm.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label title="Distância entre a última linha de fêmea e a primeira de macho">Espaçam. F×M *</Label>
+                <Controller name="spacing_female_male_cm" control={control} render={({ field }) => (
+                  <Select value={field.value ? String(field.value) : undefined} onValueChange={(v) => field.onChange(Number(v))}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>{spacingOptions.map(s => <SelectItem key={s} value={String(s)}>{s} cm</SelectItem>)}</SelectContent>
+                  </Select>
+                )} />
+                {errors.spacing_female_male_cm && <p className="text-xs text-destructive">{errors.spacing_female_male_cm.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label title="Distância entre linhas de macho">Espaçam. M×M *</Label>
+                <Controller name="spacing_male_male_cm" control={control} render={({ field }) => (
+                  <Select value={field.value ? String(field.value) : undefined} onValueChange={(v) => field.onChange(Number(v))}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>{spacingOptions.map(s => <SelectItem key={s} value={String(s)}>{s} cm</SelectItem>)}</SelectContent>
+                  </Select>
+                )} />
+                {errors.spacing_male_male_cm && <p className="text-xs text-destructive">{errors.spacing_male_male_cm.message}</p>}
+              </div>
             </div>
           </CardContent>
         </Card>

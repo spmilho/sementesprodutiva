@@ -30,6 +30,8 @@ interface Props {
   seedLots: any[];
   femaleArea: number;
   maleArea: number;
+  spacingFemaleFemaleCm?: number | null;
+  spacingMaleMaleCm?: number | null;
 }
 
 const schema = z.object({
@@ -47,7 +49,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, seedLots, femaleArea, maleArea }: Props) {
+export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, seedLots, femaleArea, maleArea, spacingFemaleFemaleCm, spacingMaleMaleCm }: Props) {
   const queryClient = useQueryClient();
   const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -55,7 +57,7 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { target_population: 62000, germination_rate: 92, row_spacing: 70, planting_order: 1 },
+    defaultValues: { target_population: 62000, germination_rate: 92, row_spacing: spacingFemaleFemaleCm || 70, planting_order: 1 },
   });
 
   const watchType = form.watch("type");
@@ -243,7 +245,12 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
               <div className="space-y-1.5">
                 <Label>Tipo *</Label>
                 <Controller name="type" control={form.control} render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={(v) => {
+                    field.onChange(v);
+                    const isFem = isFemaleType(v);
+                    const defaultSpacing = isFem ? (spacingFemaleFemaleCm || 70) : (spacingMaleMaleCm || 70);
+                    form.setValue("row_spacing", defaultSpacing);
+                  }}>
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                     <SelectContent>
                       {PLANTING_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
