@@ -1,0 +1,1 @@
+ALTER TABLE public.production_cycles ADD COLUMN IF NOT EXISTS material_split text;

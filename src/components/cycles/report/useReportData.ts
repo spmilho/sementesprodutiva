@@ -96,6 +96,7 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     male_area: cycle.male_area,
     female_male_ratio: cycle.female_male_ratio,
     irrigation_system: cycle.irrigation_system,
+    material_split: cycle.material_split || null,
     contract_number: cycle.contract_number,
     material_cycle_days: cycle.material_cycle_days,
     target_moisture: cycle.target_moisture,

@@ -2340,6 +2340,7 @@ export type Database = {
           male_line: string
           male_planting_finished: boolean
           material_cycle_days: number | null
+          material_split: string | null
           org_id: string
           pivot_area: number | null
           pivot_id: string | null
@@ -2372,6 +2373,7 @@ export type Database = {
           male_line: string
           male_planting_finished?: boolean
           material_cycle_days?: number | null
+          material_split?: string | null
           org_id: string
           pivot_area?: number | null
           pivot_id?: string | null
@@ -2404,6 +2406,7 @@ export type Database = {
           male_line?: string
           male_planting_finished?: boolean
           material_cycle_days?: number | null
+          material_split?: string | null
           org_id?: string
           pivot_area?: number | null
           pivot_id?: string | null
