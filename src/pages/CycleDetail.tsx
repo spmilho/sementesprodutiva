@@ -33,7 +33,7 @@ const statusLabels: Record<string, string> = {
 };
 
 const tabItems = [
-  { value: "resumo", label: "Resumo" }, { value: "planejamento", label: "Planejamento" },
+  { value: "resumo", label: "Resumo" },
   { value: "semente-basica", label: "Semente Básica" },
   { value: "plantio", label: "Plantio" }, { value: "nutricao", label: "Nutrição" }, { value: "fenologia", label: "Fenologia" },
   { value: "nicking", label: "Nicking" },
@@ -284,9 +284,8 @@ export default function CycleDetail() {
           />
         </TabsContent>
 
-        <TabsContent value="planejamento">
-          <div className="text-center py-12 text-sm text-muted-foreground">O planejamento de plantio agora está integrado na aba "Plantio".</div>
-        </TabsContent>
+
+
 
         <TabsContent value="plantio">
           <UnifiedPlantingTab
