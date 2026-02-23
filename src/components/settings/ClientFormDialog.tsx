@@ -115,15 +115,18 @@ export default function ClientFormDialog({ open, onOpenChange, client }: Props) 
         const { error } = await supabase.from("clients").update(payload).eq("id", client.id);
         if (error) throw error;
       } else {
-        const { data: profile } = await supabase.from("profiles").select("org_id").single();
-        if (!profile?.org_id) throw new Error("Organização não encontrada");
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Usuário não autenticado");
+        const { data: profile } = await supabase.from("profiles").select("org_id").eq("id", user.id).maybeSingle();
+        if (!profile?.org_id) throw new Error("Organização não encontrada. Verifique seu perfil.");
         const { data, error } = await supabase.from("clients").insert({ ...payload, org_id: profile.org_id }).select("id").single();
         if (error) throw error;
         clientId = data.id;
       }
 
-      const { data: profile } = await supabase.from("profiles").select("org_id").single();
-      if (!profile?.org_id) throw new Error("Organização não encontrada");
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const { data: profile2 } = await supabase.from("profiles").select("org_id").eq("id", currentUser!.id).maybeSingle();
+      if (!profile2?.org_id) throw new Error("Organização não encontrada");
 
       for (const c of contacts) {
         if (c._deleted && c.id) {
@@ -132,7 +135,7 @@ export default function ClientFormDialog({ open, onOpenChange, client }: Props) 
           await (supabase as any).from("client_contacts").update({ name: c.name, phone: c.phone || null, email: c.email || null, role: c.role || null }).eq("id", c.id);
         } else if (c.name.trim()) {
           await (supabase as any).from("client_contacts").insert({
-            client_id: clientId, org_id: profile.org_id, name: c.name, phone: c.phone || null, email: c.email || null, role: c.role || null,
+            client_id: clientId, org_id: profile2.org_id, name: c.name, phone: c.phone || null, email: c.email || null, role: c.role || null,
           });
         }
       }
