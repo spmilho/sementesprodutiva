@@ -105,7 +105,9 @@ export default function NewFarmFormDialog({ open, onOpenChange, farm, cooperator
         const { error } = await (supabase as any).from("farms").update(payload).eq("id", farm.id);
         if (error) throw error;
       } else {
-        const { data: profile } = await supabase.from("profiles").select("org_id").single();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Usuário não autenticado");
+        const { data: profile } = await supabase.from("profiles").select("org_id").eq("id", user.id).maybeSingle();
         if (!profile?.org_id) throw new Error("Organização não encontrada");
         const { data: newFarm, error } = await (supabase as any).from("farms").insert({ ...payload, org_id: profile.org_id }).select("id").single();
         if (error) throw error;
