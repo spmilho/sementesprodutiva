@@ -34,6 +34,8 @@ interface Props {
   glebas: any[];
   seedLots: any[];
   cvPoints: any[];
+  spacingFemaleFemaleCm?: number | null;
+  spacingMaleMaleCm?: number | null;
 }
 
 const schema = z.object({
@@ -53,7 +55,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, glebas, seedLots, cvPoints }: Props) {
+export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, glebas, seedLots, cvPoints, spacingFemaleFemaleCm, spacingMaleMaleCm }: Props) {
   const queryClient = useQueryClient();
   const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -63,10 +65,18 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { row_spacing: 70, observations: "" },
+    defaultValues: { row_spacing: spacingFemaleFemaleCm || 70, observations: "" },
   });
 
   const watchType = form.watch("type");
+
+  // Update row_spacing default when type changes
+  const handleTypeChange = (type: string, onChange: (v: string) => void) => {
+    onChange(type);
+    const isFem = isFemaleType(type);
+    const defaultSpacing = isFem ? (spacingFemaleFemaleCm || 70) : (spacingMaleMaleCm || 70);
+    form.setValue("row_spacing", defaultSpacing);
+  };
 
   const filteredLots = useMemo(() => {
     if (!watchType) return [];
@@ -269,7 +279,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
               <div className="space-y-1.5">
                 <Label>Tipo *</Label>
                 <Controller name="type" control={form.control} render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={(v) => handleTypeChange(v, field.onChange)}>
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                     <SelectContent>{PLANTING_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                   </Select>

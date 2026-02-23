@@ -20,6 +20,8 @@ export interface UnifiedPlantingTabProps {
   malePlantingFinished?: boolean;
   femalePlantingFinished?: boolean;
   onFinishToggle?: (type: "male" | "female", finished: boolean) => void;
+  spacingFemaleFemaleCm?: number | null;
+  spacingMaleMaleCm?: number | null;
 }
 
 export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
@@ -151,6 +153,8 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
         seedLots={seedLots}
         femaleArea={props.femaleArea}
         maleArea={props.maleArea}
+        spacingFemaleFemaleCm={props.spacingFemaleFemaleCm}
+        spacingMaleMaleCm={props.spacingMaleMaleCm}
       />
 
       {/* Section 3 - Actual Planting + CV Points */}
@@ -162,6 +166,8 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
         glebas={glebas}
         seedLots={seedLots}
         cvPoints={cvPoints}
+        spacingFemaleFemaleCm={props.spacingFemaleFemaleCm}
+        spacingMaleMaleCm={props.spacingMaleMaleCm}
       />
 
       {/* Section 4 - Stand Counts */}

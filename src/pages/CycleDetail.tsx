@@ -175,6 +175,9 @@ export default function CycleDetail() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
             <span className="font-mono">{cycle.hybrid_name}</span>
             {cycle.material_split && <><span>•</span><span>{cycle.material_split}</span></>}
+            {(cycle.spacing_female_female_cm || cycle.spacing_female_male_cm || cycle.spacing_male_male_cm) && (
+              <><span>•</span><span>F×F: {cycle.spacing_female_female_cm ?? "—"}cm | F×M: {cycle.spacing_female_male_cm ?? "—"}cm | M×M: {cycle.spacing_male_male_cm ?? "—"}cm</span></>
+            )}
             <span>•</span>
             <span>{(cycle as any).clients?.name}</span>
             {(cycle as any).cooperators?.name && <><span>•</span><span>{(cycle as any).cooperators.name}</span></>}
@@ -247,6 +250,9 @@ export default function CycleDetail() {
                 {(cycle as any).cooperators?.name && <div><p className="text-muted-foreground text-xs">Cooperado</p><p className="font-medium">{(cycle as any).cooperators.name}</p></div>}
                 <div><p className="text-muted-foreground text-xs">Proporção F:M</p><p className="font-medium">{cycle.female_male_ratio}</p></div>
                 {cycle.material_split && <div><p className="text-muted-foreground text-xs">Split do Material</p><p className="font-medium">{cycle.material_split}</p></div>}
+                {cycle.spacing_female_female_cm && <div><p className="text-muted-foreground text-xs">Espaçam. F×F</p><p className="font-medium">{cycle.spacing_female_female_cm} cm</p></div>}
+                {cycle.spacing_female_male_cm && <div><p className="text-muted-foreground text-xs">Espaçam. F×M</p><p className="font-medium">{cycle.spacing_female_male_cm} cm</p></div>}
+                {cycle.spacing_male_male_cm && <div><p className="text-muted-foreground text-xs">Espaçam. M×M</p><p className="font-medium">{cycle.spacing_male_male_cm} cm</p></div>}
                 <div><p className="text-muted-foreground text-xs">Irrigação</p><p className="font-medium">{cycle.irrigation_system}</p></div>
                 {cycle.pivot_area && <div><p className="text-muted-foreground text-xs">Área do Pivô</p><p className="font-medium">{cycle.pivot_area} ha</p></div>}
                 <div><p className="text-muted-foreground text-xs">Linhagem Fêmea</p><p className="font-medium font-mono">{cycle.female_line}</p></div>
@@ -291,6 +297,8 @@ export default function CycleDetail() {
             malePlantingFinished={cycle.male_planting_finished ?? false}
             femalePlantingFinished={cycle.female_planting_finished ?? false}
             onFinishToggle={(type, finished) => finishMutation.mutate({ type, finished })}
+            spacingFemaleFemaleCm={cycle.spacing_female_female_cm}
+            spacingMaleMaleCm={cycle.spacing_male_male_cm}
           />
         </TabsContent>
 

@@ -2345,6 +2345,9 @@ export type Database = {
           pivot_area: number | null
           pivot_id: string | null
           season: string
+          spacing_female_female_cm: number | null
+          spacing_female_male_cm: number | null
+          spacing_male_male_cm: number | null
           status: string
           target_moisture: number | null
           temporal_isolation_days: number | null
@@ -2378,6 +2381,9 @@ export type Database = {
           pivot_area?: number | null
           pivot_id?: string | null
           season: string
+          spacing_female_female_cm?: number | null
+          spacing_female_male_cm?: number | null
+          spacing_male_male_cm?: number | null
           status?: string
           target_moisture?: number | null
           temporal_isolation_days?: number | null
@@ -2411,6 +2417,9 @@ export type Database = {
           pivot_area?: number | null
           pivot_id?: string | null
           season?: string
+          spacing_female_female_cm?: number | null
+          spacing_female_male_cm?: number | null
+          spacing_male_male_cm?: number | null
           status?: string
           target_moisture?: number | null
           temporal_isolation_days?: number | null
