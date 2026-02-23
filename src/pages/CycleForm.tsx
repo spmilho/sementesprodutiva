@@ -43,7 +43,7 @@ const statusOptions = [
   { value: "cancelled", label: "Cancelado" },
 ];
 
-function computeAreas(totalArea: number, ratio: string) {
+function computeAreas(totalArea: number, ratio: string, fxf?: number, fxm?: number, mxm?: number) {
   const map: Record<string, [number, number]> = {
     "4F:2M": [4, 2],
     "6F:2M": [6, 2],
@@ -52,10 +52,25 @@ function computeAreas(totalArea: number, ratio: string) {
   };
   const parts = map[ratio];
   if (!parts || !totalArea) return { female: 0, male: 0 };
-  const total = parts[0] + parts[1];
+  const nF = parts[0];
+  const nM = parts[1];
+
+  // If all spacings provided, use weighted calculation
+  if (fxf && fxm && mxm) {
+    const femaleWidth = fxm + (nF - 1) * fxf;
+    const maleWidth = fxm + (nM - 1) * mxm;
+    const totalWidth = femaleWidth + maleWidth;
+    return {
+      female: Math.round((totalArea * femaleWidth) / totalWidth * 100) / 100,
+      male: Math.round((totalArea * maleWidth) / totalWidth * 100) / 100,
+    };
+  }
+
+  // Fallback: simple ratio
+  const total = nF + nM;
   return {
-    female: Math.round((totalArea * parts[0]) / total * 100) / 100,
-    male: Math.round((totalArea * parts[1]) / total * 100) / 100,
+    female: Math.round((totalArea * nF) / total * 100) / 100,
+    male: Math.round((totalArea * nM) / total * 100) / 100,
   };
 }
 
@@ -115,10 +130,13 @@ export default function CycleForm() {
   const expectedProductivity = watch("expected_productivity");
   const selectedCooperatorId = watch("cooperator_id");
   const selectedFarmId = watch("farm_id");
+  const spacingFF = watch("spacing_female_female_cm");
+  const spacingFM = watch("spacing_female_male_cm");
+  const spacingMM = watch("spacing_male_male_cm");
 
   const { female: femaleArea, male: maleArea } = useMemo(
-    () => computeAreas(totalArea || 0, ratio),
-    [totalArea, ratio]
+    () => computeAreas(totalArea || 0, ratio, spacingFF, spacingFM, spacingMM),
+    [totalArea, ratio, spacingFF, spacingFM, spacingMM]
   );
 
   const expectedProduction = useMemo(() => {
