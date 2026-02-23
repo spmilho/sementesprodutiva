@@ -108,7 +108,9 @@ export default function PivotFormDialog({ open, onOpenChange, pivot, farmId }: P
           const { error } = await (supabase as any).from("pivots").update(payload).eq("id", pivot.id);
           if (error) throw error;
         } else {
-          const { data: profile } = await supabase.from("profiles").select("org_id").single();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error("Usuário não autenticado");
+          const { data: profile } = await supabase.from("profiles").select("org_id").eq("id", user.id).maybeSingle();
           if (!profile?.org_id) throw new Error("Organização não encontrada");
           const { error } = await (supabase as any).from("pivots").insert({ ...payload, org_id: profile.org_id });
           if (error) throw error;
