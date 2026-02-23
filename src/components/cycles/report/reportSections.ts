@@ -184,6 +184,7 @@ export function drawExecutiveSummary(doc: jsPDF, data: ReportData) {
     ["Linhagem Fêmea", c.female_line],
     ["Linhagem Macho", c.male_line],
     ["Proporção F:M", c.female_male_ratio],
+    ...(c.material_split ? [["Split do Material", c.material_split]] : []),
     ...(c.material_cycle_days ? [["Ciclo material", `${c.material_cycle_days} dias`]] : []),
     ["Sistema irrigação", c.irrigation_system],
     ...(c.target_moisture ? [["Umidade alvo", `${fmtNum(c.target_moisture)}%`]] : []),

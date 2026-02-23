@@ -10,10 +10,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const ratioOptions = ["4F:2M", "6F:2M", "4F:1M", "3F:1M", "custom"];
+const materialSplitOptions = [
+  "P, ½V2, ½V3", "P, V1, ½V2", "P, Palito, V1", "P, E, ½V1", "P, ¾E, Palito",
+  "P, ½E, E", "P, ¼E, ¾E", "P, P, ¾E", "P, P, ½E", "P, P, ¼E", "P, P, P",
+  "¼E, P, ¼E", "½E, P, ½E", "½E, P, P", "¾E, P, ¾E", "¾E, P, ¼E",
+  "E, P, ½E", "Palito, P, ½E", "½V1, P, ½E", "V1, P, ½E", "½V2, P, ½E",
+  "V2, P, ½E", "½V3, P, ½E", "P, ¼E, ¾E", "Palito, P, ¾E",
+];
 const irrigationLabels: Record<string, string> = {
   pivot: "Pivô Central",
   dryland: "Sequeiro",
@@ -67,6 +78,7 @@ const schema = z.object({
   target_moisture: z.coerce.number().min(0).max(100).optional(),
   isolation_distance: z.coerce.number().min(0).optional(),
   temporal_isolation_days: z.coerce.number().int().min(0).optional(),
+  material_split: z.string().min(1, "Split do material é obrigatório"),
   status: z.string().default("planning"),
 });
 
@@ -87,8 +99,11 @@ export default function CycleForm() {
       isolation_distance: 300,
       temporal_isolation_days: 30,
       field_name: "",
+      material_split: "",
     },
   });
+
+  const [splitOpen, setSplitOpen] = useState(false);
 
   const totalArea = watch("total_area");
   const ratio = watch("female_male_ratio");
@@ -199,6 +214,7 @@ export default function CycleForm() {
         target_moisture: values.target_moisture ?? 18,
         isolation_distance: values.isolation_distance ?? 300,
         temporal_isolation_days: values.temporal_isolation_days ?? 30,
+        material_split: values.material_split || null,
       });
       if (error) throw error;
     },
@@ -299,7 +315,7 @@ export default function CycleForm() {
         {/* Material Genético */}
         <Card>
           <CardHeader><CardTitle className="text-base">Material Genético</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-1.5">
               <Label>Híbrido *</Label>
               <Input {...register("hybrid_name")} placeholder="Ex: P3456H" />
@@ -314,6 +330,36 @@ export default function CycleForm() {
               <Label>Linhagem Macho *</Label>
               <Input {...register("male_line")} placeholder="Ex: LM-105" />
               {errors.male_line && <p className="text-xs text-destructive">{errors.male_line.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Split do Material *</Label>
+              <Controller name="material_split" control={control} render={({ field }) => (
+                <Popover open={splitOpen} onOpenChange={setSplitOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" aria-expanded={splitOpen} className="w-full justify-between font-normal">
+                      {field.value || "Selecione o split"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Filtrar split..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum split encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {materialSplitOptions.map((opt) => (
+                            <CommandItem key={opt} value={opt} onSelect={() => { field.onChange(opt); setSplitOpen(false); }}>
+                              <Check className={cn("mr-2 h-4 w-4", field.value === opt ? "opacity-100" : "opacity-0")} />
+                              {opt}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              )} />
+              {errors.material_split && <p className="text-xs text-destructive">{errors.material_split.message}</p>}
             </div>
           </CardContent>
         </Card>

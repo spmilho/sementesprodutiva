@@ -16,6 +16,7 @@ export interface ReportCycleData {
   male_area: number;
   female_male_ratio: string;
   irrigation_system: string;
+  material_split: string | null;
   contract_number: string | null;
   material_cycle_days: number | null;
   target_moisture: number | null;

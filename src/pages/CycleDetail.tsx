@@ -174,6 +174,7 @@ export default function CycleDetail() {
           )}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
             <span className="font-mono">{cycle.hybrid_name}</span>
+            {cycle.material_split && <><span>•</span><span>{cycle.material_split}</span></>}
             <span>•</span>
             <span>{(cycle as any).clients?.name}</span>
             {(cycle as any).cooperators?.name && <><span>•</span><span>{(cycle as any).cooperators.name}</span></>}
@@ -245,6 +246,7 @@ export default function CycleDetail() {
                 <div><p className="text-muted-foreground text-xs">Pivô</p><p className="font-medium">{cycle.field_name}</p></div>
                 {(cycle as any).cooperators?.name && <div><p className="text-muted-foreground text-xs">Cooperado</p><p className="font-medium">{(cycle as any).cooperators.name}</p></div>}
                 <div><p className="text-muted-foreground text-xs">Proporção F:M</p><p className="font-medium">{cycle.female_male_ratio}</p></div>
+                {cycle.material_split && <div><p className="text-muted-foreground text-xs">Split do Material</p><p className="font-medium">{cycle.material_split}</p></div>}
                 <div><p className="text-muted-foreground text-xs">Irrigação</p><p className="font-medium">{cycle.irrigation_system}</p></div>
                 {cycle.pivot_area && <div><p className="text-muted-foreground text-xs">Área do Pivô</p><p className="font-medium">{cycle.pivot_area} ha</p></div>}
                 <div><p className="text-muted-foreground text-xs">Linhagem Fêmea</p><p className="font-medium font-mono">{cycle.female_line}</p></div>
