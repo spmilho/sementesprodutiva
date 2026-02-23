@@ -93,24 +93,29 @@ export default function PivotFormDialog({ open, onOpenChange, pivot, farmId }: P
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const payload: any = {
-        name: values.name,
-        area_ha: values.area_ha,
-        irrigation_type: values.irrigation_type || null,
-        status: values.status,
-        latitude: values.latitude ?? null,
-        longitude: values.longitude ?? null,
-        notes: values.notes || null,
-        farm_id: farmId,
-      };
-      if (isEditing) {
-        const { error } = await (supabase as any).from("pivots").update(payload).eq("id", pivot.id);
-        if (error) throw error;
-      } else {
-        const { data: profile } = await supabase.from("profiles").select("org_id").single();
-        if (!profile?.org_id) throw new Error("Organização não encontrada");
-        const { error } = await (supabase as any).from("pivots").insert({ ...payload, org_id: profile.org_id });
-        if (error) throw error;
+      try {
+        const payload: any = {
+          name: values.name,
+          area_ha: values.area_ha,
+          irrigation_type: values.irrigation_type || null,
+          status: values.status,
+          latitude: values.latitude ?? null,
+          longitude: values.longitude ?? null,
+          notes: values.notes || null,
+          farm_id: farmId,
+        };
+        if (isEditing) {
+          const { error } = await (supabase as any).from("pivots").update(payload).eq("id", pivot.id);
+          if (error) throw error;
+        } else {
+          const { data: profile } = await supabase.from("profiles").select("org_id").single();
+          if (!profile?.org_id) throw new Error("Organização não encontrada");
+          const { error } = await (supabase as any).from("pivots").insert({ ...payload, org_id: profile.org_id });
+          if (error) throw error;
+        }
+      } catch (err) {
+        console.error("Pivot save error:", err);
+        throw err;
       }
     },
     onSuccess: () => {
@@ -121,12 +126,19 @@ export default function PivotFormDialog({ open, onOpenChange, pivot, farmId }: P
     onError: (err: any) => toast.error(err.message || "Erro ao salvar"),
   });
 
+  const onSubmit = (values: FormValues) => mutation.mutate(values);
+  const onError = (errors: any) => {
+    console.error("Pivot form validation errors:", errors);
+    const firstError = Object.values(errors)[0] as any;
+    if (firstError?.message) toast.error(firstError.message);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{isEditing ? "Editar Pivô" : "Novo Pivô"}</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-4">
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem><FormLabel>Nome / Identificação *</FormLabel><FormControl><Input {...field} placeholder="Ex: Pivô 1, Pivô Norte" /></FormControl><FormMessage /></FormItem>
             )} />
