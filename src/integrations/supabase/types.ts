@@ -2324,6 +2324,7 @@ export type Database = {
           cooperator_id: string | null
           created_at: string
           deleted_at: string | null
+          detasseling_dap: number | null
           expected_production: number | null
           expected_productivity: number | null
           farm_id: string
@@ -2360,6 +2361,7 @@ export type Database = {
           cooperator_id?: string | null
           created_at?: string
           deleted_at?: string | null
+          detasseling_dap?: number | null
           expected_production?: number | null
           expected_productivity?: number | null
           farm_id: string
@@ -2396,6 +2398,7 @@ export type Database = {
           cooperator_id?: string | null
           created_at?: string
           deleted_at?: string | null
+          detasseling_dap?: number | null
           expected_production?: number | null
           expected_productivity?: number | null
           farm_id?: string

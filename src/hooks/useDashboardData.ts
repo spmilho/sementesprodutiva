@@ -19,6 +19,7 @@ export interface DashboardCycle {
   pivot_id: string | null;
   expected_productivity: number | null;
   expected_production: number | null;
+  detasseling_dap: number | null;
   // Joined
   client_name: string;
   cooperator_name: string;

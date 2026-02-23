@@ -178,6 +178,9 @@ export default function CycleDetail() {
             {(cycle.spacing_female_female_cm || cycle.spacing_female_male_cm || cycle.spacing_male_male_cm) && (
               <><span>•</span><span>F×F: {cycle.spacing_female_female_cm ?? "—"}cm | F×M: {cycle.spacing_female_male_cm ?? "—"}cm | M×M: {cycle.spacing_male_male_cm ?? "—"}cm</span></>
             )}
+            {cycle.detasseling_dap && (
+              <><span>•</span><span>DAP Desp.: {cycle.detasseling_dap}d</span></>
+            )}
             <span>•</span>
             <span>{(cycle as any).clients?.name}</span>
             {(cycle as any).cooperators?.name && <><span>•</span><span>{(cycle as any).cooperators.name}</span></>}
@@ -258,6 +261,7 @@ export default function CycleDetail() {
                 <div><p className="text-muted-foreground text-xs">Linhagem Fêmea</p><p className="font-medium font-mono">{cycle.female_line}</p></div>
                 <div><p className="text-muted-foreground text-xs">Linhagem Macho</p><p className="font-medium font-mono">{cycle.male_line}</p></div>
                 {cycle.material_cycle_days && <div><p className="text-muted-foreground text-xs">Ciclo do Material</p><p className="font-medium">{cycle.material_cycle_days} dias</p></div>}
+                {cycle.detasseling_dap && <div><p className="text-muted-foreground text-xs">DAP Despendoamento</p><p className="font-medium">{cycle.detasseling_dap} dias</p></div>}
                 {cycle.expected_productivity && <div><p className="text-muted-foreground text-xs">Produtividade Esperada</p><p className="font-medium">{cycle.expected_productivity} kg/ha</p></div>}
                 <div><p className="text-muted-foreground text-xs">Distância de Isolamento</p><p className="font-medium">{cycle.isolation_distance ?? 300} m</p></div>
                 <div><p className="text-muted-foreground text-xs">Isolamento Temporal</p><p className="font-medium">{cycle.temporal_isolation_days ?? 30} dias</p></div>
@@ -350,6 +354,7 @@ export default function CycleDetail() {
             hybridName={cycle.hybrid_name}
             cooperatorName={(cycle as any).cooperators?.name}
             femaleArea={cycle.female_area}
+            detasselingDap={cycle.detasseling_dap}
           />
         </TabsContent>
 

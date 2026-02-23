@@ -102,6 +102,7 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     spacing_male_male_cm: cycle.spacing_male_male_cm ?? null,
     contract_number: cycle.contract_number,
     material_cycle_days: cycle.material_cycle_days,
+    detasseling_dap: cycle.detasseling_dap ?? null,
     target_moisture: cycle.target_moisture,
     expected_productivity: cycle.expected_productivity,
     expected_production: cycle.expected_production,

@@ -22,6 +22,7 @@ export interface ReportCycleData {
   spacing_male_male_cm: number | null;
   contract_number: string | null;
   material_cycle_days: number | null;
+  detasseling_dap: number | null;
   target_moisture: number | null;
   expected_productivity: number | null;
   expected_production: number | null;

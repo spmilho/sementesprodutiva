@@ -13,6 +13,7 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import DetasselingFormDialog from "./detasseling/DetasselingFormDialog";
 import DetasselingCharts from "./detasseling/DetasselingCharts";
+import DetasselingForecast from "./detasseling/DetasselingForecast";
 import {
   PASS_TYPES, getPassLabel, getMethodLabel, getShiftLabel,
   getPassBadgeColor, getMethodBadgeColor,
@@ -26,9 +27,10 @@ interface Props {
   hybridName: string;
   cooperatorName?: string;
   femaleArea: number;
+  detasselingDap?: number | null;
 }
 
-export default function Detasseling({ cycleId, orgId, contractNumber, pivotName, hybridName, cooperatorName, femaleArea }: Props) {
+export default function Detasseling({ cycleId, orgId, contractNumber, pivotName, hybridName, cooperatorName, femaleArea, detasselingDap }: Props) {
   const qc = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [filterPass, setFilterPass] = useState("all");
@@ -150,6 +152,11 @@ export default function Detasseling({ cycleId, orgId, contractNumber, pivotName,
 
   return (
     <div className="space-y-6">
+      {/* Forecast Section */}
+      {detasselingDap && (
+        <DetasselingForecast cycleId={cycleId} detasselingDap={detasselingDap} />
+      )}
+
       {/* Header */}
       <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
         <span>Contrato: <strong>{contractNumber || pivotName}</strong></span>
