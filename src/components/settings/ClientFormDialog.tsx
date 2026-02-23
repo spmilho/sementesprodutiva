@@ -48,7 +48,7 @@ export default function ClientFormDialog({ open, onOpenChange, client }: Props) 
     defaultValues: { name: "", contact_name: "", phone: "", contact_email: "", status: true },
   });
 
-  const { data: existingContacts = [] } = useQuery({
+  const { data: existingContacts } = useQuery({
     queryKey: ["client_contacts", client?.id],
     queryFn: async () => {
       if (!client) return [];
@@ -65,6 +65,7 @@ export default function ClientFormDialog({ open, onOpenChange, client }: Props) 
   });
 
   useEffect(() => {
+    if (!open) return;
     if (client) {
       form.reset({
         name: client.name,
@@ -73,16 +74,19 @@ export default function ClientFormDialog({ open, onOpenChange, client }: Props) 
         contact_email: (client as any).contact_email || "",
         status: client.status === "active",
       });
-      setContacts(
-        existingContacts.map((c: any) => ({
-          id: c.id, name: c.name, phone: c.phone || "", email: c.email || "", role: c.role || "",
-        }))
-      );
+      if (existingContacts) {
+        setContacts(
+          existingContacts.map((c: any) => ({
+            id: c.id, name: c.name, phone: c.phone || "", email: c.email || "", role: c.role || "",
+          }))
+        );
+      }
     } else {
       form.reset({ name: "", contact_name: "", phone: "", contact_email: "", status: true });
       setContacts([]);
     }
-  }, [client, open, existingContacts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client?.id, open, existingContacts]);
 
   const addContact = () => setContacts((prev) => [...prev, { name: "", phone: "", email: "", role: "" }]);
   const updateContact = (index: number, field: keyof ContactRow, value: string) =>
@@ -142,7 +146,7 @@ export default function ClientFormDialog({ open, onOpenChange, client }: Props) 
     onError: (err: any) => toast.error(err.message || "Erro ao salvar"),
   });
 
-  const visibleContacts = contacts.filter((c) => !c._deleted);
+  const visibleContacts = contacts?.filter((c) => !c._deleted) ?? [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
