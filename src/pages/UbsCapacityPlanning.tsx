@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Factory } from "lucide-react";
+import { Factory, Maximize2, Minimize2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { CapacityConfigTab } from "@/components/ubs/CapacityConfigTab";
 import { ClientDemandTab } from "@/components/ubs/ClientDemandTab";
 import { AnalysisDashboardTab } from "@/components/ubs/AnalysisDashboardTab";
@@ -94,10 +95,25 @@ function loadState(): UbsState {
 
 export default function UbsCapacityPlanning() {
   const [state, setState] = useState<UbsState>(loadState);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("ubs-capacity-state", JSON.stringify(state));
   }, [state]);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
 
   const update = useCallback(<K extends keyof UbsState>(key: K, value: UbsState[K]) => {
     setState((prev) => ({ ...prev, [key]: value }));
@@ -120,13 +136,22 @@ export default function UbsCapacityPlanning() {
               <p className="text-xs text-[#8aac8f] font-['DM_Mono',monospace]">Planejamento de Capacidade — Safra 2026</p>
             </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
             <Badge className="bg-[#162b1c] text-[#5CDB6E] border border-[#2a4a32] px-3 py-1 font-['DM_Mono',monospace] text-xs">
               Receb. {weeklyReceiving.toLocaleString("pt-BR")} t/sem
             </Badge>
             <Badge className="bg-[#162b1c] text-[#4ECDC4] border border-[#2a4a32] px-3 py-1 font-['DM_Mono',monospace] text-xs">
               Secagem {weeklyDrying.toLocaleString("pt-BR")} t/sem
             </Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleFullscreen}
+              className="h-8 w-8 text-[#8aac8f] hover:text-[#5CDB6E] hover:bg-[#162b1c]"
+              title={isFullscreen ? "Sair da tela cheia" : "Tela cheia"}
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </Button>
           </div>
         </div>
       </div>
