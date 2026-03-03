@@ -77,8 +77,10 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
       entry.balanceDrying = weeklyDrying - weeklyDemand[i];
       entry.pctUtil = weeklyReceiving > 0 ? (weeklyDemand[i] / weeklyReceiving) * 100 : 0;
       entry.pctUtilDrying = weeklyDrying > 0 ? (weeklyDemand[i] / weeklyDrying) * 100 : 0;
+      entry.capReceiving = weeklyReceiving;
+      entry.capDrying = weeklyDrying;
       return entry;
-    }), [weekLabels, state.clients, weeklyDemand, weeklyReceiving]);
+    }), [weekLabels, state.clients, weeklyDemand, weeklyReceiving, weeklyDrying]);
 
   // KPIs
   const totalDemand = weeklyDemand.reduce((a, b) => a + b, 0);
@@ -136,18 +138,21 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
       {/* Chart 1: Demand vs Capacity */}
       <ChartWrapper title="Demanda × Capacidade Semanal" name="demanda_capacidade">
         {() => (
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer width="100%" height={360}>
             <ComposedChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e3a25" />
               <XAxis dataKey="name" tick={{ fill: "#8aac8f", fontSize: 10 }} />
-              <YAxis tick={{ fill: "#8aac8f", fontSize: 10 }} />
+              <YAxis yAxisId="left" tick={{ fill: "#8aac8f", fontSize: 10 }} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fill: "#8aac8f", fontSize: 10 }} />
               <Tooltip content={<CustomTooltip weeklyReceiving={weeklyReceiving} weeklyDrying={weeklyDrying} />} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
               {state.clients.map((c) => (
-                <Bar key={c.id} dataKey={c.name} stackId="a" fill={c.color} radius={[0, 0, 0, 0]} />
+                <Bar key={c.id} dataKey={c.name} stackId="a" yAxisId="left" fill={c.color} radius={[0, 0, 0, 0]} />
               ))}
-              <ReferenceLine y={weeklyReceiving} stroke="#5CDB6E" strokeWidth={2} label={{ value: `Receb. ${weeklyReceiving}`, fill: "#5CDB6E", fontSize: 10, position: "right" }} />
-              <ReferenceLine y={weeklyDrying} stroke="#4ECDC4" strokeDasharray="6 3" strokeWidth={1.5} label={{ value: `Secag. ${weeklyDrying}`, fill: "#4ECDC4", fontSize: 10, position: "right" }} />
+              <Line type="stepAfter" dataKey="capReceiving" yAxisId="left" name="Cap. Recebimento" stroke="#5CDB6E" strokeWidth={2} dot={false} />
+              <Line type="stepAfter" dataKey="capDrying" yAxisId="left" name="Cap. Secagem" stroke="#4ECDC4" strokeWidth={2} strokeDasharray="6 3" dot={false} />
+              <Line type="monotone" dataKey="balance" yAxisId="right" name="Balanço Receb." stroke="#5CDB6E" strokeWidth={1.5} dot={{ r: 3, fill: "#5CDB6E" }} strokeDasharray="3 3" />
+              <Line type="monotone" dataKey="balanceDrying" yAxisId="right" name="Balanço Secag." stroke="#4ECDC4" strokeWidth={1.5} dot={{ r: 3, fill: "#4ECDC4" }} strokeDasharray="3 3" />
             </ComposedChart>
           </ResponsiveContainer>
         )}
