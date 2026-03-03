@@ -11,6 +11,7 @@ import CycleForm from "./pages/CycleForm";
 import CycleDetail from "./pages/CycleDetail";
 
 import MapaIntegrado from "./pages/MapaIntegrado";
+import UbsCapacityPlanning from "./pages/UbsCapacityPlanning";
 import Configuracoes from "./pages/Configuracoes";
 import UserManagement from "./pages/UserManagement";
 import Auth from "./pages/Auth";
@@ -52,7 +53,7 @@ const App = () => (
                     <Route path="/ciclos/novo" element={<CycleForm />} />
                     <Route path="/ciclos/:id" element={<CycleDetail />} />
                     <Route path="/mapa" element={<MapaIntegrado />} />
-                    
+                    <Route path="/ubs" element={<UbsCapacityPlanning />} />
                     <Route path="/configuracoes" element={<Configuracoes />} />
                     <Route path="/usuarios" element={<UserManagement />} />
                     <Route path="*" element={<NotFound />} />
