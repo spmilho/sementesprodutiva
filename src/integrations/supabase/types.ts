@@ -3099,6 +3099,41 @@ export type Database = {
           },
         ]
       }
+      ubs_capacity_state: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          state_data: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          state_data?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          state_data?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ubs_capacity_state_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           client_id: string | null

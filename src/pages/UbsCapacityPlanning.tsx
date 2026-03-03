@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Factory, Maximize2, Minimize2, FileDown } from "lucide-react";
+import { Factory, Maximize2, Minimize2, FileDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { exportUbsHtml } from "@/components/ubs/exportHtml";
 import { CapacityConfigTab } from "@/components/ubs/CapacityConfigTab";
@@ -11,106 +11,11 @@ import { AnalysisDashboardTab } from "@/components/ubs/AnalysisDashboardTab";
 import { AnalysisDashboardPhase2Tab } from "@/components/ubs/AnalysisDashboardPhase2Tab";
 import { StatisticalAnalysisTab } from "@/components/ubs/StatisticalAnalysisTab";
 import { getPhaseWeeklyCap } from "@/components/ubs/types";
-import type { UbsState, Client, PhaseConfig } from "@/components/ubs/types";
-
-const DEFAULT_PHASE_CONFIG: Record<string, PhaseConfig> = {
-  "Recebimento e Despalha": { shifts: 3, hoursPerShift: 8, operatingDays: 6 },
-  Secador: { shifts: 3, hoursPerShift: 8, operatingDays: 6 },
-  Debulha: { shifts: 2, hoursPerShift: 8, operatingDays: 6 },
-  Classificação: { shifts: 2, hoursPerShift: 8, operatingDays: 6 },
-  "Tratamento e Ensaque": { shifts: 2, hoursPerShift: 8, operatingDays: 6 },
-  Expedição: { shifts: 1, hoursPerShift: 8, operatingDays: 5 },
-};
-
-const DEFAULT_CLIENTS: Client[] = [
-  { id: "1", name: "Limagrain", color: "#5CDB6E", hybrids: [
-    { id: "1a", name: "LG 36790", volumes: [0, 0, 0, 700, 700, 600, 600, 0, 0, 0, 0] },
-    { id: "1b", name: "LG 34799", volumes: [0, 0, 0, 500, 500, 600, 600, 0, 0, 0, 0] },
-  ]},
-  { id: "2", name: "Advanta", color: "#4ECDC4", hybrids: [
-    { id: "2a", name: "ADV 9275", volumes: [0, 0, 563, 836, 1084, 328, 0, 0, 0, 0, 0] },
-  ]},
-  { id: "3", name: "Milhão", color: "#FFD93D", hybrids: [
-    { id: "3a", name: "MH 7040", volumes: [0, 0, 0, 0, 550, 0, 0, 0, 0, 0, 0] },
-  ]},
-];
-
-const DEFAULT_STAFF: Record<string, number[]> = {
-  "Recebimento e Despalha": [5, 5, 5],
-  Secador: [2, 2, 2],
-  Debulha: [3, 3],
-  Classificação: [3, 3],
-  "Tratamento e Ensaque": [3, 3],
-  Expedição: [2],
-};
-
-const DEFAULT_CAP_PER_SHIFT: Record<string, number> = {
-  "Recebimento e Despalha": 283,
-  Secador: 5832,
-  Debulha: 200,
-  Classificação: 180,
-  "Tratamento e Ensaque": 160,
-  Expedição: 200,
-};
-
-const DEFAULT_STATE: UbsState = {
-  ubsName: "UBS Produtiva Sementes",
-  phaseConfig: DEFAULT_PHASE_CONFIG,
-  phaseCapPerShift: DEFAULT_CAP_PER_SHIFT,
-  clients: DEFAULT_CLIENTS,
-  clientsPhase2: JSON.parse(JSON.stringify(DEFAULT_CLIENTS)),
-  startDate: "2026-06-08",
-  numWeeks: 11,
-  staff: DEFAULT_STAFF,
-  compareMode: false,
-  altShifts: 3,
-  altReceivingCapPerShift: 350,
-  altDryingCapPerShift: 400,
-  changeoverTimeH: 4,
-  changeoverTimeHPhase2: 4,
-};
-
-function loadState(): UbsState {
-  try {
-    const raw = localStorage.getItem("ubs-capacity-state");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      // Migrate old format
-      if (!parsed.phaseConfig) {
-        const s = parsed.shifts || 3;
-        const h = parsed.hoursPerShift || 8;
-        const d = parsed.operatingDays || 6;
-        const cfg: Record<string, PhaseConfig> = {};
-        for (const phase of ["Recebimento e Despalha", "Secador", "Debulha", "Classificação", "Tratamento e Ensaque", "Expedição"]) {
-          cfg[phase] = { shifts: s, hoursPerShift: h, operatingDays: d };
-        }
-        parsed.phaseConfig = cfg;
-      }
-      if (!parsed.phaseCapPerShift) {
-        const dryingPerShift = parsed.dryingCapPerShift || 324;
-        const dryingCfg = parsed.phaseConfig?.["Secador"] || { shifts: 3, operatingDays: 6 };
-        parsed.phaseCapPerShift = {
-          "Recebimento e Despalha": parsed.receivingCapPerShift || 283,
-          Secador: dryingPerShift * (dryingCfg.shifts || 3) * (dryingCfg.operatingDays || 6),
-          Debulha: 200, Classificação: 180, "Tratamento e Ensaque": 160, Expedição: 200,
-        };
-      }
-      if (parsed.changeoverTimeH === undefined) parsed.changeoverTimeH = 4;
-      if (parsed.changeoverTimeHPhase2 === undefined) parsed.changeoverTimeHPhase2 = 4;
-      if (!parsed.clientsPhase2) parsed.clientsPhase2 = JSON.parse(JSON.stringify(parsed.clients || []));
-      return parsed;
-    }
-  } catch {}
-  return DEFAULT_STATE;
-}
+import { useUbsState } from "@/hooks/useUbsState";
 
 export default function UbsCapacityPlanning() {
-  const [state, setState] = useState<UbsState>(loadState);
+  const { state, update, loading } = useUbsState();
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-  useEffect(() => {
-    localStorage.setItem("ubs-capacity-state", JSON.stringify(state));
-  }, [state]);
 
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement);
@@ -126,14 +31,21 @@ export default function UbsCapacityPlanning() {
     }
   }, []);
 
-  const update = useCallback(<K extends keyof UbsState>(key: K, value: UbsState[K]) => {
-    setState((prev) => ({ ...prev, [key]: value }));
-  }, []);
-
   const weeklyReceiving = getPhaseWeeklyCap(state, "Recebimento e Despalha");
   const weeklyDrying = getPhaseWeeklyCap(state, "Secador");
   const weeklyClassificacao = getPhaseWeeklyCap(state, "Classificação");
   const weeklyTratamento = getPhaseWeeklyCap(state, "Tratamento e Ensaque");
+
+  if (loading) {
+    return (
+      <div className="ubs-theme min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-[#5CDB6E] animate-spin" />
+          <span className="text-sm text-[#8aac8f]">Carregando dados da UBS...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ubs-theme min-h-screen">
