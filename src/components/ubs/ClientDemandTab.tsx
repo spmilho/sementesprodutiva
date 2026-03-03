@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { UbsCard } from "./UbsCard";
 import { getWeekLabels, getWeeklyDemand, getClientVolumes, type UbsState, type Client, type Hybrid } from "./types";
 import { Plus, Pencil, Trash2, Download, ChevronDown, ChevronRight } from "lucide-react";
@@ -189,10 +189,10 @@ export function ClientDemandTab({ state, update, weeklyReceiving, weeklyDrying }
                 const isExpanded = expandedClients.has(client.id);
                 const clientVolumes = getClientVolumes(client, state.numWeeks);
 
-                return (
-                  <>
+              return (
+                  <React.Fragment key={client.id}>
                     {/* Client row (totals) */}
-                    <tr key={client.id} className="border-b border-[#1e3a25] group">
+                    <tr className="border-b border-[#1e3a25] group">
                       <td className="py-2 pr-2 sticky left-0 bg-[#162b1c]">
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => toggleExpand(client.id)} className="p-0.5 hover:bg-[#0f1f14] rounded transition-colors">
@@ -260,7 +260,7 @@ export function ClientDemandTab({ state, update, weeklyReceiving, weeklyDrying }
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 );
               })}
               {/* Total row */}
