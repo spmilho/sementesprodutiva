@@ -98,7 +98,7 @@ export function ClientDemandTab({ state, update, weeklyReceiving, weeklyDrying }
   const removeHybrid = (clientId: string, hybridId: string) => {
     const newClients = state.clients.map((c) => {
       if (c.id !== clientId) return c;
-      if (c.hybrids.length <= 1) return c; // keep at least one
+      if ((c.hybrids || []).length <= 1) return c; // keep at least one
       return { ...c, hybrids: c.hybrids.filter((h) => h.id !== hybridId) };
     });
     update("clients", newClients);
@@ -200,7 +200,7 @@ export function ClientDemandTab({ state, update, weeklyReceiving, weeklyDrying }
                           </button>
                           <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: client.color }} />
                           <span className="text-[#c8e6c9] font-semibold truncate">{client.name}</span>
-                          <span className="text-[10px] text-[#8aac8f] ml-1">({client.hybrids.length})</span>
+                          <span className="text-[10px] text-[#8aac8f] ml-1">({(client.hybrids || []).length})</span>
                           <button onClick={() => { setEditClient(client); setDialogOpen(true); }} className="opacity-0 group-hover:opacity-100 transition-opacity"><Pencil className="w-3 h-3 text-[#8aac8f]" /></button>
                           <button onClick={() => removeClient(client.id)} className="opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3 h-3 text-red-400" /></button>
                         </div>
@@ -216,7 +216,7 @@ export function ClientDemandTab({ state, update, weeklyReceiving, weeklyDrying }
                     </tr>
 
                     {/* Hybrid rows */}
-                    {isExpanded && client.hybrids.map((hybrid) => (
+                    {isExpanded && (client.hybrids || []).map((hybrid) => (
                       <tr key={hybrid.id} className="border-b border-[#1e3a25]/50 bg-[#0f1f14]/30">
                         <td className="py-1.5 pr-2 sticky left-0 bg-[#14251a]">
                           <div className="flex items-center gap-1.5 pl-7">
@@ -225,7 +225,7 @@ export function ClientDemandTab({ state, update, weeklyReceiving, weeklyDrying }
                               onChange={(e) => renameHybrid(client.id, hybrid.id, e.target.value)}
                               className="bg-transparent border-b border-[#2a4a32] text-[#a5d6a7] text-xs px-1 py-0.5 w-28 focus:outline-none focus:border-[#5CDB6E] font-['DM_Mono',monospace]"
                             />
-                            {client.hybrids.length > 1 && (
+                            {(client.hybrids || []).length > 1 && (
                               <button onClick={() => removeHybrid(client.id, hybrid.id)} className="opacity-50 hover:opacity-100 transition-opacity">
                                 <Trash2 className="w-2.5 h-2.5 text-red-400" />
                               </button>
