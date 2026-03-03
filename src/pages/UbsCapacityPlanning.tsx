@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Factory, Maximize2, Minimize2 } from "lucide-react";
+import { Factory, Maximize2, Minimize2, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { exportUbsHtml } from "@/components/ubs/exportHtml";
 import { CapacityConfigTab } from "@/components/ubs/CapacityConfigTab";
 import { ClientDemandTab } from "@/components/ubs/ClientDemandTab";
 import { AnalysisDashboardTab } from "@/components/ubs/AnalysisDashboardTab";
@@ -143,6 +144,15 @@ export default function UbsCapacityPlanning() {
             <Badge className="bg-[#162b1c] text-[#4ECDC4] border border-[#2a4a32] px-3 py-1 font-['DM_Mono',monospace] text-xs">
               Secagem {weeklyDrying.toLocaleString("pt-BR")} t/sem
             </Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => exportUbsHtml(state, weeklyReceiving, weeklyDrying)}
+              className="h-8 w-8 text-[#8aac8f] hover:text-[#5CDB6E] hover:bg-[#162b1c]"
+              title="Exportar HTML"
+            >
+              <FileDown className="w-4 h-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
