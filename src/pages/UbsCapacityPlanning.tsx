@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Factory } from "lucide-react";
@@ -6,7 +6,17 @@ import { CapacityConfigTab } from "@/components/ubs/CapacityConfigTab";
 import { ClientDemandTab } from "@/components/ubs/ClientDemandTab";
 import { AnalysisDashboardTab } from "@/components/ubs/AnalysisDashboardTab";
 import { StatisticalAnalysisTab } from "@/components/ubs/StatisticalAnalysisTab";
-import type { UbsState, Client } from "@/components/ubs/types";
+import { getPhaseWeeklyCap } from "@/components/ubs/types";
+import type { UbsState, Client, PhaseConfig } from "@/components/ubs/types";
+
+const DEFAULT_PHASE_CONFIG: Record<string, PhaseConfig> = {
+  "Recebimento e Despalha": { shifts: 3, hoursPerShift: 8, operatingDays: 6 },
+  Secador: { shifts: 3, hoursPerShift: 8, operatingDays: 6 },
+  Debulha: { shifts: 2, hoursPerShift: 8, operatingDays: 6 },
+  Classificação: { shifts: 2, hoursPerShift: 8, operatingDays: 6 },
+  "Tratamento e Ensaque": { shifts: 2, hoursPerShift: 8, operatingDays: 6 },
+  Expedição: { shifts: 1, hoursPerShift: 8, operatingDays: 5 },
+};
 
 const DEFAULT_CLIENTS: Client[] = [
   { id: "1", name: "Limagrain", color: "#5CDB6E", hybrids: [
@@ -24,24 +34,21 @@ const DEFAULT_CLIENTS: Client[] = [
 const DEFAULT_STAFF: Record<string, number[]> = {
   "Recebimento e Despalha": [5, 5, 5],
   Secador: [2, 2, 2],
-  Debulha: [3, 3, 3],
-  Classificação: [3, 3, 3],
-  "Tratamento e Ensaque": [3, 3, 3],
-  Expedição: [2, 2, 2],
+  Debulha: [3, 3],
+  Classificação: [3, 3],
+  "Tratamento e Ensaque": [3, 3],
+  Expedição: [2],
 };
 
 const DEFAULT_STATE: UbsState = {
   ubsName: "UBS Produtiva Sementes",
-  shifts: 3,
-  hoursPerShift: 8,
-  operatingDays: 6,
+  phaseConfig: DEFAULT_PHASE_CONFIG,
   receivingCapPerShift: 283,
   dryingCapPerShift: 324,
   clients: DEFAULT_CLIENTS,
   startDate: "2026-06-08",
   numWeeks: 11,
   staff: DEFAULT_STAFF,
-  avgSalary: 2800,
   compareMode: false,
   altShifts: 3,
   altReceivingCapPerShift: 350,
@@ -51,7 +58,21 @@ const DEFAULT_STATE: UbsState = {
 function loadState(): UbsState {
   try {
     const raw = localStorage.getItem("ubs-capacity-state");
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Migrate old format: if no phaseConfig, create from global values
+      if (!parsed.phaseConfig) {
+        const s = parsed.shifts || 3;
+        const h = parsed.hoursPerShift || 8;
+        const d = parsed.operatingDays || 6;
+        const cfg: Record<string, PhaseConfig> = {};
+        for (const phase of ["Recebimento e Despalha", "Secador", "Debulha", "Classificação", "Tratamento e Ensaque", "Expedição"]) {
+          cfg[phase] = { shifts: s, hoursPerShift: h, operatingDays: d };
+        }
+        parsed.phaseConfig = cfg;
+      }
+      return parsed;
+    }
   } catch {}
   return DEFAULT_STATE;
 }
@@ -67,8 +88,8 @@ export default function UbsCapacityPlanning() {
     setState((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  const weeklyReceiving = state.receivingCapPerShift * state.shifts * state.operatingDays;
-  const weeklyDrying = state.dryingCapPerShift * state.shifts * state.operatingDays;
+  const weeklyReceiving = getPhaseWeeklyCap(state, "Recebimento e Despalha", state.receivingCapPerShift);
+  const weeklyDrying = getPhaseWeeklyCap(state, "Secador", state.dryingCapPerShift);
 
   return (
     <div className="ubs-theme min-h-screen">

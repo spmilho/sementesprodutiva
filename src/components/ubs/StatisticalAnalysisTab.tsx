@@ -70,7 +70,9 @@ export function StatisticalAnalysisTab({ state, weeklyReceiving, weeklyDrying }:
 
   // Staff totals
   const totalStaff = PHASES.reduce((sum, p) => sum + ((state.staff[p] || []).reduce((a, b) => a + b, 0)), 0);
-  const totalHH = active.length * totalStaff * state.hoursPerShift * state.operatingDays;
+  const avgHours = state.phaseConfig ? Object.values(state.phaseConfig).reduce((s, c) => s + c.hoursPerShift, 0) / Object.values(state.phaseConfig).length : 8;
+  const avgDays = state.phaseConfig ? Object.values(state.phaseConfig).reduce((s, c) => s + c.operatingDays, 0) / Object.values(state.phaseConfig).length : 6;
+  const totalHH = active.length * totalStaff * avgHours * avgDays;
 
   // Bottleneck projection
   const bottleneckWeek = useMemo(() => {
@@ -167,7 +169,7 @@ export function StatisticalAnalysisTab({ state, weeklyReceiving, weeklyDrying }:
       {/* Staff summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <UbsKPI label="HH Total no Período" value={totalHH.toLocaleString("pt-BR")} sub="homens-hora" color="#4ECDC4" />
-        <UbsKPI label="Pico de Pessoal" value={`${totalStaff} pessoas`} sub={`por turno × ${state.shifts} turnos`} />
+        <UbsKPI label="Pico de Pessoal" value={`${totalStaff} pessoas`} />
         {bottleneckWeek !== null && (
           <UbsKPI label="Projeção Gargalo" value={`Semana ${bottleneckWeek + 1}`} sub="100% utilização projetada" color="#FF6B6B" />
         )}

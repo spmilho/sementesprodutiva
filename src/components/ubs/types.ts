@@ -30,18 +30,38 @@ export function getClientVolumes(client: Client, numWeeks: number): number[] {
   return totals;
 }
 
-export interface UbsState {
-  ubsName: string;
+export interface PhaseConfig {
   shifts: number;
   hoursPerShift: number;
   operatingDays: number;
+}
+
+export const DEFAULT_PHASE_CONFIG: PhaseConfig = { shifts: 3, hoursPerShift: 8, operatingDays: 6 };
+
+export function getPhaseConfig(state: UbsState, phase: string): PhaseConfig {
+  return state.phaseConfig?.[phase] || { shifts: state.shifts ?? 3, hoursPerShift: state.hoursPerShift ?? 8, operatingDays: state.operatingDays ?? 6 };
+}
+
+export function getPhaseWeeklyCap(state: UbsState, phase: string, capPerShift: number): number {
+  const cfg = getPhaseConfig(state, phase);
+  return capPerShift * cfg.shifts * cfg.operatingDays;
+}
+
+export interface UbsState {
+  ubsName: string;
+  /** @deprecated use phaseConfig instead */
+  shifts?: number;
+  /** @deprecated use phaseConfig instead */
+  hoursPerShift?: number;
+  /** @deprecated use phaseConfig instead */
+  operatingDays?: number;
+  phaseConfig: Record<string, PhaseConfig>;
   receivingCapPerShift: number;
   dryingCapPerShift: number;
   clients: Client[];
   startDate: string;
   numWeeks: number;
   staff: Record<string, number[]>;
-  avgSalary: number;
   compareMode: boolean;
   altShifts: number;
   altReceivingCapPerShift: number;
