@@ -40,6 +40,11 @@ export function CapacityConfigTab({ state, update }: Props) {
     update("phaseConfig", newConfig);
   };
 
+  const updatePhaseCap = (phase: string, val: number) => {
+    const newCaps = { ...state.phaseCapPerShift, [phase]: val };
+    update("phaseCapPerShift", newCaps);
+  };
+
   const updateStaff = (phase: string, shiftIdx: number, val: number) => {
     const newStaff = { ...state.staff };
     const cfg = getPhaseConfig(state, phase);
@@ -63,29 +68,35 @@ export function CapacityConfigTab({ state, update }: Props) {
   });
   const grandTotal = totalPerPhase.reduce((a, b) => a + b, 0);
 
+  const PHASE_COLORS: Record<string, string> = {
+    "Recebimento e Despalha": "#5CDB6E",
+    Secador: "#4ECDC4",
+    Debulha: "#FFD93D",
+    Classificação: "#38BDF8",
+    "Tratamento e Ensaque": "#C084FC",
+    Expedição: "#FB7185",
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Capacity per phase */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <UbsCard title="Capacidade por Fase (t/turno)">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[10px] text-[#8aac8f] uppercase tracking-wider block mb-1">Recebimento & Despalha</label>
-              <NumInput value={state.receivingCapPerShift} onChange={(v) => update("receivingCapPerShift", v)} />
-              <p className="text-[10px] text-[#5CDB6E] mt-1 font-['DM_Mono',monospace]">
-                Semanal: {getPhaseWeeklyCap(state, "Recebimento e Despalha", state.receivingCapPerShift).toLocaleString("pt-BR")} t
-              </p>
-            </div>
-            <div>
-              <label className="text-[10px] text-[#8aac8f] uppercase tracking-wider block mb-1">Secagem</label>
-              <NumInput value={state.dryingCapPerShift} onChange={(v) => update("dryingCapPerShift", v)} />
-              <p className="text-[10px] text-[#4ECDC4] mt-1 font-['DM_Mono',monospace]">
-                Semanal: {getPhaseWeeklyCap(state, "Secador", state.dryingCapPerShift).toLocaleString("pt-BR")} t
-              </p>
-            </div>
-          </div>
-        </UbsCard>
-      </div>
+      <UbsCard title="Capacidade por Fase (t/turno)">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {PHASES.map((phase) => {
+            const cap = state.phaseCapPerShift?.[phase] ?? 0;
+            const color = PHASE_COLORS[phase] || "#5CDB6E";
+            return (
+              <div key={phase}>
+                <label className="text-[10px] text-[#8aac8f] uppercase tracking-wider block mb-1">{phase}</label>
+                <NumInput value={cap} onChange={(v) => updatePhaseCap(phase, v)} />
+                <p className="text-[10px] mt-1 font-['DM_Mono',monospace]" style={{ color }}>
+                  Semanal: {getPhaseWeeklyCap(state, phase).toLocaleString("pt-BR")} t
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </UbsCard>
 
       {/* Per-phase operations config */}
       <UbsCard title="Turnos & Operação por Fase">
