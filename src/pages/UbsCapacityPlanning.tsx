@@ -44,7 +44,7 @@ const DEFAULT_STAFF: Record<string, number[]> = {
 
 const DEFAULT_CAP_PER_SHIFT: Record<string, number> = {
   "Recebimento e Despalha": 283,
-  Secador: 324,
+  Secador: 5832,
   Debulha: 200,
   Classificação: 180,
   "Tratamento e Ensaque": 160,
@@ -82,9 +82,11 @@ function loadState(): UbsState {
         parsed.phaseConfig = cfg;
       }
       if (!parsed.phaseCapPerShift) {
+        const dryingPerShift = parsed.dryingCapPerShift || 324;
+        const dryingCfg = parsed.phaseConfig?.["Secador"] || { shifts: 3, operatingDays: 6 };
         parsed.phaseCapPerShift = {
           "Recebimento e Despalha": parsed.receivingCapPerShift || 283,
-          Secador: parsed.dryingCapPerShift || 324,
+          Secador: dryingPerShift * (dryingCfg.shifts || 3) * (dryingCfg.operatingDays || 6),
           Debulha: 200, Classificação: 180, "Tratamento e Ensaque": 160, Expedição: 200,
         };
       }
