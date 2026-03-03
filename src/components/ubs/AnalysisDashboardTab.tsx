@@ -65,8 +65,8 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
   const weekLabels = getWeekLabels(state.startDate, state.numWeeks);
   const weeklyDemand = getWeeklyDemand(state.clients, state.numWeeks);
 
-  const altReceiving = state.altReceivingCapPerShift * state.altShifts * state.operatingDays;
-  const altDrying = state.altDryingCapPerShift * state.altShifts * state.operatingDays;
+  const altReceiving = state.altReceivingCapPerShift * state.altShifts * ((state.phaseConfig?.["Recebimento e Despalha"]?.operatingDays) || 6);
+  const altDrying = state.altDryingCapPerShift * state.altShifts * ((state.phaseConfig?.["Secador"]?.operatingDays) || 6);
 
   const chartData = useMemo(() =>
     weekLabels.map((label, i) => {
@@ -128,7 +128,7 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
         <UbsKPI label="Sem. Déficit" value={`${deficitWeeks}`} color={deficitWeeks > 0 ? "#FF6B6B" : "#5CDB6E"} />
         <UbsKPI label="Utiliz. Média" value={`${avgUtil.toFixed(1)}%`} color={avgUtil > 100 ? "#FF6B6B" : avgUtil > 80 ? "#FFD93D" : "#5CDB6E"} />
         <UbsKPI label="Maior Déficit" value={maxDeficit > 0 ? `${maxDeficit.toLocaleString("pt-BR")} t` : "Nenhum"} sub={maxDeficit > 0 ? weekLabels[maxDeficitWeek] : undefined} color={maxDeficit > 0 ? "#FF6B6B" : "#5CDB6E"} />
-        <UbsKPI label="Pessoal Total" value={`${totalStaff} pessoas`} sub={`${state.shifts} turnos`} color="#4ECDC4" />
+        <UbsKPI label="Pessoal Total" value={`${totalStaff} pessoas`} color="#4ECDC4" />
       </div>
 
       {/* Chart 1: Demand vs Capacity */}
