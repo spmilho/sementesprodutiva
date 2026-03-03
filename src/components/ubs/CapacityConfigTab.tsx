@@ -1,5 +1,5 @@
 import { UbsCard } from "./UbsCard";
-import { PHASES, type UbsState, type PhaseConfig, getPhaseConfig, getPhaseWeeklyCap } from "./types";
+import { PHASES, type UbsState, type PhaseConfig, getPhaseConfig, getPhaseWeeklyCap, getReceivingRateTH, getChangeoverLossPerHybrid } from "./types";
 import { AlertTriangle } from "lucide-react";
 
 interface Props {
@@ -100,6 +100,32 @@ export function CapacityConfigTab({ state, update }: Props) {
               </div>
             );
           })}
+        </div>
+      </UbsCard>
+
+      {/* Changeover Configuration */}
+      <UbsCard title="Configuração de Changeover">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-[10px] text-[#8aac8f] uppercase tracking-wider block mb-1">Tempo de changeover por híbrido (h)</label>
+            <NumInput value={state.changeoverTimeH} onChange={(v) => update("changeoverTimeH", v)} min={0} className="w-32" />
+          </div>
+          <div>
+            <label className="text-[10px] text-[#8aac8f] uppercase tracking-wider block mb-1">Etapa afetada</label>
+            <div className="bg-[#0f1f14] border border-[#2a4a32] rounded px-2 py-1.5 text-xs text-[#8aac8f] font-['DM_Mono',monospace]">
+              Recebimento & Despalha <span className="text-[#3a5a42]">(Secador não impactado)</span>
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 pt-3 border-t border-[#1e3a25]">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] text-[#8aac8f] uppercase">Taxa de recebimento</span>
+            <span className="text-xs text-[#e8f5e9] font-['DM_Mono',monospace] font-semibold">{getReceivingRateTH(state).toFixed(1)} t/h</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] text-[#8aac8f] uppercase">Perda por híbrido</span>
+            <span className="text-xs font-['DM_Mono',monospace] font-semibold" style={{ color: "#F97316" }}>{getChangeoverLossPerHybrid(state).toFixed(1)} t</span>
+          </div>
         </div>
       </UbsCard>
 

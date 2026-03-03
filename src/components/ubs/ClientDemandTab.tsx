@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { UbsCard } from "./UbsCard";
-import { getWeekLabels, getWeeklyDemand, getClientVolumes, type UbsState, type Client, type Hybrid } from "./types";
+import { getWeekLabels, getWeeklyDemand, getClientVolumes, getWeeklyChangeovers, getReceivingRateTH, getPhaseWeeklyCap, getWeeklyEffectiveReceiving, type UbsState, type Client, type Hybrid } from "./types";
 import { Plus, Pencil, Trash2, Download, ChevronDown, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -333,6 +333,90 @@ export function ClientDemandTab({ state, update, weeklyReceiving, weeklyDrying }
                   );
                 })}
               </tr>
+              {/* Changeover rows */}
+              {(() => {
+                const changeovers = getWeeklyChangeovers(state.clients, state.numWeeks);
+                const rateTH = getReceivingRateTH(state);
+                const grossCap = weeklyReceiving;
+                const effectiveCaps = getWeeklyEffectiveReceiving(state);
+                return (
+                  <>
+                    <tr className="border-t-2 border-[#F97316]/30">
+                      <td className="py-2 pr-2 text-[#8aac8f] sticky left-0 bg-[#162b1c]">Changeovers (nº)</td>
+                      {changeovers.map((co, i) => (
+                        <td key={i} className="py-2 text-center font-['DM_Mono',monospace] text-[#c8e6c9]">
+                          {weeklyDemand[i] > 0 ? co : "—"}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-2 text-[#8aac8f] sticky left-0 bg-[#162b1c]">Horas perdidas (h)</td>
+                      {changeovers.map((co, i) => {
+                        const hours = co * state.changeoverTimeH;
+                        return (
+                          <td key={i} className="py-2 text-center font-['DM_Mono',monospace]" style={{ color: hours > 0 ? "#F97316" : "#3a5a42" }}>
+                            {weeklyDemand[i] > 0 && hours > 0 ? hours.toFixed(1) : "—"}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-2 text-[#8aac8f] sticky left-0 bg-[#162b1c]">Perda capacidade (t)</td>
+                      {changeovers.map((co, i) => {
+                        const loss = co * state.changeoverTimeH * rateTH;
+                        return (
+                          <td key={i} className="py-2 text-center font-['DM_Mono',monospace]" style={{ color: loss > 0 ? "#F97316" : "#3a5a42" }}>
+                            {weeklyDemand[i] > 0 && loss > 0 ? loss.toFixed(0) : "—"}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    <tr className="border-t border-[#F97316]/30">
+                      <td className="py-2 pr-2 sticky left-0 bg-[#162b1c]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[#e8f5e9] font-bold text-xs">Cap. Efetiva Receb.</span>
+                          <span className="bg-[#F97316] text-[#0f1f14] text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">Efetiva</span>
+                        </div>
+                      </td>
+                      {effectiveCaps.map((ec, i) => (
+                        <td key={i} className="py-2 text-center font-['DM_Mono',monospace] font-bold text-sm" style={{ color: ec < grossCap ? "#F97316" : "#5CDB6E" }}>
+                          {weeklyDemand[i] > 0 ? ec.toFixed(0) : grossCap.toLocaleString("pt-BR")}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-2 text-[#8aac8f] sticky left-0 bg-[#162b1c]">Balanço Efetivo (t)</td>
+                      {effectiveCaps.map((ec, i) => {
+                        const bal = ec - weeklyDemand[i];
+                        return (
+                          <td key={i} className={`py-2 text-center font-['DM_Mono',monospace] font-semibold ${bal >= 0 ? "text-[#5CDB6E]" : "text-[#FF6B6B]"}`}>
+                            {weeklyDemand[i] > 0 ? (bal > 0 ? "+" : "") + bal.toFixed(0) : "—"}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-2 text-[#8aac8f] sticky left-0 bg-[#162b1c]">% Utiliz. Efetiva</td>
+                      {effectiveCaps.map((ec, i) => {
+                        const pct = ec > 0 ? (weeklyDemand[i] / ec) * 100 : 0;
+                        const barColor = pct > 100 ? "#FF6B6B" : pct >= 80 ? "#FFD93D" : "#5CDB6E";
+                        return (
+                          <td key={i} className="py-2 px-1">
+                            {weeklyDemand[i] > 0 ? (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="text-[10px] font-['DM_Mono',monospace] font-bold" style={{ color: barColor }}>{pct.toFixed(0)}%</span>
+                                <div className="w-full h-1.5 bg-[#0f1f14] rounded-full overflow-hidden">
+                                  <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: barColor }} />
+                                </div>
+                              </div>
+                            ) : <span className="text-[#3a5a42] text-center block">—</span>}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </>
+                );
+              })()}
             </tbody>
           </table>
         </div>

@@ -74,6 +74,43 @@ export interface UbsState {
   altShifts: number;
   altReceivingCapPerShift: number;
   altDryingCapPerShift: number;
+  changeoverTimeH: number;
+}
+
+/** Count active hybrids per week across all clients (only clients with demand > 0) */
+export function getWeeklyChangeovers(clients: Client[], numWeeks: number): number[] {
+  const result: number[] = Array(numWeeks).fill(0);
+  clients.forEach((c) => {
+    const hybrids = Array.isArray(c.hybrids) ? c.hybrids : [];
+    for (let w = 0; w < numWeeks; w++) {
+      const clientDemand = hybrids.reduce((s, h) => s + (h.volumes?.[w] || 0), 0);
+      if (clientDemand <= 0) continue;
+      const activeHybrids = hybrids.filter((h) => (h.volumes?.[w] || 0) > 0).length;
+      result[w] += activeHybrids;
+    }
+  });
+  return result;
+}
+
+/** Get receiving rate in t/h */
+export function getReceivingRateTH(state: UbsState): number {
+  const cfg = getPhaseConfig(state, "Recebimento e Despalha");
+  const totalHoursPerWeek = cfg.shifts * cfg.hoursPerShift * cfg.operatingDays;
+  if (totalHoursPerWeek === 0) return 0;
+  return getPhaseWeeklyCap(state, "Recebimento e Despalha") / totalHoursPerWeek;
+}
+
+/** Get changeover loss per hybrid in tons */
+export function getChangeoverLossPerHybrid(state: UbsState): number {
+  return state.changeoverTimeH * getReceivingRateTH(state);
+}
+
+/** Get weekly effective receiving capacity (after changeover losses) */
+export function getWeeklyEffectiveReceiving(state: UbsState): number[] {
+  const grossCap = getPhaseWeeklyCap(state, "Recebimento e Despalha");
+  const changeovers = getWeeklyChangeovers(state.clients, state.numWeeks);
+  const lossPerHybrid = getChangeoverLossPerHybrid(state);
+  return changeovers.map((co) => Math.max(0, grossCap - co * lossPerHybrid));
 }
 
 export const PHASES = ["Recebimento e Despalha", "Secador", "Debulha", "Classificação", "Tratamento e Ensaque", "Expedição"] as const;
