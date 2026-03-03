@@ -23,7 +23,7 @@ export interface UbsState {
   altDryingCapPerShift: number;
 }
 
-export const PHASES = ["Recebimento", "Despalha", "Secador", "Classificação", "Tratamento", "Expedição"] as const;
+export const PHASES = ["Recebimento e Despalha", "Secador", "Debulha", "Classificação", "Tratamento e Ensaque", "Expedição"] as const;
 export type Phase = (typeof PHASES)[number];
 
 export function getWeekLabels(startDate: string, numWeeks: number): string[] {

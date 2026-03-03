@@ -56,7 +56,7 @@ export function CapacityConfigTab({ state, update }: Props) {
   const grandTotal = totalPerShift.reduce((a, b) => a + b, 0);
   const monthlyCost = grandTotal * state.avgSalary;
 
-  const minPerPhase: Record<string, number> = { Recebimento: 2, Despalha: 3, Secador: 1, Classificação: 2, Tratamento: 1, Expedição: 1 };
+  const minPerPhase: Record<string, number> = { "Recebimento e Despalha": 3, Secador: 1, Debulha: 2, Classificação: 2, "Tratamento e Ensaque": 2, Expedição: 1 };
 
   return (
     <div className="space-y-6 animate-fade-in">
