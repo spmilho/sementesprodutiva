@@ -75,6 +75,7 @@ export interface UbsState {
   altReceivingCapPerShift: number;
   altDryingCapPerShift: number;
   changeoverTimeH: number;
+  changeoverTimeHPhase2: number;
 }
 
 /** Count active hybrids per week across all clients (only clients with demand > 0) */
@@ -123,7 +124,7 @@ export function getClassificacaoRateTH(state: UbsState): number {
 
 /** Get changeover loss per hybrid in tons for Phase 2 (Classificação) */
 export function getChangeoverLossPerHybridPhase2(state: UbsState): number {
-  return state.changeoverTimeH * getClassificacaoRateTH(state);
+  return (state.changeoverTimeHPhase2 ?? state.changeoverTimeH) * getClassificacaoRateTH(state);
 }
 
 /** Get weekly effective classificação capacity (after changeover losses) */

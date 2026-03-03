@@ -66,6 +66,7 @@ const DEFAULT_STATE: UbsState = {
   altReceivingCapPerShift: 350,
   altDryingCapPerShift: 400,
   changeoverTimeH: 4,
+  changeoverTimeHPhase2: 4,
 };
 
 function loadState(): UbsState {
@@ -94,6 +95,7 @@ function loadState(): UbsState {
         };
       }
       if (parsed.changeoverTimeH === undefined) parsed.changeoverTimeH = 4;
+      if (parsed.changeoverTimeHPhase2 === undefined) parsed.changeoverTimeHPhase2 = 4;
       return parsed;
     }
   } catch {}
