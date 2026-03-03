@@ -98,13 +98,14 @@ const DemandTooltipPhase2 = ({ active, payload, label, weeklyClassificacao, week
 
 export function AnalysisDashboardPhase2Tab({ state, weeklyClassificacao, weeklyTratamento }: Props) {
   const weekLabels = getWeekLabels(state.startDate, state.numWeeks);
-  const weeklyDemand = getWeeklyDemand(state.clients, state.numWeeks);
+  const clients2 = state.clientsPhase2 || [];
+  const weeklyDemand = getWeeklyDemand(clients2, state.numWeeks);
   const weeklyEffective = getWeeklyEffectiveClassificacao(state);
 
   const chartData = useMemo(() =>
     weekLabels.map((label, i) => {
       const entry: any = { name: label };
-      state.clients.forEach((c) => { entry[c.name] = getClientVolumes(c, state.numWeeks)[i] || 0; });
+      clients2.forEach((c) => { entry[c.name] = getClientVolumes(c, state.numWeeks)[i] || 0; });
       entry.total = weeklyDemand[i];
       entry.balanceClassif = weeklyClassificacao - weeklyDemand[i];
       entry.balanceTrat = weeklyTratamento - weeklyDemand[i];
@@ -115,7 +116,7 @@ export function AnalysisDashboardPhase2Tab({ state, weeklyClassificacao, weeklyT
       entry.capEffective = weeklyEffective[i];
       entry.changeoverLoss = weeklyClassificacao - weeklyEffective[i];
       return entry;
-    }), [weekLabels, state.clients, weeklyDemand, weeklyClassificacao, weeklyTratamento, weeklyEffective]);
+    }), [weekLabels, clients2, weeklyDemand, weeklyClassificacao, weeklyTratamento, weeklyEffective]);
 
   // KPIs
   const totalDemand = weeklyDemand.reduce((a, b) => a + b, 0);
@@ -137,7 +138,7 @@ export function AnalysisDashboardPhase2Tab({ state, weeklyClassificacao, weeklyT
   const peakLossWeekIdx = weeklyLosses.indexOf(peakLoss);
 
   // Pie data
-  const pieData = state.clients.map((c) => ({
+  const pieData = clients2.map((c) => ({
     name: c.name,
     value: getClientVolumes(c, state.numWeeks).reduce((a, b) => a + b, 0),
     color: c.color,
@@ -179,7 +180,7 @@ export function AnalysisDashboardPhase2Tab({ state, weeklyClassificacao, weeklyT
               <YAxis tick={{ fill: "#8aac8f", fontSize: 10, fontFamily: "DM Mono" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : `${v}`} />
               <Tooltip content={<DemandTooltipPhase2 weeklyClassificacao={weeklyClassificacao} weeklyTratamento={weeklyTratamento} />} cursor={{ fill: "#38BDF8", fillOpacity: 0.05 }} />
               <Legend wrapperStyle={{ fontSize: 11, fontFamily: "DM Mono", paddingTop: 8 }} iconType="circle" iconSize={8} />
-              {state.clients.map((c) => (
+              {clients2.map((c) => (
                 <Bar key={c.id} dataKey={c.name} stackId="demand" fill={c.color} radius={[0, 0, 0, 0]} />
               ))}
               <Area type="monotone" dataKey="changeoverLoss" name="Perda Changeover" fill="url(#changeoverLossGradientP2)" stroke="none" baseValue={0} legendType="none" />

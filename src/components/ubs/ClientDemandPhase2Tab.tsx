@@ -56,7 +56,8 @@ export function ClientDemandPhase2Tab({ state, update, weeklyClassificacao, week
   const [dialogOpen, setDialogOpen] = useState(false);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const weekLabels = getWeekLabels(state.startDate, state.numWeeks);
-  const weeklyDemand = getWeeklyDemand(state.clients, state.numWeeks);
+  const clients2 = state.clientsPhase2 || [];
+  const weeklyDemand = getWeeklyDemand(clients2, state.numWeeks);
 
   const toggleExpand = (clientId: string) => {
     setExpandedClients((prev) => {
@@ -67,7 +68,7 @@ export function ClientDemandPhase2Tab({ state, update, weeklyClassificacao, week
   };
 
   const updateHybridVolume = (clientId: string, hybridId: string, weekIdx: number, val: number) => {
-    const newClients = state.clients.map((c) => {
+    const newClients = clients2.map((c) => {
       if (c.id !== clientId) return c;
       return {
         ...c,
@@ -80,11 +81,11 @@ export function ClientDemandPhase2Tab({ state, update, weeklyClassificacao, week
         }),
       };
     });
-    update("clients", newClients);
+    update("clientsPhase2", newClients);
   };
 
   const addHybrid = (clientId: string) => {
-    const newClients = state.clients.map((c) => {
+    const newClients = clients2.map((c) => {
       if (c.id !== clientId) return c;
       const currentHybrids = Array.isArray(c.hybrids) ? c.hybrids : [];
       return {
@@ -92,44 +93,44 @@ export function ClientDemandPhase2Tab({ state, update, weeklyClassificacao, week
         hybrids: [...currentHybrids, { id: crypto.randomUUID(), name: `Híbrido ${currentHybrids.length + 1}`, volumes: Array(state.numWeeks).fill(0) }],
       };
     });
-    update("clients", newClients);
+    update("clientsPhase2", newClients);
     setExpandedClients((prev) => new Set(prev).add(clientId));
   };
 
   const removeHybrid = (clientId: string, hybridId: string) => {
-    const newClients = state.clients.map((c) => {
+    const newClients = clients2.map((c) => {
       if (c.id !== clientId) return c;
       if ((c.hybrids || []).length <= 1) return c;
       return { ...c, hybrids: c.hybrids.filter((h) => h.id !== hybridId) };
     });
-    update("clients", newClients);
+    update("clientsPhase2", newClients);
   };
 
   const renameHybrid = (clientId: string, hybridId: string, name: string) => {
-    const newClients = state.clients.map((c) => {
+    const newClients = clients2.map((c) => {
       if (c.id !== clientId) return c;
       return { ...c, hybrids: c.hybrids.map((h) => h.id === hybridId ? { ...h, name } : h) };
     });
-    update("clients", newClients);
+    update("clientsPhase2", newClients);
   };
 
   const addOrUpdateClient = (c: Client) => {
-    const exists = state.clients.find((x) => x.id === c.id);
+    const exists = clients2.find((x) => x.id === c.id);
     if (exists) {
-      update("clients", state.clients.map((x) => (x.id === c.id ? { ...c, hybrids: x.hybrids } : x)));
+      update("clientsPhase2", clients2.map((x) => (x.id === c.id ? { ...c, hybrids: x.hybrids } : x)));
     } else {
-      update("clients", [...state.clients, c]);
+      update("clientsPhase2", [...clients2, c]);
     }
   };
 
   const removeClient = (id: string) => {
-    update("clients", state.clients.filter((c) => c.id !== id));
+    update("clientsPhase2", clients2.filter((c) => c.id !== id));
   };
 
   const exportCsv = () => {
     const header = ["Cliente", "Híbrido", ...weekLabels].join(",");
     const rows: string[] = [];
-    state.clients.forEach((c) => {
+    clients2.forEach((c) => {
       c.hybrids.forEach((h) => {
         rows.push([c.name, h.name, ...h.volumes.slice(0, state.numWeeks)].join(","));
       });
@@ -146,7 +147,7 @@ export function ClientDemandPhase2Tab({ state, update, weeklyClassificacao, week
   };
 
   // Changeover calculations for Phase 2
-  const changeovers = getWeeklyChangeovers(state.clients, state.numWeeks);
+  const changeovers = getWeeklyChangeovers(clients2, state.numWeeks);
   const rateTH = getClassificacaoRateTH(state);
   const grossCap = weeklyClassificacao;
   const effectiveCaps = getWeeklyEffectiveClassificacao(state);
@@ -192,7 +193,7 @@ export function ClientDemandPhase2Tab({ state, update, weeklyClassificacao, week
               </tr>
             </thead>
             <tbody>
-              {state.clients.map((client) => {
+              {clients2.map((client) => {
                 const isExpanded = expandedClients.has(client.id);
                 const clientVolumes = getClientVolumes(client, state.numWeeks);
 

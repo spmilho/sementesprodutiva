@@ -67,6 +67,7 @@ export interface UbsState {
   /** @deprecated use phaseCapPerShift["Secador"] */
   dryingCapPerShift?: number;
   clients: Client[];
+  clientsPhase2: Client[];
   startDate: string;
   numWeeks: number;
   staff: Record<string, number[]>;
@@ -130,7 +131,8 @@ export function getChangeoverLossPerHybridPhase2(state: UbsState): number {
 /** Get weekly effective classificação capacity (after changeover losses) */
 export function getWeeklyEffectiveClassificacao(state: UbsState): number[] {
   const grossCap = getPhaseWeeklyCap(state, "Classificação");
-  const changeovers = getWeeklyChangeovers(state.clients, state.numWeeks);
+  const clients = state.clientsPhase2 || state.clients;
+  const changeovers = getWeeklyChangeovers(clients, state.numWeeks);
   const lossPerHybrid = getChangeoverLossPerHybridPhase2(state);
   return changeovers.map((co) => Math.max(0, grossCap - co * lossPerHybrid));
 }
