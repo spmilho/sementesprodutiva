@@ -58,6 +58,7 @@ const DEFAULT_STATE: UbsState = {
   phaseConfig: DEFAULT_PHASE_CONFIG,
   phaseCapPerShift: DEFAULT_CAP_PER_SHIFT,
   clients: DEFAULT_CLIENTS,
+  clientsPhase2: JSON.parse(JSON.stringify(DEFAULT_CLIENTS)),
   startDate: "2026-06-08",
   numWeeks: 11,
   staff: DEFAULT_STAFF,
@@ -96,6 +97,7 @@ function loadState(): UbsState {
       }
       if (parsed.changeoverTimeH === undefined) parsed.changeoverTimeH = 4;
       if (parsed.changeoverTimeHPhase2 === undefined) parsed.changeoverTimeHPhase2 = 4;
+      if (!parsed.clientsPhase2) parsed.clientsPhase2 = JSON.parse(JSON.stringify(parsed.clients || []));
       return parsed;
     }
   } catch {}
