@@ -43,6 +43,10 @@ export function getPhaseConfig(state: UbsState, phase: string): PhaseConfig {
 }
 
 export function getPhaseWeeklyCap(state: UbsState, phase: string, capPerShift?: number): number {
+  // Secador: value is already weekly capacity
+  if (phase === "Secador") {
+    return capPerShift ?? state.phaseCapPerShift?.[phase] ?? 0;
+  }
   const cfg = getPhaseConfig(state, phase);
   const cap = capPerShift ?? state.phaseCapPerShift?.[phase] ?? 0;
   return cap * cfg.shifts * cfg.operatingDays;

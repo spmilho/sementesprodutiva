@@ -80,18 +80,23 @@ export function CapacityConfigTab({ state, update }: Props) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Capacity per phase */}
-      <UbsCard title="Capacidade por Fase (t/turno)">
+      <UbsCard title="Capacidade por Fase">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {PHASES.map((phase) => {
+            const isDryer = phase === "Secador";
             const cap = state.phaseCapPerShift?.[phase] ?? 0;
             const color = PHASE_COLORS[phase] || "#5CDB6E";
             return (
               <div key={phase}>
-                <label className="text-[10px] text-[#8aac8f] uppercase tracking-wider block mb-1">{phase}</label>
+                <label className="text-[10px] text-[#8aac8f] uppercase tracking-wider block mb-1">
+                  {phase} {isDryer ? "(t/semana)" : "(t/turno)"}
+                </label>
                 <NumInput value={cap} onChange={(v) => updatePhaseCap(phase, v)} />
-                <p className="text-[10px] mt-1 font-['DM_Mono',monospace]" style={{ color }}>
-                  Semanal: {getPhaseWeeklyCap(state, phase).toLocaleString("pt-BR")} t
-                </p>
+                {!isDryer && (
+                  <p className="text-[10px] mt-1 font-['DM_Mono',monospace]" style={{ color }}>
+                    Semanal: {getPhaseWeeklyCap(state, phase).toLocaleString("pt-BR")} t
+                  </p>
+                )}
               </div>
             );
           })}
