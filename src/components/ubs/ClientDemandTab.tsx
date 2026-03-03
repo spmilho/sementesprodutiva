@@ -294,12 +294,31 @@ export function ClientDemandTab({ state, update, weeklyReceiving, weeklyDrying }
                   );
                 })}
               </tr>
-              {/* Utilization row */}
+              {/* Utilization rows */}
               <tr className="border-t border-[#2a4a32]">
                 <td className="py-2 pr-2 text-[#8aac8f] sticky left-0 bg-[#162b1c]">% Utiliz. Receb.</td>
                 {weeklyDemand.map((d, i) => {
                   const pct = weeklyReceiving > 0 ? (d / weeklyReceiving) * 100 : 0;
                   const barColor = pct > 100 ? "#FF6B6B" : pct >= 80 ? "#FFD93D" : "#5CDB6E";
+                  return (
+                    <td key={i} className="py-2 px-1">
+                      {d > 0 ? (
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="text-[10px] font-['DM_Mono',monospace]" style={{ color: barColor }}>{pct.toFixed(0)}%</span>
+                          <div className="w-full h-1.5 bg-[#0f1f14] rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: barColor }} />
+                          </div>
+                        </div>
+                      ) : <span className="text-[#3a5a42] text-center block">—</span>}
+                    </td>
+                  );
+                })}
+              </tr>
+              <tr>
+                <td className="py-2 pr-2 text-[#8aac8f] sticky left-0 bg-[#162b1c]">% Utiliz. Secag.</td>
+                {weeklyDemand.map((d, i) => {
+                  const pct = weeklyDrying > 0 ? (d / weeklyDrying) * 100 : 0;
+                  const barColor = pct > 100 ? "#FF6B6B" : pct >= 80 ? "#FFD93D" : "#4ECDC4";
                   return (
                     <td key={i} className="py-2 px-1">
                       {d > 0 ? (
