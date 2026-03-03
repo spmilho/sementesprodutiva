@@ -13,9 +13,18 @@ export interface Client {
 
 export function getClientVolumes(client: Client, numWeeks: number): number[] {
   const totals: number[] = Array(numWeeks).fill(0);
-  client.hybrids.forEach((h) => {
+  const hybrids = client.hybrids || [];
+  // Backward compat: old localStorage may have `volumes` directly on client
+  if (hybrids.length === 0 && (client as any).volumes) {
+    const vols = (client as any).volumes as number[];
     for (let i = 0; i < numWeeks; i++) {
-      totals[i] += h.volumes[i] || 0;
+      totals[i] += vols[i] || 0;
+    }
+    return totals;
+  }
+  hybrids.forEach((h) => {
+    for (let i = 0; i < numWeeks; i++) {
+      totals[i] += h.volumes?.[i] || 0;
     }
   });
   return totals;
