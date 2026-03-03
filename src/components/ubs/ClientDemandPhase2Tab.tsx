@@ -354,7 +354,7 @@ export function ClientDemandPhase2Tab({ state, update, weeklyClassificacao, week
                     <tr>
                       <td className="py-2 pr-2 text-[#8aac8f] sticky left-0 bg-[#162b1c]">Horas perdidas (h)</td>
                       {changeovers.map((co, i) => {
-                        const hours = co * state.changeoverTimeH;
+                        const hours = co * (state.changeoverTimeHPhase2 ?? state.changeoverTimeH);
                         return (
                           <td key={i} className="py-2 text-center font-['DM_Mono',monospace]" style={{ color: hours > 0 ? "#F97316" : "#3a5a42" }}>
                             {weeklyDemand[i] > 0 && hours > 0 ? hours.toFixed(1) : "—"}
@@ -365,7 +365,7 @@ export function ClientDemandPhase2Tab({ state, update, weeklyClassificacao, week
                     <tr>
                       <td className="py-2 pr-2 text-[#8aac8f] sticky left-0 bg-[#162b1c]">Perda capacidade (t)</td>
                       {changeovers.map((co, i) => {
-                        const loss = co * state.changeoverTimeH * rateTH;
+                        const loss = co * (state.changeoverTimeHPhase2 ?? state.changeoverTimeH) * rateTH;
                         return (
                           <td key={i} className="py-2 text-center font-['DM_Mono',monospace]" style={{ color: loss > 0 ? "#F97316" : "#3a5a42" }}>
                             {weeklyDemand[i] > 0 && loss > 0 ? loss.toFixed(0) : "—"}
