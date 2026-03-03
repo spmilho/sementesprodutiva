@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { exportUbsHtml } from "@/components/ubs/exportHtml";
 import { CapacityConfigTab } from "@/components/ubs/CapacityConfigTab";
 import { ClientDemandTab } from "@/components/ubs/ClientDemandTab";
+import { ClientDemandPhase2Tab } from "@/components/ubs/ClientDemandPhase2Tab";
 import { AnalysisDashboardTab } from "@/components/ubs/AnalysisDashboardTab";
+import { AnalysisDashboardPhase2Tab } from "@/components/ubs/AnalysisDashboardPhase2Tab";
 import { StatisticalAnalysisTab } from "@/components/ubs/StatisticalAnalysisTab";
 import { getPhaseWeeklyCap } from "@/components/ubs/types";
 import type { UbsState, Client, PhaseConfig } from "@/components/ubs/types";
@@ -126,6 +128,8 @@ export default function UbsCapacityPlanning() {
 
   const weeklyReceiving = getPhaseWeeklyCap(state, "Recebimento e Despalha");
   const weeklyDrying = getPhaseWeeklyCap(state, "Secador");
+  const weeklyClassificacao = getPhaseWeeklyCap(state, "Classificação");
+  const weeklyTratamento = getPhaseWeeklyCap(state, "Tratamento e Ensaque");
 
   return (
     <div className="ubs-theme min-h-screen">
@@ -146,7 +150,13 @@ export default function UbsCapacityPlanning() {
               Receb. {weeklyReceiving.toLocaleString("pt-BR")} t/sem
             </Badge>
             <Badge className="bg-[#162b1c] text-[#4ECDC4] border border-[#2a4a32] px-3 py-1 font-['DM_Mono',monospace] text-xs">
-              Secagem {weeklyDrying.toLocaleString("pt-BR")} t/sem
+              Secag. {weeklyDrying.toLocaleString("pt-BR")} t/sem
+            </Badge>
+            <Badge className="bg-[#162b1c] text-[#38BDF8] border border-[#2a4a32] px-3 py-1 font-['DM_Mono',monospace] text-xs">
+              Classif. {weeklyClassificacao.toLocaleString("pt-BR")} t/sem
+            </Badge>
+            <Badge className="bg-[#162b1c] text-[#C084FC] border border-[#2a4a32] px-3 py-1 font-['DM_Mono',monospace] text-xs">
+              Trat. {weeklyTratamento.toLocaleString("pt-BR")} t/sem
             </Badge>
             <Button
               variant="ghost"
@@ -174,8 +184,10 @@ export default function UbsCapacityPlanning() {
       <Tabs defaultValue="config" className="px-4 sm:px-6 py-4">
         <TabsList className="bg-[#162b1c] border border-[#2a4a32] mb-4">
           <TabsTrigger value="config" className="data-[state=active]:bg-[#5CDB6E]/20 data-[state=active]:text-[#5CDB6E] text-[#8aac8f] text-xs">Configuração</TabsTrigger>
-          <TabsTrigger value="demand" className="data-[state=active]:bg-[#5CDB6E]/20 data-[state=active]:text-[#5CDB6E] text-[#8aac8f] text-xs">Demanda</TabsTrigger>
-          <TabsTrigger value="dashboard" className="data-[state=active]:bg-[#5CDB6E]/20 data-[state=active]:text-[#5CDB6E] text-[#8aac8f] text-xs">Dashboard</TabsTrigger>
+          <TabsTrigger value="demand" className="data-[state=active]:bg-[#5CDB6E]/20 data-[state=active]:text-[#5CDB6E] text-[#8aac8f] text-xs">Demanda Fase 1</TabsTrigger>
+          <TabsTrigger value="dashboard" className="data-[state=active]:bg-[#5CDB6E]/20 data-[state=active]:text-[#5CDB6E] text-[#8aac8f] text-xs">Dashboard Fase 1</TabsTrigger>
+          <TabsTrigger value="demand2" className="data-[state=active]:bg-[#38BDF8]/20 data-[state=active]:text-[#38BDF8] text-[#8aac8f] text-xs">Demanda Fase 2</TabsTrigger>
+          <TabsTrigger value="dashboard2" className="data-[state=active]:bg-[#38BDF8]/20 data-[state=active]:text-[#38BDF8] text-[#8aac8f] text-xs">Dashboard Fase 2</TabsTrigger>
           <TabsTrigger value="stats" className="data-[state=active]:bg-[#5CDB6E]/20 data-[state=active]:text-[#5CDB6E] text-[#8aac8f] text-xs">Estatística</TabsTrigger>
         </TabsList>
 
@@ -187,6 +199,12 @@ export default function UbsCapacityPlanning() {
         </TabsContent>
         <TabsContent value="dashboard">
           <AnalysisDashboardTab state={state} weeklyReceiving={weeklyReceiving} weeklyDrying={weeklyDrying} />
+        </TabsContent>
+        <TabsContent value="demand2">
+          <ClientDemandPhase2Tab state={state} update={update} weeklyClassificacao={weeklyClassificacao} weeklyTratamento={weeklyTratamento} />
+        </TabsContent>
+        <TabsContent value="dashboard2">
+          <AnalysisDashboardPhase2Tab state={state} weeklyClassificacao={weeklyClassificacao} weeklyTratamento={weeklyTratamento} />
         </TabsContent>
         <TabsContent value="stats">
           <StatisticalAnalysisTab state={state} weeklyReceiving={weeklyReceiving} weeklyDrying={weeklyDrying} />

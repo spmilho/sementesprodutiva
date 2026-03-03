@@ -113,6 +113,27 @@ export function getWeeklyEffectiveReceiving(state: UbsState): number[] {
   return changeovers.map((co) => Math.max(0, grossCap - co * lossPerHybrid));
 }
 
+/** Get classificação rate in t/h */
+export function getClassificacaoRateTH(state: UbsState): number {
+  const cfg = getPhaseConfig(state, "Classificação");
+  const totalHoursPerWeek = cfg.shifts * cfg.hoursPerShift * cfg.operatingDays;
+  if (totalHoursPerWeek === 0) return 0;
+  return getPhaseWeeklyCap(state, "Classificação") / totalHoursPerWeek;
+}
+
+/** Get changeover loss per hybrid in tons for Phase 2 (Classificação) */
+export function getChangeoverLossPerHybridPhase2(state: UbsState): number {
+  return state.changeoverTimeH * getClassificacaoRateTH(state);
+}
+
+/** Get weekly effective classificação capacity (after changeover losses) */
+export function getWeeklyEffectiveClassificacao(state: UbsState): number[] {
+  const grossCap = getPhaseWeeklyCap(state, "Classificação");
+  const changeovers = getWeeklyChangeovers(state.clients, state.numWeeks);
+  const lossPerHybrid = getChangeoverLossPerHybridPhase2(state);
+  return changeovers.map((co) => Math.max(0, grossCap - co * lossPerHybrid));
+}
+
 export const PHASES = ["Recebimento e Despalha", "Secador", "Debulha", "Classificação", "Tratamento e Ensaque", "Expedição"] as const;
 export type Phase = (typeof PHASES)[number];
 
