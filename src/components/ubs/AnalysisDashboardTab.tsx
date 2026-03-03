@@ -1,6 +1,6 @@
 import { useMemo, useRef, useCallback } from "react";
 import { UbsKPI } from "./UbsCard";
-import { getWeekLabels, getWeeklyDemand, getClientVolumes, type UbsState, PHASES } from "./types";
+import { getWeekLabels, getWeeklyDemand, getClientVolumes, getWeeklyChangeovers, getWeeklyEffectiveReceiving, getChangeoverLossPerHybrid, getReceivingRateTH, getPhaseWeeklyCap, type UbsState, PHASES } from "./types";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend,
   LineChart, Line, Area, AreaChart, PieChart, Pie, Cell, ComposedChart,
@@ -44,15 +44,16 @@ function ChartWrapper({ title, children, name }: { title: string; children: (ref
 
 const DemandTooltip = ({ active, payload, label, weeklyReceiving, weeklyDrying }: any) => {
   if (!active || !payload?.length) return null;
-  // Only sum bar entries (clients), skip lines
-  const clientEntries = payload.filter((p: any) => p.type === "bar" || (!p.strokeDasharray && p.dataKey !== "capReceiving" && p.dataKey !== "capDrying"));
+  const clientEntries = payload.filter((p: any) => p.stackId === "demand");
   const total = clientEntries.reduce((s: number, p: any) => s + (p.value || 0), 0);
-  const balReceb = weeklyReceiving - total;
+  const capEffective = payload.find((p: any) => p.dataKey === "capEffective")?.value ?? weeklyReceiving;
+  const changeoverLoss = weeklyReceiving - capEffective;
+  const balBruto = weeklyReceiving - total;
+  const balEfetivo = capEffective - total;
   const balSecag = weeklyDrying - total;
-  const pctReceb = weeklyReceiving > 0 ? ((total / weeklyReceiving) * 100).toFixed(0) : "0";
-  const pctSecag = weeklyDrying > 0 ? ((total / weeklyDrying) * 100).toFixed(0) : "0";
+  const pctEfetivo = capEffective > 0 ? ((total / capEffective) * 100).toFixed(0) : "0";
   return (
-    <div className="bg-[#0f1f14] border border-[#2a4a32] rounded-lg p-3 text-xs shadow-xl min-w-[180px]">
+    <div className="bg-[#0f1f14] border border-[#2a4a32] rounded-lg p-3 text-xs shadow-xl min-w-[200px]">
       <p className="font-semibold text-[#e8f5e9] mb-2 font-['Syne',sans-serif]">{label}</p>
       {clientEntries.map((p: any) => (
         <div key={p.dataKey} className="flex justify-between gap-4">
@@ -62,20 +63,34 @@ const DemandTooltip = ({ active, payload, label, weeklyReceiving, weeklyDrying }
       ))}
       <hr className="my-1.5 border-[#2a4a32]" />
       <div className="flex justify-between font-semibold">
-        <span className="text-[#e8f5e9]">Total Demanda</span>
+        <span className="text-[#e8f5e9]">Demanda</span>
         <span className="text-[#e8f5e9] font-['DM_Mono',monospace]">{total.toLocaleString("pt-BR")} t</span>
       </div>
-      <div className="mt-1.5 space-y-1">
+      <div className="mt-1.5 space-y-0.5">
         <div className="flex justify-between">
-          <span className="text-[#5CDB6E]">Recebimento</span>
-          <span className="font-['DM_Mono',monospace]" style={{ color: balReceb >= 0 ? "#5CDB6E" : "#FF6B6B" }}>
-            {balReceb >= 0 ? "+" : ""}{balReceb.toLocaleString("pt-BR")} t ({pctReceb}%)
+          <span className="text-[#5CDB6E]">Cap. Bruta</span>
+          <span className="text-[#5CDB6E] font-['DM_Mono',monospace]">{weeklyReceiving.toLocaleString("pt-BR")} t</span>
+        </div>
+        {changeoverLoss > 0 && (
+          <div className="flex justify-between">
+            <span className="text-[#F97316]">Perda Changeover</span>
+            <span className="text-[#F97316] font-['DM_Mono',monospace]">−{changeoverLoss.toFixed(0)} t</span>
+          </div>
+        )}
+        <div className="flex justify-between font-semibold">
+          <span className="text-[#F97316]">Cap. Efetiva</span>
+          <span className="text-[#F97316] font-['DM_Mono',monospace]">{capEffective.toFixed(0)} t</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-[#8aac8f]">Balanço Efetivo</span>
+          <span className="font-['DM_Mono',monospace]" style={{ color: balEfetivo >= 0 ? "#5CDB6E" : "#FF6B6B" }}>
+            {balEfetivo >= 0 ? "+" : ""}{balEfetivo.toFixed(0)} t ({pctEfetivo}%)
           </span>
         </div>
         <div className="flex justify-between">
           <span className="text-[#4ECDC4]">Secagem</span>
           <span className="font-['DM_Mono',monospace]" style={{ color: balSecag >= 0 ? "#4ECDC4" : "#FF6B6B" }}>
-            {balSecag >= 0 ? "+" : ""}{balSecag.toLocaleString("pt-BR")} t ({pctSecag}%)
+            {balSecag >= 0 ? "+" : ""}{balSecag.toLocaleString("pt-BR")} t
           </span>
         </div>
       </div>
@@ -86,6 +101,10 @@ const DemandTooltip = ({ active, payload, label, weeklyReceiving, weeklyDrying }
 export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: Props) {
   const weekLabels = getWeekLabels(state.startDate, state.numWeeks);
   const weeklyDemand = getWeeklyDemand(state.clients, state.numWeeks);
+  const weeklyChangeovers = getWeeklyChangeovers(state.clients, state.numWeeks);
+  const weeklyEffective = getWeeklyEffectiveReceiving(state);
+  const lossPerHybrid = getChangeoverLossPerHybrid(state);
+  const rateTH = getReceivingRateTH(state);
 
   const altReceiving = state.altReceivingCapPerShift * state.altShifts * ((state.phaseConfig?.["Recebimento e Despalha"]?.operatingDays) || 6);
   const altDrying = state.altDryingCapPerShift * state.altShifts * ((state.phaseConfig?.["Secador"]?.operatingDays) || 6);
@@ -101,8 +120,10 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
       entry.pctUtilDrying = weeklyDrying > 0 ? (weeklyDemand[i] / weeklyDrying) * 100 : 0;
       entry.capReceiving = weeklyReceiving;
       entry.capDrying = weeklyDrying;
+      entry.capEffective = weeklyEffective[i];
+      entry.changeoverLoss = weeklyReceiving - weeklyEffective[i];
       return entry;
-    }), [weekLabels, state.clients, weeklyDemand, weeklyReceiving, weeklyDrying]);
+    }), [weekLabels, state.clients, weeklyDemand, weeklyReceiving, weeklyDrying, weeklyEffective]);
 
   // KPIs
   const totalDemand = weeklyDemand.reduce((a, b) => a + b, 0);
@@ -114,6 +135,15 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
   const maxDeficit = Math.max(...weeklyDemand.map((d) => d - weeklyReceiving));
   const maxDeficitWeek = weeklyDemand.findIndex((d) => d - weeklyReceiving === maxDeficit);
   const totalStaff = PHASES.reduce((sum, p) => sum + ((state.staff[p] || []).reduce((a, b) => a + b, 0)), 0);
+
+  // Changeover KPIs
+  const activeEffectiveWeeks = weeklyDemand.map((d, i) => ({ d, eff: weeklyEffective[i] })).filter(({ d }) => d > 0);
+  const avgEffectiveCap = activeEffectiveWeeks.length > 0 ? activeEffectiveWeeks.reduce((s, { eff }) => s + eff, 0) / activeEffectiveWeeks.length : weeklyReceiving;
+  const totalChangeoverLoss = weeklyDemand.reduce((s, d, i) => s + (d > 0 ? weeklyReceiving - weeklyEffective[i] : 0), 0);
+  const effectiveDeficitWeeks = weeklyDemand.filter((d, i) => d > 0 && d > weeklyEffective[i]).length;
+  const weeklyLosses = weeklyDemand.map((d, i) => d > 0 ? weeklyReceiving - weeklyEffective[i] : 0);
+  const peakLoss = Math.max(...weeklyLosses);
+  const peakLossWeekIdx = weeklyLosses.indexOf(peakLoss);
 
   // Pie data
   const pieData = state.clients.map((c) => ({
@@ -157,15 +187,23 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
         <UbsKPI label="Pessoal Total" value={`${totalStaff} pessoas`} color="#4ECDC4" />
       </div>
 
-      {/* Chart 1: Demand vs Capacity — clean & visual */}
+      {/* Changeover KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <UbsKPI label="Cap. Efetiva Média" value={`${avgEffectiveCap.toFixed(0)} t`} color="#F97316" />
+        <UbsKPI label="Total Perdido Changeover" value={`${totalChangeoverLoss.toFixed(0)} t`} color="#F97316" />
+        <UbsKPI label="Sem. Déficit Efetivo" value={`${effectiveDeficitWeeks}`} color={effectiveDeficitWeeks > 0 ? "#FF6B6B" : "#5CDB6E"} />
+        <UbsKPI label="Pico de Perda" value={peakLoss > 0 ? `${peakLoss.toFixed(0)} t` : "Nenhum"} sub={peakLoss > 0 ? weekLabels[peakLossWeekIdx] : undefined} color={peakLoss > 0 ? "#F97316" : "#5CDB6E"} />
+      </div>
+
+      {/* Chart 1: Demand vs Capacity with Effective Capacity */}
       <ChartWrapper title="Demanda × Capacidade Semanal" name="demanda_capacidade">
         {() => (
           <ResponsiveContainer width="100%" height={380}>
             <ComposedChart data={chartData} barCategoryGap="20%">
               <defs>
-                <linearGradient id="overCapGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#FF6B6B" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#FF6B6B" stopOpacity={0} />
+                <linearGradient id="changeoverLossGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#F97316" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#F97316" stopOpacity={0.05} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e3a25" vertical={false} />
@@ -176,9 +214,10 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
               {state.clients.map((c) => (
                 <Bar key={c.id} dataKey={c.name} stackId="demand" fill={c.color} radius={[0, 0, 0, 0]} />
               ))}
-              {/* Top bar rounded corners on last client */}
-              <ReferenceLine y={weeklyReceiving} stroke="#5CDB6E" strokeWidth={2.5} label={{ value: `⬤ Receb. ${weeklyReceiving.toLocaleString("pt-BR")} t`, fill: "#5CDB6E", fontSize: 10, fontFamily: "DM Mono", position: "insideTopRight" }} />
-              <ReferenceLine y={weeklyDrying} stroke="#4ECDC4" strokeWidth={2} strokeDasharray="8 4" label={{ value: `◆ Secag. ${weeklyDrying.toLocaleString("pt-BR")} t`, fill: "#4ECDC4", fontSize: 10, fontFamily: "DM Mono", position: "insideTopRight" }} />
+              <Area type="monotone" dataKey="changeoverLoss" name="Perda Changeover" fill="url(#changeoverLossGradient)" stroke="none" baseValue={0} legendType="none" />
+              <ReferenceLine y={weeklyReceiving} stroke="#5CDB6E" strokeWidth={2.5} label={{ value: `Cap. Bruta ${weeklyReceiving.toLocaleString("pt-BR")} t`, fill: "#5CDB6E", fontSize: 10, fontFamily: "DM Mono", position: "insideTopRight" }} />
+              <Line type="monotone" dataKey="capEffective" name="Cap. Efetiva Receb." stroke="#F97316" strokeWidth={2} strokeDasharray="6 3" dot={{ r: 3, fill: "#F97316" }} />
+              <ReferenceLine y={weeklyDrying} stroke="#4ECDC4" strokeWidth={2} strokeDasharray="8 4" label={{ value: `Secag. ${weeklyDrying.toLocaleString("pt-BR")} t`, fill: "#4ECDC4", fontSize: 10, fontFamily: "DM Mono", position: "insideTopRight" }} />
             </ComposedChart>
           </ResponsiveContainer>
         )}

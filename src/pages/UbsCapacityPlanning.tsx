@@ -63,6 +63,7 @@ const DEFAULT_STATE: UbsState = {
   altShifts: 3,
   altReceivingCapPerShift: 350,
   altDryingCapPerShift: 400,
+  changeoverTimeH: 4,
 };
 
 function loadState(): UbsState {
@@ -90,6 +91,7 @@ function loadState(): UbsState {
           Debulha: 200, Classificação: 180, "Tratamento e Ensaque": 160, Expedição: 200,
         };
       }
+      if (parsed.changeoverTimeH === undefined) parsed.changeoverTimeH = 4;
       return parsed;
     }
   } catch {}
