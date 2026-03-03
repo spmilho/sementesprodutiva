@@ -9,9 +9,16 @@ import { StatisticalAnalysisTab } from "@/components/ubs/StatisticalAnalysisTab"
 import type { UbsState, Client } from "@/components/ubs/types";
 
 const DEFAULT_CLIENTS: Client[] = [
-  { id: "1", name: "Limagrain", color: "#5CDB6E", volumes: [0, 0, 0, 1200, 1200, 1200, 1200, 0, 0, 0, 0] },
-  { id: "2", name: "Advanta", color: "#4ECDC4", volumes: [0, 0, 563, 836, 1084, 328, 0, 0, 0, 0, 0] },
-  { id: "3", name: "Milhão", color: "#FFD93D", volumes: [0, 0, 0, 0, 550, 0, 0, 0, 0, 0, 0] },
+  { id: "1", name: "Limagrain", color: "#5CDB6E", hybrids: [
+    { id: "1a", name: "LG 36790", volumes: [0, 0, 0, 700, 700, 600, 600, 0, 0, 0, 0] },
+    { id: "1b", name: "LG 34799", volumes: [0, 0, 0, 500, 500, 600, 600, 0, 0, 0, 0] },
+  ]},
+  { id: "2", name: "Advanta", color: "#4ECDC4", hybrids: [
+    { id: "2a", name: "ADV 9275", volumes: [0, 0, 563, 836, 1084, 328, 0, 0, 0, 0, 0] },
+  ]},
+  { id: "3", name: "Milhão", color: "#FFD93D", hybrids: [
+    { id: "3a", name: "MH 7040", volumes: [0, 0, 0, 0, 550, 0, 0, 0, 0, 0, 0] },
+  ]},
 ];
 
 const DEFAULT_STAFF: Record<string, number[]> = {

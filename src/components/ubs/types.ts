@@ -1,8 +1,24 @@
+export interface Hybrid {
+  id: string;
+  name: string;
+  volumes: number[];
+}
+
 export interface Client {
   id: string;
   name: string;
   color: string;
-  volumes: number[];
+  hybrids: Hybrid[];
+}
+
+export function getClientVolumes(client: Client, numWeeks: number): number[] {
+  const totals: number[] = Array(numWeeks).fill(0);
+  client.hybrids.forEach((h) => {
+    for (let i = 0; i < numWeeks; i++) {
+      totals[i] += h.volumes[i] || 0;
+    }
+  });
+  return totals;
 }
 
 export interface UbsState {
@@ -40,8 +56,9 @@ export function getWeekLabels(startDate: string, numWeeks: number): string[] {
 export function getWeeklyDemand(clients: Client[], numWeeks: number): number[] {
   const totals: number[] = Array(numWeeks).fill(0);
   clients.forEach((c) => {
+    const cv = getClientVolumes(c, numWeeks);
     for (let i = 0; i < numWeeks; i++) {
-      totals[i] += c.volumes[i] || 0;
+      totals[i] += cv[i];
     }
   });
   return totals;
