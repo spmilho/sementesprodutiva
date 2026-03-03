@@ -15,11 +15,11 @@ const DEFAULT_CLIENTS: Client[] = [
 ];
 
 const DEFAULT_STAFF: Record<string, number[]> = {
-  Recebimento: [3, 3, 3],
-  Despalha: [4, 4, 4],
+  "Recebimento e Despalha": [5, 5, 5],
   Secador: [2, 2, 2],
+  Debulha: [3, 3, 3],
   Classificação: [3, 3, 3],
-  Tratamento: [2, 2, 2],
+  "Tratamento e Ensaque": [3, 3, 3],
   Expedição: [2, 2, 2],
 };
 
