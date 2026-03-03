@@ -40,11 +40,19 @@ const DEFAULT_STAFF: Record<string, number[]> = {
   Expedição: [2],
 };
 
+const DEFAULT_CAP_PER_SHIFT: Record<string, number> = {
+  "Recebimento e Despalha": 283,
+  Secador: 324,
+  Debulha: 200,
+  Classificação: 180,
+  "Tratamento e Ensaque": 160,
+  Expedição: 200,
+};
+
 const DEFAULT_STATE: UbsState = {
   ubsName: "UBS Produtiva Sementes",
   phaseConfig: DEFAULT_PHASE_CONFIG,
-  receivingCapPerShift: 283,
-  dryingCapPerShift: 324,
+  phaseCapPerShift: DEFAULT_CAP_PER_SHIFT,
   clients: DEFAULT_CLIENTS,
   startDate: "2026-06-08",
   numWeeks: 11,
@@ -60,7 +68,7 @@ function loadState(): UbsState {
     const raw = localStorage.getItem("ubs-capacity-state");
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Migrate old format: if no phaseConfig, create from global values
+      // Migrate old format
       if (!parsed.phaseConfig) {
         const s = parsed.shifts || 3;
         const h = parsed.hoursPerShift || 8;
@@ -70,6 +78,13 @@ function loadState(): UbsState {
           cfg[phase] = { shifts: s, hoursPerShift: h, operatingDays: d };
         }
         parsed.phaseConfig = cfg;
+      }
+      if (!parsed.phaseCapPerShift) {
+        parsed.phaseCapPerShift = {
+          "Recebimento e Despalha": parsed.receivingCapPerShift || 283,
+          Secador: parsed.dryingCapPerShift || 324,
+          Debulha: 200, Classificação: 180, "Tratamento e Ensaque": 160, Expedição: 200,
+        };
       }
       return parsed;
     }
@@ -88,8 +103,8 @@ export default function UbsCapacityPlanning() {
     setState((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  const weeklyReceiving = getPhaseWeeklyCap(state, "Recebimento e Despalha", state.receivingCapPerShift);
-  const weeklyDrying = getPhaseWeeklyCap(state, "Secador", state.dryingCapPerShift);
+  const weeklyReceiving = getPhaseWeeklyCap(state, "Recebimento e Despalha");
+  const weeklyDrying = getPhaseWeeklyCap(state, "Secador");
 
   return (
     <div className="ubs-theme min-h-screen">

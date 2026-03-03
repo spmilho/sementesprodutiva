@@ -42,9 +42,10 @@ export function getPhaseConfig(state: UbsState, phase: string): PhaseConfig {
   return state.phaseConfig?.[phase] || { shifts: state.shifts ?? 3, hoursPerShift: state.hoursPerShift ?? 8, operatingDays: state.operatingDays ?? 6 };
 }
 
-export function getPhaseWeeklyCap(state: UbsState, phase: string, capPerShift: number): number {
+export function getPhaseWeeklyCap(state: UbsState, phase: string, capPerShift?: number): number {
   const cfg = getPhaseConfig(state, phase);
-  return capPerShift * cfg.shifts * cfg.operatingDays;
+  const cap = capPerShift ?? state.phaseCapPerShift?.[phase] ?? 0;
+  return cap * cfg.shifts * cfg.operatingDays;
 }
 
 export interface UbsState {
@@ -56,8 +57,11 @@ export interface UbsState {
   /** @deprecated use phaseConfig instead */
   operatingDays?: number;
   phaseConfig: Record<string, PhaseConfig>;
-  receivingCapPerShift: number;
-  dryingCapPerShift: number;
+  phaseCapPerShift: Record<string, number>;
+  /** @deprecated use phaseCapPerShift["Recebimento e Despalha"] */
+  receivingCapPerShift?: number;
+  /** @deprecated use phaseCapPerShift["Secador"] */
+  dryingCapPerShift?: number;
   clients: Client[];
   startDate: string;
   numWeeks: number;
