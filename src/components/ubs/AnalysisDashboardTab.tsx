@@ -74,7 +74,9 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
       state.clients.forEach((c) => { entry[c.name] = getClientVolumes(c, state.numWeeks)[i] || 0; });
       entry.total = weeklyDemand[i];
       entry.balance = weeklyReceiving - weeklyDemand[i];
+      entry.balanceDrying = weeklyDrying - weeklyDemand[i];
       entry.pctUtil = weeklyReceiving > 0 ? (weeklyDemand[i] / weeklyReceiving) * 100 : 0;
+      entry.pctUtilDrying = weeklyDrying > 0 ? (weeklyDemand[i] / weeklyDrying) * 100 : 0;
       return entry;
     }), [weekLabels, state.clients, weeklyDemand, weeklyReceiving]);
 
@@ -153,7 +155,7 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Chart 2: Balance */}
-        <ChartWrapper title="Balanço Surplus / Déficit" name="balanco">
+        <ChartWrapper title="Balanço Surplus / Déficit — Recebimento" name="balanco_receb">
           {() => (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={chartData}>
@@ -162,9 +164,28 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
                 <YAxis tick={{ fill: "#8aac8f", fontSize: 10 }} />
                 <ReferenceLine y={0} stroke="#8aac8f" strokeWidth={1.5} />
                 <Tooltip contentStyle={{ backgroundColor: "#0f1f14", border: "1px solid #2a4a32", fontSize: 11 }} />
-                <Bar dataKey="balance" name="Balanço (t)" label={{ position: "top", fill: "#8aac8f", fontSize: 9 }}>
+                <Bar dataKey="balance" name="Balanço Receb. (t)" label={{ position: "top", fill: "#8aac8f", fontSize: 9 }}>
                   {chartData.map((d, i) => (
                     <Cell key={i} fill={d.balance >= 0 ? "#5CDB6E" : "#FF6B6B"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </ChartWrapper>
+
+        <ChartWrapper title="Balanço Surplus / Déficit — Secagem" name="balanco_secag">
+          {() => (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a25" />
+                <XAxis dataKey="name" tick={{ fill: "#8aac8f", fontSize: 10 }} />
+                <YAxis tick={{ fill: "#8aac8f", fontSize: 10 }} />
+                <ReferenceLine y={0} stroke="#8aac8f" strokeWidth={1.5} />
+                <Tooltip contentStyle={{ backgroundColor: "#0f1f14", border: "1px solid #2a4a32", fontSize: 11 }} />
+                <Bar dataKey="balanceDrying" name="Balanço Secag. (t)" label={{ position: "top", fill: "#8aac8f", fontSize: 9 }}>
+                  {chartData.map((d, i) => (
+                    <Cell key={i} fill={d.balanceDrying >= 0 ? "#4ECDC4" : "#FF6B6B"} />
                   ))}
                 </Bar>
               </BarChart>
@@ -183,8 +204,13 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
                 <ReferenceLine y={80} stroke="#FFD93D" strokeDasharray="6 3" label={{ value: "80%", fill: "#FFD93D", fontSize: 9 }} />
                 <ReferenceLine y={100} stroke="#FF6B6B" strokeDasharray="6 3" label={{ value: "100%", fill: "#FF6B6B", fontSize: 9 }} />
                 <Tooltip contentStyle={{ backgroundColor: "#0f1f14", border: "1px solid #2a4a32", fontSize: 11 }} />
-                <Area type="monotone" dataKey="pctUtil" name="Utilização (%)" stroke="#5CDB6E" fill="#5CDB6E" fillOpacity={0.15} dot={(props: any) => {
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+                <Area type="monotone" dataKey="pctUtil" name="Recebimento (%)" stroke="#5CDB6E" fill="#5CDB6E" fillOpacity={0.15} dot={(props: any) => {
                   const color = props.payload.pctUtil > 100 ? "#FF6B6B" : props.payload.pctUtil >= 80 ? "#FFD93D" : "#5CDB6E";
+                  return <circle cx={props.cx} cy={props.cy} r={4} fill={color} stroke={color} />;
+                }} />
+                <Area type="monotone" dataKey="pctUtilDrying" name="Secagem (%)" stroke="#4ECDC4" fill="#4ECDC4" fillOpacity={0.1} dot={(props: any) => {
+                  const color = props.payload.pctUtilDrying > 100 ? "#FF6B6B" : props.payload.pctUtilDrying >= 80 ? "#FFD93D" : "#4ECDC4";
                   return <circle cx={props.cx} cy={props.cy} r={4} fill={color} stroke={color} />;
                 }} />
               </AreaChart>
