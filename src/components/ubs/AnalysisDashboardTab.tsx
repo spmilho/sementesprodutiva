@@ -42,21 +42,43 @@ function ChartWrapper({ title, children, name }: { title: string; children: (ref
   );
 }
 
-const CustomTooltip = ({ active, payload, label, weeklyReceiving, weeklyDrying }: any) => {
+const DemandTooltip = ({ active, payload, label, weeklyReceiving, weeklyDrying }: any) => {
   if (!active || !payload?.length) return null;
-  const total = payload.reduce((s: number, p: any) => s + (p.value || 0), 0);
-  const surplus = weeklyReceiving - total;
-  const pct = weeklyReceiving > 0 ? ((total / weeklyReceiving) * 100).toFixed(1) : "0";
+  // Only sum bar entries (clients), skip lines
+  const clientEntries = payload.filter((p: any) => p.type === "bar" || (!p.strokeDasharray && p.dataKey !== "capReceiving" && p.dataKey !== "capDrying"));
+  const total = clientEntries.reduce((s: number, p: any) => s + (p.value || 0), 0);
+  const balReceb = weeklyReceiving - total;
+  const balSecag = weeklyDrying - total;
+  const pctReceb = weeklyReceiving > 0 ? ((total / weeklyReceiving) * 100).toFixed(0) : "0";
+  const pctSecag = weeklyDrying > 0 ? ((total / weeklyDrying) * 100).toFixed(0) : "0";
   return (
-    <div className="bg-[#0f1f14] border border-[#2a4a32] rounded-lg p-3 text-xs shadow-xl">
-      <p className="font-semibold text-[#e8f5e9] mb-1">{label}</p>
-      {payload.map((p: any) => (
-        <p key={p.dataKey} style={{ color: p.fill || p.color }}>{p.name}: {p.value?.toLocaleString("pt-BR")} t</p>
+    <div className="bg-[#0f1f14] border border-[#2a4a32] rounded-lg p-3 text-xs shadow-xl min-w-[180px]">
+      <p className="font-semibold text-[#e8f5e9] mb-2 font-['Syne',sans-serif]">{label}</p>
+      {clientEntries.map((p: any) => (
+        <div key={p.dataKey} className="flex justify-between gap-4">
+          <span style={{ color: p.fill || p.color }}>● {p.name}</span>
+          <span className="text-[#e8f5e9] font-['DM_Mono',monospace]">{p.value?.toLocaleString("pt-BR")} t</span>
+        </div>
       ))}
-      <hr className="my-1 border-[#2a4a32]" />
-      <p className="text-[#e8f5e9]">Total: {total.toLocaleString("pt-BR")} t</p>
-      <p className={surplus >= 0 ? "text-[#5CDB6E]" : "text-red-400"}>Balanço: {(surplus > 0 ? "+" : "")}{surplus.toLocaleString("pt-BR")} t</p>
-      <p className="text-[#8aac8f]">Utilização: {pct}%</p>
+      <hr className="my-1.5 border-[#2a4a32]" />
+      <div className="flex justify-between font-semibold">
+        <span className="text-[#e8f5e9]">Total Demanda</span>
+        <span className="text-[#e8f5e9] font-['DM_Mono',monospace]">{total.toLocaleString("pt-BR")} t</span>
+      </div>
+      <div className="mt-1.5 space-y-1">
+        <div className="flex justify-between">
+          <span className="text-[#5CDB6E]">Recebimento</span>
+          <span className="font-['DM_Mono',monospace]" style={{ color: balReceb >= 0 ? "#5CDB6E" : "#FF6B6B" }}>
+            {balReceb >= 0 ? "+" : ""}{balReceb.toLocaleString("pt-BR")} t ({pctReceb}%)
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-[#4ECDC4]">Secagem</span>
+          <span className="font-['DM_Mono',monospace]" style={{ color: balSecag >= 0 ? "#4ECDC4" : "#FF6B6B" }}>
+            {balSecag >= 0 ? "+" : ""}{balSecag.toLocaleString("pt-BR")} t ({pctSecag}%)
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
@@ -135,28 +157,73 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
         <UbsKPI label="Pessoal Total" value={`${totalStaff} pessoas`} color="#4ECDC4" />
       </div>
 
-      {/* Chart 1: Demand vs Capacity */}
+      {/* Chart 1: Demand vs Capacity — clean & visual */}
       <ChartWrapper title="Demanda × Capacidade Semanal" name="demanda_capacidade">
         {() => (
-          <ResponsiveContainer width="100%" height={360}>
-            <ComposedChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e3a25" />
-              <XAxis dataKey="name" tick={{ fill: "#8aac8f", fontSize: 10 }} />
-              <YAxis yAxisId="left" tick={{ fill: "#8aac8f", fontSize: 10 }} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fill: "#8aac8f", fontSize: 10 }} />
-              <Tooltip content={<CustomTooltip weeklyReceiving={weeklyReceiving} weeklyDrying={weeklyDrying} />} />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
+          <ResponsiveContainer width="100%" height={380}>
+            <ComposedChart data={chartData} barCategoryGap="20%">
+              <defs>
+                <linearGradient id="overCapGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FF6B6B" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#FF6B6B" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e3a25" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: "#8aac8f", fontSize: 10, fontFamily: "DM Mono" }} axisLine={{ stroke: "#2a4a32" }} tickLine={false} />
+              <YAxis tick={{ fill: "#8aac8f", fontSize: 10, fontFamily: "DM Mono" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : `${v}`} />
+              <Tooltip content={<DemandTooltip weeklyReceiving={weeklyReceiving} weeklyDrying={weeklyDrying} />} cursor={{ fill: "#5CDB6E", fillOpacity: 0.05 }} />
+              <Legend wrapperStyle={{ fontSize: 11, fontFamily: "DM Mono", paddingTop: 8 }} iconType="circle" iconSize={8} />
               {state.clients.map((c) => (
-                <Bar key={c.id} dataKey={c.name} stackId="a" yAxisId="left" fill={c.color} radius={[0, 0, 0, 0]} />
+                <Bar key={c.id} dataKey={c.name} stackId="demand" fill={c.color} radius={[0, 0, 0, 0]} />
               ))}
-              <Line type="stepAfter" dataKey="capReceiving" yAxisId="left" name="Cap. Recebimento" stroke="#5CDB6E" strokeWidth={2} dot={false} />
-              <Line type="stepAfter" dataKey="capDrying" yAxisId="left" name="Cap. Secagem" stroke="#4ECDC4" strokeWidth={2} strokeDasharray="6 3" dot={false} />
-              <Line type="monotone" dataKey="balance" yAxisId="right" name="Balanço Receb." stroke="#5CDB6E" strokeWidth={1.5} dot={{ r: 3, fill: "#5CDB6E" }} strokeDasharray="3 3" />
-              <Line type="monotone" dataKey="balanceDrying" yAxisId="right" name="Balanço Secag." stroke="#4ECDC4" strokeWidth={1.5} dot={{ r: 3, fill: "#4ECDC4" }} strokeDasharray="3 3" />
+              {/* Top bar rounded corners on last client */}
+              <ReferenceLine y={weeklyReceiving} stroke="#5CDB6E" strokeWidth={2.5} label={{ value: `⬤ Receb. ${weeklyReceiving.toLocaleString("pt-BR")} t`, fill: "#5CDB6E", fontSize: 10, fontFamily: "DM Mono", position: "insideTopRight" }} />
+              <ReferenceLine y={weeklyDrying} stroke="#4ECDC4" strokeWidth={2} strokeDasharray="8 4" label={{ value: `◆ Secag. ${weeklyDrying.toLocaleString("pt-BR")} t`, fill: "#4ECDC4", fontSize: 10, fontFamily: "DM Mono", position: "insideTopRight" }} />
             </ComposedChart>
           </ResponsiveContainer>
         )}
       </ChartWrapper>
+
+      {/* Visual capacity status per week */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {["Recebimento", "Secagem"].map((tipo) => {
+          const cap = tipo === "Recebimento" ? weeklyReceiving : weeklyDrying;
+          const color = tipo === "Recebimento" ? "#5CDB6E" : "#4ECDC4";
+          const weekLabelsArr = getWeekLabels(state.startDate, state.numWeeks);
+          return (
+            <div key={tipo} className="bg-[#162b1c] border border-[#2a4a32] rounded-lg p-4">
+              <h4 className="text-xs font-semibold mb-3 font-['Syne',sans-serif]" style={{ color }}>
+                Balanço {tipo} — {cap.toLocaleString("pt-BR")} t/sem
+              </h4>
+              <div className="space-y-1.5">
+                {weeklyDemand.map((d, i) => {
+                  if (d === 0) return null;
+                  const pct = cap > 0 ? (d / cap) * 100 : 0;
+                  const bal = cap - d;
+                  const barColor = pct > 100 ? "#FF6B6B" : pct >= 80 ? "#FFD93D" : color;
+                  return (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-[10px] text-[#8aac8f] font-['DM_Mono',monospace] w-24 shrink-0 truncate">{weekLabelsArr[i]}</span>
+                      <div className="flex-1 h-4 bg-[#0f1f14] rounded-full overflow-hidden relative">
+                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: barColor, opacity: 0.85 }} />
+                        {pct > 100 && (
+                          <div className="absolute inset-0 rounded-full border-2 border-[#FF6B6B]/50" />
+                        )}
+                      </div>
+                      <span className="text-[10px] font-['DM_Mono',monospace] w-14 text-right shrink-0" style={{ color: barColor }}>
+                        {pct.toFixed(0)}%
+                      </span>
+                      <span className="text-[10px] font-['DM_Mono',monospace] w-16 text-right shrink-0" style={{ color: bal >= 0 ? color : "#FF6B6B" }}>
+                        {bal >= 0 ? "+" : ""}{bal.toLocaleString("pt-BR")}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Chart 2: Balance */}
