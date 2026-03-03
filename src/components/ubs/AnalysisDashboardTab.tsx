@@ -1,6 +1,6 @@
 import { useMemo, useRef, useCallback } from "react";
 import { UbsKPI } from "./UbsCard";
-import { getWeekLabels, getWeeklyDemand, type UbsState, PHASES } from "./types";
+import { getWeekLabels, getWeeklyDemand, getClientVolumes, type UbsState, PHASES } from "./types";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend,
   LineChart, Line, Area, AreaChart, PieChart, Pie, Cell, ComposedChart,
@@ -71,7 +71,7 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
   const chartData = useMemo(() =>
     weekLabels.map((label, i) => {
       const entry: any = { name: label };
-      state.clients.forEach((c) => { entry[c.name] = c.volumes[i] || 0; });
+      state.clients.forEach((c) => { entry[c.name] = getClientVolumes(c, state.numWeeks)[i] || 0; });
       entry.total = weeklyDemand[i];
       entry.balance = weeklyReceiving - weeklyDemand[i];
       entry.pctUtil = weeklyReceiving > 0 ? (weeklyDemand[i] / weeklyReceiving) * 100 : 0;
@@ -92,7 +92,7 @@ export function AnalysisDashboardTab({ state, weeklyReceiving, weeklyDrying }: P
   // Pie data
   const pieData = state.clients.map((c) => ({
     name: c.name,
-    value: c.volumes.reduce((a, b) => a + b, 0),
+    value: getClientVolumes(c, state.numWeeks).reduce((a, b) => a + b, 0),
     color: c.color,
   })).filter((d) => d.value > 0);
 
