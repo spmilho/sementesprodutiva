@@ -86,9 +86,10 @@ export function ClientDemandTab({ state, update, weeklyReceiving, weeklyDrying }
   const addHybrid = (clientId: string) => {
     const newClients = state.clients.map((c) => {
       if (c.id !== clientId) return c;
+      const currentHybrids = Array.isArray(c.hybrids) ? c.hybrids : [];
       return {
         ...c,
-        hybrids: [...c.hybrids, { id: crypto.randomUUID(), name: `Híbrido ${c.hybrids.length + 1}`, volumes: Array(state.numWeeks).fill(0) }],
+        hybrids: [...currentHybrids, { id: crypto.randomUUID(), name: `Híbrido ${currentHybrids.length + 1}`, volumes: Array(state.numWeeks).fill(0) }],
       };
     });
     update("clients", newClients);
