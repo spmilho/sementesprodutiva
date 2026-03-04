@@ -301,6 +301,7 @@ export default function CycleDetail() {
             femalePlantingFinished={cycle.female_planting_finished ?? false}
             onFinishToggle={(type, finished) => finishMutation.mutate({ type, finished })}
             spacingFemaleFemaleCm={cycle.spacing_female_female_cm}
+            spacingFemaleMaleCm={cycle.spacing_female_male_cm}
             spacingMaleMaleCm={cycle.spacing_male_male_cm}
           />
         </TabsContent>
