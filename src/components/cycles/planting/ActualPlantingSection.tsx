@@ -150,9 +150,17 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data: any, variables: FormValues) => {
       queryClient.invalidateQueries({ queryKey: ["planting_actual", cycleId] });
-      toast.success(editingId ? "Plantio atualizado!" : "Plantio registrado!");
+      queryClient.invalidateQueries({ queryKey: ["planting_cv_points", cycleId] });
+      if (!editingId) {
+        // Auto-expand the latest record to show CV% points
+        setTimeout(() => {
+          const latest = actuals[actuals.length - 1];
+          if (latest) setExpandedId(latest.id);
+        }, 500);
+      }
+      toast.success(editingId ? "Plantio atualizado!" : "Plantio registrado! Expanda a linha para adicionar pontos de CV%.");
       setDialogOpen(false);
     },
     onError: (err: any) => toast.error(err.message),
@@ -231,7 +239,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                         <TableCell className="text-sm text-right">{a.row_spacing || "—"}</TableCell>
                         <TableCell className="text-sm text-right font-mono">{stats.n > 0 ? stats.mean.toFixed(2) : (a.seeds_per_meter || "—")}</TableCell>
                         <TableCell className="text-sm text-right">
-                          {cvLabel ? <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cvLabel.bg)}>{stats.cv.toFixed(1)}%</span> : "—"}
+                          {cvLabel ? <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium cursor-pointer", cvLabel.bg)}>{stats.cv.toFixed(1)}%</span> : <span className="text-xs text-muted-foreground cursor-pointer hover:text-primary">+ CV%</span>}
                         </TableCell>
                         <TableCell className="text-sm text-right hidden md:table-cell">{a.planter_speed || "—"}</TableCell>
                         <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
