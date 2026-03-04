@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Satellite, RefreshCw, MapPin, TrendingUp, Eye } from "lucide-react";
+import { Loader2, Satellite, RefreshCw, MapPin, TrendingUp, Eye, Trash2 } from "lucide-react";
 import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
   Tooltip as RTooltip, ReferenceLine, Legend, Area,
@@ -198,6 +198,22 @@ export default function NdviSection({
     staleTime: 1000 * 60 * 60,
   });
 
+  // Delete polygon
+  const deletePolygonMut = useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase as any)
+        .from("ndvi_polygons")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", polygon?.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ndvi-polygon", cycleId] });
+      toast.success("Polígono NDVI removido. Você pode configurar novamente.");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   // Auto-setup polygon if pivot has coordinates
   const canAutoSetup = pivot?.latitude && pivot?.longitude && !polygon && !polygonLoading;
 
@@ -359,6 +375,11 @@ export default function NdviSection({
                 </div>
                 <Button size="sm" variant="outline" className="h-7" onClick={() => refetchImages()}>
                   <RefreshCw className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="outline" className="h-7 text-destructive hover:text-destructive" 
+                  onClick={() => { if (confirm("Excluir polígono NDVI? Você poderá recriar depois.")) deletePolygonMut.mutate(); }}
+                  disabled={deletePolygonMut.isPending}>
+                  <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
             </div>
