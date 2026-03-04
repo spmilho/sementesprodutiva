@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useOfflineSyncContext } from "@/components/Layout";
-import { calcSeedsPerMeter, PLANTING_TYPES, getPlantingTypeInfo, isFemaleType } from "./planting-utils";
+import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType } from "./planting-utils";
 
 interface Props {
   cycleId: string;
@@ -40,8 +40,7 @@ const schema = z.object({
   seed_lot_id: z.string().optional(),
   gleba_id: z.string().optional(),
   planned_area: z.coerce.number().positive("Área deve ser > 0"),
-  target_population: z.coerce.number().int().positive().default(62000),
-  germination_rate: z.coerce.number().min(1).max(100).default(92),
+  seeds_per_meter: z.coerce.number().positive("Sem/metro deve ser > 0").default(5.5),
   row_spacing: z.coerce.number().int().positive().default(70),
   planting_order: z.coerce.number().int().positive().default(1),
   observations: z.string().optional(),
@@ -57,15 +56,11 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { target_population: 62000, germination_rate: 92, row_spacing: spacingFemaleFemaleCm || 70, planting_order: 1 },
+    defaultValues: { seeds_per_meter: 5.5, row_spacing: spacingFemaleFemaleCm || 70, planting_order: 1 },
   });
 
   const watchType = form.watch("type");
-  const watchPop = form.watch("target_population");
-  const watchGerm = form.watch("germination_rate");
-  const watchSpacing = form.watch("row_spacing");
   const watchLotId = form.watch("seed_lot_id");
-  const seedsPerMeter = calcSeedsPerMeter(watchPop, watchSpacing, watchGerm);
 
   const filteredLots = useMemo(() => {
     if (!watchType) return [];
@@ -79,13 +74,8 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
     return glebas.filter((g: any) => isFem ? g.parent_type === "female" || !g.parent_type : g.parent_type === "male" || !g.parent_type);
   }, [watchType, glebas]);
 
-  // When lot changes, pre-fill germination
   const handleLotChange = (lotId: string) => {
     form.setValue("seed_lot_id", lotId || undefined);
-    if (lotId) {
-      const lot = seedLots.find((l: any) => l.id === lotId);
-      if (lot?.germination_pct) form.setValue("germination_rate", lot.germination_pct);
-    }
   };
 
   // When gleba changes, pre-fill area
@@ -99,7 +89,7 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
 
   const openNew = () => {
     setEditingId(null);
-    form.reset({ target_population: 62000, germination_rate: 92, row_spacing: 70, planting_order: (plans.length || 0) + 1 });
+    form.reset({ seeds_per_meter: 5.5, row_spacing: 70, planting_order: (plans.length || 0) + 1 });
     setDialogOpen(true);
   };
 
@@ -111,8 +101,7 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
       seed_lot_id: p.seed_lot_id || undefined,
       gleba_id: p.gleba_id || undefined,
       planned_area: p.planned_area,
-      target_population: p.target_population,
-      germination_rate: p.germination_rate,
+      seeds_per_meter: p.seeds_per_meter || 5.5,
       row_spacing: p.row_spacing,
       planting_order: p.planting_order,
       observations: p.observations || "",
@@ -122,7 +111,6 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
 
   const saveMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const spm = calcSeedsPerMeter(values.target_population, values.row_spacing, values.germination_rate);
       const row: any = {
         cycle_id: cycleId, org_id: orgId,
         planned_date: format(values.planned_date, "yyyy-MM-dd"),
@@ -130,10 +118,10 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
         seed_lot_id: values.seed_lot_id || null,
         gleba_id: values.gleba_id || null,
         planned_area: values.planned_area,
-        target_population: values.target_population,
-        germination_rate: values.germination_rate,
+        target_population: null,
+        germination_rate: null,
         row_spacing: values.row_spacing,
-        seeds_per_meter: spm,
+        seeds_per_meter: values.seeds_per_meter,
         planting_order: values.planting_order,
         observations: values.observations || null,
       };
@@ -185,8 +173,6 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
                   <TableHead className="text-xs">Gleba</TableHead>
                   <TableHead className="text-xs">Lote</TableHead>
                   <TableHead className="text-xs text-right">Área(ha)</TableHead>
-                  <TableHead className="text-xs text-right">Pop.Alvo</TableHead>
-                  <TableHead className="text-xs text-right">Germ%</TableHead>
                   <TableHead className="text-xs text-right">Sem/metro</TableHead>
                   <TableHead className="text-xs text-center">Ordem</TableHead>
                   <TableHead className="text-xs text-center w-20">Ações</TableHead>
@@ -204,8 +190,6 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
                       <TableCell className="text-sm">{gleba?.name || "Geral"}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{lot?.lot_number || "—"}</TableCell>
                       <TableCell className="text-sm text-right">{p.planned_area}</TableCell>
-                      <TableCell className="text-sm text-right">{p.target_population?.toLocaleString("pt-BR")}</TableCell>
-                      <TableCell className="text-sm text-right">{p.germination_rate}%</TableCell>
                       <TableCell className="text-sm text-right font-mono">{p.seeds_per_meter}</TableCell>
                       <TableCell className="text-sm text-center">{p.planting_order}</TableCell>
                       <TableCell className="text-center">
@@ -291,29 +275,18 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="space-y-1.5">
                 <Label>Área planejada (ha) *</Label>
                 <Input type="number" step="0.01" {...form.register("planned_area")} />
               </div>
               <div className="space-y-1.5">
-                <Label>Pop. alvo (pl/ha) *</Label>
-                <Input type="number" {...form.register("target_population")} />
+                <Label>Pop. Alvo (sem/metro) *</Label>
+                <Input type="number" step="0.01" {...form.register("seeds_per_meter")} />
               </div>
-              <div className="space-y-1.5">
-                <Label>Germinação (%)</Label>
-                <Input type="number" step="0.1" {...form.register("germination_rate")} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label>Espaçamento (cm) *</Label>
                 <Input type="number" {...form.register("row_spacing")} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Sem/metro (calc.)</Label>
-                <div className="h-9 flex items-center px-3 border rounded-md bg-muted text-sm font-mono">{seedsPerMeter > 0 ? seedsPerMeter.toFixed(2) : "—"}</div>
               </div>
               <div className="space-y-1.5">
                 <Label>Ordem</Label>
