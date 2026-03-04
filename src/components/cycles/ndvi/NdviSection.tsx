@@ -91,8 +91,8 @@ export default function NdviSection({
         .select("*")
         .eq("cycle_id", cycleId)
         .is("deleted_at", null)
-        .single();
-      return data;
+        .maybeSingle();
+      return data ?? null;
     },
   });
 
