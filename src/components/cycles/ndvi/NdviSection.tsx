@@ -139,14 +139,15 @@ export default function NdviSection({
         geo_json: geoJson,
       });
 
-      const { error } = await (supabase as any).from("ndvi_polygons").insert({
+      const { error } = await (supabase as any).from("ndvi_polygons").upsert({
         cycle_id: cycleId,
         org_id: orgId,
         agro_polygon_id: agroData.id,
         polygon_name: pivotName,
         polygon_geo: geoJson,
         area_ha: agroData.area ? (agroData.area / 10000).toFixed(2) : null,
-      });
+        deleted_at: null,
+      }, { onConflict: "cycle_id" });
       if (error) throw error;
       return agroData;
     },
