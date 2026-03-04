@@ -201,10 +201,10 @@ export default function NdviSection({
   // Delete polygon
   const deletePolygonMut = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any)
-        .from("ndvi_polygons")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", polygon?.id);
+      const { error } = await supabase.rpc("soft_delete_record", {
+        _table_name: "ndvi_polygons",
+        _record_id: polygon?.id,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
