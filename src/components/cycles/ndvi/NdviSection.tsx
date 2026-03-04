@@ -287,8 +287,9 @@ export default function NdviSection({
     if (!selectedImage) return null;
     const raw = selectedImage.tile?.[layerType];
     if (!raw) return null;
-    let url = raw.replace(/^http:\/\//, "https://");
-    url += (url.includes("?") ? "&" : "?") + `appid=${API_KEY}`;
+    // Force HTTPS to avoid mixed-content blocks
+    const url = raw.replace(/^http:\/\//, "https://");
+    console.log('NDVI tile URL:', url);
     return url;
   }, [selectedImage, layerType]);
 
@@ -438,18 +439,19 @@ export default function NdviSection({
                   url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
                   attribution="Esri"
                 />
-                <LeafletPolygon
-                  positions={leafletCoords}
-                  pathOptions={{ color: "#1E88E5", weight: 2, fillOpacity: 0.05 }}
-                />
                 {tileUrl && (
                   <TileLayer
                     key={tileUrl}
                     url={tileUrl}
                     opacity={opacity / 100}
+                    zIndex={500}
                     attribution="Agromonitoring"
                   />
                 )}
+                <LeafletPolygon
+                  positions={leafletCoords}
+                  pathOptions={{ color: "#1E88E5", weight: 2, fillOpacity: 0.05 }}
+                />
               </MapContainer>
             </div>
           </CardContent>
