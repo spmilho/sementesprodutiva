@@ -588,9 +588,13 @@ export default function SementeBasica({
                             <Badge variant="outline" className={cn("text-[10px]", statusInfo.color)}>{statusInfo.label}</Badge>
                           </TableCell>
                           <TableCell>
-                            {!treatmentByLotId[lot.id] && (
-                              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openTsDialog(lot)}>
+                          {!treatmentByLotId[lot.id] ? (
+                              <Button variant="default" size="sm" className="h-7 text-xs" onClick={() => openTsDialog(lot)}>
                                 <Beaker className="h-3 w-3 mr-1" /> Registrar TS
+                              </Button>
+                            ) : (
+                              <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => openTsDialog(lot)}>
+                                Ver TS
                               </Button>
                             )}
                           </TableCell>
@@ -877,9 +881,9 @@ export default function SementeBasica({
               <Label className="text-sm font-medium">Origem do tratamento</Label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {([
-                  { v: "client_treated", l: "Veio TRATADA pelo cliente" },
-                  { v: "in_house", l: "Tratamento feito por NÓS" },
-                  { v: "no_treatment", l: "Sem tratamento (nua)" },
+                  { v: "client_treated", l: "Semente já tratada pelo cliente", desc: "A semente chegou tratada, apenas registrar os produtos" },
+                  { v: "in_house", l: "Semente branca (tratamos aqui)", desc: "Semente sem tratamento — inserir pacote de produtos e doses aplicados" },
+                  { v: "no_treatment", l: "Sem tratamento", desc: "Semente será plantada sem TS" },
                 ] as const).map(opt => (
                   <button key={opt.v} type="button" onClick={() => setTsForm(f => ({ ...f, treatment_origin: opt.v }))}
                     className={cn("border rounded-lg p-3 text-left text-sm transition-all",
@@ -888,7 +892,8 @@ export default function SementeBasica({
                     <span className={cn("inline-block w-3 h-3 rounded-full border-2 mr-2 align-middle",
                       tsForm.treatment_origin === opt.v ? "border-primary bg-primary" : "border-muted-foreground"
                     )} />
-                    {opt.l}
+                    <span className="block">{opt.l}</span>
+                    <span className="block text-[11px] text-muted-foreground mt-0.5 font-normal">{opt.desc}</span>
                   </button>
                 ))}
               </div>
