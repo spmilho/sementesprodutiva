@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case "create_polygon":
-        url = `${AGRO_API}/polygons?appid=${API_KEY}`;
+        url = `${AGRO_API}/polygons?appid=${API_KEY}&duplicated=true`;
         method = "POST";
         body = JSON.stringify(payload);
         break;
