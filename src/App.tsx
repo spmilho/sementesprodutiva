@@ -9,6 +9,9 @@ import Index from "./pages/Index";
 import Cycles from "./pages/Cycles";
 import CycleForm from "./pages/CycleForm";
 import CycleDetail from "./pages/CycleDetail";
+import FieldEvaluationList from "./pages/FieldEvaluationList";
+import FieldEvaluationForm from "./pages/FieldEvaluationForm";
+import FieldEvaluationDetail from "./pages/FieldEvaluationDetail";
 
 import MapaIntegrado from "./pages/MapaIntegrado";
 import UbsCapacityPlanning from "./pages/UbsCapacityPlanning";
@@ -52,6 +55,9 @@ const App = () => (
                     <Route path="/ciclos" element={<Cycles />} />
                     <Route path="/ciclos/novo" element={<CycleForm />} />
                     <Route path="/ciclos/:id" element={<CycleDetail />} />
+                    <Route path="/ciclos/:id/avaliacoes" element={<FieldEvaluationList />} />
+                    <Route path="/ciclos/:id/avaliacoes/nova" element={<FieldEvaluationForm />} />
+                    <Route path="/ciclos/:id/avaliacoes/:visitId" element={<FieldEvaluationDetail />} />
                     <Route path="/mapa" element={<MapaIntegrado />} />
                     <Route path="/ubs" element={<UbsCapacityPlanning />} />
                     <Route path="/configuracoes" element={<Configuracoes />} />

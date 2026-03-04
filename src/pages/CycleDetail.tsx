@@ -27,6 +27,7 @@ import HarvestTab from "@/components/cycles/harvest/HarvestTab";
 import DocumentsTab from "@/components/cycles/DocumentsTab";
 import CycleMapTab from "@/components/cycles/CycleMapTab";
 import ReportTab from "@/components/cycles/report/ReportTab";
+import FieldEvaluationSection from "@/components/field-evaluation/FieldEvaluationSection";
 const statusLabels: Record<string, string> = {
   planning: "Planejamento", planting: "Plantio", growing: "Crescimento",
   detasseling: "Despendoamento", harvest: "Colheita", completed: "Concluído", cancelled: "Cancelado",
@@ -42,6 +43,7 @@ const tabItems = [
   { value: "agua", label: "Água" }, { value: "umidade", label: "Umidade" },
   { value: "estimativa", label: "Est. Produtividade" },
   { value: "colheita", label: "Colheita" }, { value: "mapa", label: "Mapa" },
+  { value: "avaliacoes", label: "Avaliações" },
   { value: "visitas", label: "Visitas" }, { value: "documentos", label: "Documentos" },
   { value: "relatorio", label: "Relatório" },
 ];
@@ -420,6 +422,10 @@ export default function CycleDetail() {
 
         <TabsContent value="mapa">
           <CycleMapTab cycleId={id!} orgId={cycle.org_id} pivotId={cycle.pivot_id} />
+        </TabsContent>
+
+        <TabsContent value="avaliacoes">
+          <FieldEvaluationSection cycleId={id!} orgId={cycle.org_id} />
         </TabsContent>
 
         <TabsContent value="relatorio">

@@ -820,6 +820,178 @@ export type Database = {
           },
         ]
       }
+      field_visit_photos: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          id: string
+          org_id: string
+          photo_url: string
+          score_id: string | null
+          visit_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          org_id: string
+          photo_url: string
+          score_id?: string | null
+          visit_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          org_id?: string
+          photo_url?: string
+          score_id?: string | null
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_visit_photos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_visit_photos_score_id_fkey"
+            columns: ["score_id"]
+            isOneToOne: false
+            referencedRelation: "field_visit_scores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_visit_photos_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "field_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      field_visit_scores: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          score_points: number | null
+          score_value: string | null
+          stage: string
+          subitem: string
+          updated_at: string | null
+          visit_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          score_points?: number | null
+          score_value?: string | null
+          stage: string
+          subitem: string
+          updated_at?: string | null
+          visit_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          score_points?: number | null
+          score_value?: string | null
+          stage?: string
+          subitem?: string
+          updated_at?: string | null
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_visit_scores_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_visit_scores_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "field_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      field_visits: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          cycle_id: string
+          final_score: number | null
+          general_notes: string | null
+          id: string
+          max_possible_score: number | null
+          org_id: string
+          stage: string | null
+          status: string | null
+          technician_name: string | null
+          updated_at: string | null
+          visit_date: string
+          visit_number: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          cycle_id: string
+          final_score?: number | null
+          general_notes?: string | null
+          id?: string
+          max_possible_score?: number | null
+          org_id: string
+          stage?: string | null
+          status?: string | null
+          technician_name?: string | null
+          updated_at?: string | null
+          visit_date: string
+          visit_number?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          cycle_id?: string
+          final_score?: number | null
+          general_notes?: string | null
+          id?: string
+          max_possible_score?: number | null
+          org_id?: string
+          stage?: string | null
+          status?: string | null
+          technician_name?: string | null
+          updated_at?: string | null
+          visit_date?: string
+          visit_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_visits_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_visits_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       harvest_plan: {
         Row: {
           bag_weight_kg: number
