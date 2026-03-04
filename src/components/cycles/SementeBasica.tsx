@@ -491,37 +491,141 @@ export default function SementeBasica({
         <span>Macho: <strong className="text-foreground font-mono">{maleLine}</strong></span>
       </div>
 
-      {/* SEÇÃO 1 — INFO LINHAGENS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card style={{ borderColor: "#EC407A", borderWidth: 2 }}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: "#EC407A" }} />
-              LINHAGEM FÊMEA
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 text-sm">
-            <p>Linhagem: <strong className="font-mono">{femaleLine}</strong></p>
-            <p>Híbrido: <strong>{hybridName}</strong></p>
-            <p>Lotes recebidos: <strong>{femaleLots.length}</strong></p>
-            <p>Quantidade total: <strong>{femaleQtyTotal}</strong></p>
-          </CardContent>
-        </Card>
-        <Card style={{ borderColor: "#4CAF50", borderWidth: 2 }}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: "#4CAF50" }} />
-              LINHAGEM MACHO
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 text-sm">
-            <p>Linhagem: <strong className="font-mono">{maleLine}</strong></p>
-            <p>Híbrido: <strong>{hybridName}</strong></p>
-            <p>Lotes recebidos: <strong>{maleLots.length}</strong></p>
-            <p>Quantidade total: <strong>{maleQtyTotal}</strong></p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* SEÇÃO 1 — LINHAGENS EXPANDÍVEIS */}
+      {[
+        { label: "LINHAGEM FÊMEA", color: "#EC407A", line: femaleLine, lotsArr: femaleLots, qtyTotal: femaleQtyTotal, parentType: "female" as const },
+        { label: "LINHAGEM MACHO", color: "#4CAF50", line: maleLine, lotsArr: maleLots, qtyTotal: maleQtyTotal, parentType: "male" as const },
+      ].map(group => {
+        const isExpanded = expandedLots.has(group.parentType);
+        return (
+          <Collapsible key={group.parentType} open={isExpanded} onOpenChange={() => toggleExpand(group.parentType)}>
+            <Card style={{ borderColor: group.color, borderWidth: 2 }}>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="pb-2 cursor-pointer hover:bg-muted/50 transition-colors">
+                  <CardTitle className="text-sm flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: group.color }} />
+                      {group.label}
+                      <Badge variant="outline" className="text-[10px] ml-2">{group.lotsArr.length} lotes</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs font-normal text-muted-foreground">
+                      <span>Linhagem: <strong className="font-mono text-foreground">{group.line}</strong></span>
+                      <span>Qtd: <strong className="text-foreground">{group.qtyTotal}</strong></span>
+                      <span>Germ. média: <strong className="text-foreground">{group.lotsArr.length > 0 ? weightedGerm(group.lotsArr).toFixed(1) : "—"}%</strong></span>
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0 space-y-3">
+                  {group.lotsArr.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">Nenhum lote cadastrado para esta linhagem.</p>
+                  ) : (
+                    group.lotsArr.map((lot: any) => {
+                      const tsBadge = getTsBadge(lot.id);
+                      const statusInfo = LOT_STATUS_LABELS[lot.status] || LOT_STATUS_LABELS.available;
+                      const treatment = treatmentByLotId[lot.id];
+                      return (
+                        <Card key={lot.id} className="border">
+                          <CardContent className="p-4 space-y-3">
+                            {/* Lot Header */}
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-sm font-semibold">{lot.lot_number}</span>
+                                <Badge variant="outline" className={cn("text-[10px]", statusInfo.color)}>{statusInfo.label}</Badge>
+                                <Badge variant="outline" className={cn("text-[10px]", tsBadge.color)}>{tsBadge.emoji} {tsBadge.label}</Badge>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {!treatment ? (
+                                  <Button variant="default" size="sm" className="h-7 text-xs" onClick={() => openTsDialog(lot)}>
+                                    <Beaker className="h-3 w-3 mr-1" /> Registrar TS
+                                  </Button>
+                                ) : (
+                                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openTsDialog(lot)}>
+                                    <Beaker className="h-3 w-3 mr-1" /> Ver TS
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Quality Data Grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-2 text-xs">
+                              <div><span className="text-muted-foreground">Safra origem:</span> <strong>{lot.origin_season || "—"}</strong></div>
+                              <div><span className="text-muted-foreground">Recebimento:</span> <strong>{lot.received_date ? format(new Date(lot.received_date), "dd/MM/yy") : "—"}</strong></div>
+                              <div><span className="text-muted-foreground">Quantidade:</span> <strong>{lot.quantity} {unitLabel(lot.quantity_unit).split(" ")[0]}</strong></div>
+                              {lot.quantity_kg && <div><span className="text-muted-foreground">Peso (kg):</span> <strong>{lot.quantity_kg}</strong></div>}
+                              <div><span className="text-muted-foreground">Germinação:</span> <strong className="text-foreground">{lot.germination_pct}%</strong></div>
+                              {lot.vigor_aa_pct != null && <div><span className="text-muted-foreground">Vigor EA:</span> <strong>{lot.vigor_aa_pct}%</strong></div>}
+                              {lot.vigor_cold_pct != null && <div><span className="text-muted-foreground">Vigor Frio:</span> <strong>{lot.vigor_cold_pct}%</strong></div>}
+                              {lot.tetrazolium_viability_pct != null && <div><span className="text-muted-foreground">TZ Viab.:</span> <strong>{lot.tetrazolium_viability_pct}%</strong></div>}
+                              {lot.tetrazolium_vigor_pct != null && <div><span className="text-muted-foreground">TZ Vigor:</span> <strong>{lot.tetrazolium_vigor_pct}%</strong></div>}
+                              {lot.physical_purity_pct != null && <div><span className="text-muted-foreground">Pureza Fís.:</span> <strong>{lot.physical_purity_pct}%</strong></div>}
+                              {lot.genetic_purity_pct != null && <div><span className="text-muted-foreground">Pureza Gen.:</span> <strong>{lot.genetic_purity_pct}%</strong></div>}
+                              {lot.seed_moisture_pct != null && <div><span className="text-muted-foreground">Umidade:</span> <strong>{lot.seed_moisture_pct}%</strong></div>}
+                              {lot.thousand_seed_weight_g != null && <div><span className="text-muted-foreground">PMS:</span> <strong>{lot.thousand_seed_weight_g}g</strong></div>}
+                              {lot.sieve_classification && <div><span className="text-muted-foreground">Peneira:</span> <strong>{lot.sieve_classification}</strong></div>}
+                              {lot.supplier_origin && <div><span className="text-muted-foreground">Fornecedor:</span> <strong>{lot.supplier_origin}</strong></div>}
+                              {lot.analysis_report_number && <div><span className="text-muted-foreground">Nº Laudo:</span> <strong>{lot.analysis_report_number}</strong></div>}
+                              {lot.packaging_condition && <div><span className="text-muted-foreground">Embalagens:</span> <strong>{PACKAGING_CONDITIONS.find(c => c.value === lot.packaging_condition)?.label || lot.packaging_condition}</strong></div>}
+                              {lot.pest_presence && lot.pest_presence !== "none" && <div><span className="text-muted-foreground">Pragas:</span> <strong>{PEST_OPTIONS.find(p => p.value === lot.pest_presence)?.label || lot.pest_presence}</strong></div>}
+                            </div>
+                            {lot.reception_notes && (
+                              <p className="text-xs text-muted-foreground italic">Obs: {lot.reception_notes}</p>
+                            )}
+
+                            {/* TS Details inline */}
+                            {treatment && (
+                              <div className="border-t pt-3 mt-2 space-y-2">
+                                <p className="text-xs font-semibold flex items-center gap-1"><Beaker className="h-3 w-3" /> Tratamento de Sementes</p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-1 text-xs">
+                                  <div><span className="text-muted-foreground">Origem:</span> <strong>{TS_BADGES[treatment.treatment_origin]?.label || treatment.treatment_origin}</strong></div>
+                                  {treatment.treatment_date && <div><span className="text-muted-foreground">Data:</span> <strong>{format(new Date(treatment.treatment_date), "dd/MM/yy")}</strong></div>}
+                                  {treatment.responsible_person && <div><span className="text-muted-foreground">Responsável:</span> <strong>{treatment.responsible_person}</strong></div>}
+                                  {treatment.equipment_used && <div><span className="text-muted-foreground">Equipamento:</span> <strong>{treatment.equipment_used}</strong></div>}
+                                  {treatment.visual_quality && <div><span className="text-muted-foreground">Qualidade visual:</span> <strong>{VISUAL_QUALITY.find(v => v.value === treatment.visual_quality)?.label || treatment.visual_quality}</strong></div>}
+                                  {treatment.germination_after_ts != null && <div><span className="text-muted-foreground">Germ. pós-TS:</span> <strong>{treatment.germination_after_ts}%</strong></div>}
+                                </div>
+                                {treatment.seed_lot_treatment_products?.length > 0 && (
+                                  <div className="overflow-x-auto mt-1">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead className="text-[10px]">Produto</TableHead>
+                                          <TableHead className="text-[10px]">I.A.</TableHead>
+                                          <TableHead className="text-[10px]">Tipo</TableHead>
+                                          <TableHead className="text-[10px]">Dose</TableHead>
+                                          <TableHead className="text-[10px]">Unidade</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {treatment.seed_lot_treatment_products.map((p: any, i: number) => (
+                                          <TableRow key={i}>
+                                            <TableCell className="text-xs font-medium">{p.product_name}</TableCell>
+                                            <TableCell className="text-xs">{p.active_ingredient || "—"}</TableCell>
+                                            <TableCell className="text-xs">{PRODUCT_TYPE_LABELS[p.product_type] || p.product_type || "—"}</TableCell>
+                                            <TableCell className="text-xs">{p.dose}</TableCell>
+                                            <TableCell className="text-xs">{DOSE_UNITS.find(u => u.value === p.dose_unit)?.label || p.dose_unit}</TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
+                                )}
+                                {treatment.notes && <p className="text-xs text-muted-foreground italic">Obs: {treatment.notes}</p>}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        );
+      })}
 
       {/* SEÇÃO 2 — BOTÃO CADASTRAR LOTE */}
       <div className="flex justify-between items-center">
@@ -531,100 +635,11 @@ export default function SementeBasica({
         </Button>
       </div>
 
-      {/* SEÇÃO 3 — LISTA DE LOTES */}
-      {lots.length === 0 ? (
+      {lots.length === 0 && (
         <Card><CardContent className="py-12 text-center text-muted-foreground text-sm">
           <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
           Nenhum lote cadastrado. Clique em "Cadastrar Novo Lote" para começar.
         </CardContent></Card>
-      ) : (
-        <>
-          {[
-            { label: `Lotes de Fêmea (${femaleLine})`, arr: femaleLots, color: "#EC407A" },
-            { label: `Lotes de Macho (${maleLine})`, arr: maleLots, color: "#4CAF50" },
-          ].filter(g => g.arr.length > 0).map(group => (
-            <div key={group.label} className="space-y-2">
-              <h4 className="text-sm font-semibold flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: group.color }} />
-                {group.label}
-              </h4>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Lote</TableHead>
-                      <TableHead>Safra Orig.</TableHead>
-                      <TableHead>Data Receb.</TableHead>
-                      <TableHead>Qtd</TableHead>
-                      <TableHead>Germ. (%)</TableHead>
-                      <TableHead>Vigor EA (%)</TableHead>
-                      <TableHead>PMS (g)</TableHead>
-                      <TableHead>Peneira</TableHead>
-                      <TableHead>TS</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {group.arr.map((lot: any) => {
-                      const tsBadge = getTsBadge(lot.id);
-                      const statusInfo = LOT_STATUS_LABELS[lot.status] || LOT_STATUS_LABELS.available;
-                      return (
-                        <TableRow key={lot.id}>
-                          <TableCell className="font-mono text-xs font-medium">{lot.lot_number}</TableCell>
-                          <TableCell className="text-xs">{lot.origin_season}</TableCell>
-                          <TableCell className="text-xs">{lot.received_date ? format(new Date(lot.received_date), "dd/MM/yy") : "—"}</TableCell>
-                          <TableCell className="text-xs">{lot.quantity} {unitLabel(lot.quantity_unit).split(" ")[0]}</TableCell>
-                          <TableCell className="text-xs font-medium">{lot.germination_pct}%</TableCell>
-                          <TableCell className="text-xs">{lot.vigor_aa_pct ?? "—"}</TableCell>
-                          <TableCell className="text-xs">{lot.thousand_seed_weight_g ?? "—"}</TableCell>
-                          <TableCell className="text-xs">{lot.sieve_classification || "—"}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={cn("text-[10px]", tsBadge.color)}>
-                              {tsBadge.emoji} {tsBadge.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={cn("text-[10px]", statusInfo.color)}>{statusInfo.label}</Badge>
-                          </TableCell>
-                          <TableCell>
-                          {!treatmentByLotId[lot.id] ? (
-                              <Button variant="default" size="sm" className="h-7 text-xs" onClick={() => openTsDialog(lot)}>
-                                <Beaker className="h-3 w-3 mr-1" /> Registrar TS
-                              </Button>
-                            ) : (
-                              <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => openTsDialog(lot)}>
-                                Ver TS
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          ))}
-
-          {/* Totalizador */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {femaleLots.length > 0 && (
-              <Card className="border-l-4" style={{ borderLeftColor: "#EC407A" }}>
-                <CardContent className="p-3 text-sm">
-                  Fêmea: <strong>{femaleLots.length}</strong> lotes | <strong>{femaleQtyTotal}</strong> un. | Germ. média: <strong>{weightedGerm(femaleLots).toFixed(1)}%</strong>
-                </CardContent>
-              </Card>
-            )}
-            {maleLots.length > 0 && (
-              <Card className="border-l-4" style={{ borderLeftColor: "#4CAF50" }}>
-                <CardContent className="p-3 text-sm">
-                  Macho: <strong>{maleLots.length}</strong> lotes | <strong>{maleQtyTotal}</strong> un. | Germ. média: <strong>{weightedGerm(maleLots).toFixed(1)}%</strong>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </>
       )}
 
       {/* SEÇÃO 5 — RESUMO CONSOLIDADO */}
