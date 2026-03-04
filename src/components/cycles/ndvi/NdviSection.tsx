@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Satellite, RefreshCw, MapPin, TrendingUp, Eye, Trash2 } from "lucide-react";
+import { Loader2, Satellite, RefreshCw, MapPin, TrendingUp, Eye, Trash2, Calendar } from "lucide-react";
 import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
   Tooltip as RTooltip, ReferenceLine, Legend, Area,
@@ -281,6 +282,15 @@ export default function NdviSection({
     return polygon.polygon_geo.geometry.coordinates[0].map((c: number[]) => [c[1], c[0]] as [number, number]);
   }, [polygon]);
 
+  const overlayUrl = useMemo(() => {
+    if (!selectedImage) return null;
+    const raw = selectedImage.image?.[layerType] || selectedImage.tile?.[layerType];
+    if (!raw) return null;
+    let url = raw.replace(/^http:\/\//, "https://");
+    url += (url.includes("?") ? "&" : "?") + `appid=${API_KEY}`;
+    return url;
+  }, [selectedImage, layerType]);
+
   // ── RENDER ──
 
   if (polygonLoading) {
@@ -323,10 +333,6 @@ export default function NdviSection({
       </Card>
     );
   }
-
-  const tileUrl = selectedImage
-    ? `${selectedImage.tile[layerType]}&appid=${API_KEY}`
-    : null;
 
   return (
     <div className="space-y-6">
@@ -383,26 +389,36 @@ export default function NdviSection({
                 </Button>
               </div>
             </div>
-            {satImages.length > 1 && (
-              <div className="flex items-center gap-3 mt-2">
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {selectedImage ? format(fromUnixTime(selectedImage.dt), "dd/MM/yyyy") : "—"}
-                </span>
-                <Slider
-                  value={[selectedImageIdx]}
-                  onValueChange={([v]) => setSelectedImageIdx(v)}
-                  max={satImages.length - 1}
-                  step={1}
-                  className="flex-1"
-                />
-                <span className="text-xs text-muted-foreground">Opacidade: {opacity}%</span>
-                <Slider
-                  value={[opacity]}
-                  onValueChange={([v]) => setOpacity(v)}
-                  max={100}
-                  step={5}
-                  className="w-24"
-                />
+            {satImages.length > 0 && (
+              <div className="flex items-center gap-3 mt-2 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Select
+                    value={String(selectedImageIdx)}
+                    onValueChange={(v) => setSelectedImageIdx(Number(v))}
+                  >
+                    <SelectTrigger className="h-7 w-[150px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {satImages.map((img, i) => (
+                        <SelectItem key={i} value={String(i)} className="text-xs">
+                          {format(fromUnixTime(img.dt), "dd/MM/yyyy")} {img.cl > 0.3 ? "☁️" : "☀️"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Opacidade: {opacity}%</span>
+                  <Slider
+                    value={[opacity]}
+                    onValueChange={([v]) => setOpacity(v)}
+                    max={100}
+                    step={5}
+                    className="w-24"
+                  />
+                </div>
               </div>
             )}
           </CardHeader>
@@ -425,9 +441,9 @@ export default function NdviSection({
                   positions={leafletCoords}
                   pathOptions={{ color: "#1E88E5", weight: 2, fillOpacity: 0.05 }}
                 />
-                {tileUrl && bounds && (
+                {overlayUrl && bounds && (
                   <ImageOverlay
-                    url={tileUrl}
+                    url={overlayUrl}
                     bounds={bounds}
                     opacity={opacity / 100}
                   />
