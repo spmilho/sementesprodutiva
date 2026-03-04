@@ -3428,6 +3428,17 @@ export type Database = {
         Args: { _record_id: string; _table_name: string }
         Returns: undefined
       }
+      upsert_ndvi_polygon: {
+        Args: {
+          _agro_polygon_id: string
+          _area_ha: number
+          _cycle_id: string
+          _org_id: string
+          _polygon_geo: Json
+          _polygon_name: string
+        }
+        Returns: undefined
+      }
       user_client_id: { Args: never; Returns: string }
       user_org_id: { Args: never; Returns: string }
     }
