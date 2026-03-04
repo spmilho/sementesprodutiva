@@ -15,7 +15,7 @@ import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
   Tooltip as RTooltip, ReferenceLine, Legend, Area,
 } from "recharts";
-import { MapContainer, TileLayer, ImageOverlay, Polygon as LeafletPolygon } from "react-leaflet";
+import { MapContainer, TileLayer, Polygon as LeafletPolygon } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 const API_KEY = "13ab2c8b70045ba0a48a6fd8f69e8f4b";
@@ -282,9 +282,10 @@ export default function NdviSection({
     return polygon.polygon_geo.geometry.coordinates[0].map((c: number[]) => [c[1], c[0]] as [number, number]);
   }, [polygon]);
 
-  const overlayUrl = useMemo(() => {
+  // Build tile URL for the selected image + layer type
+  const tileUrl = useMemo(() => {
     if (!selectedImage) return null;
-    const raw = selectedImage.image?.[layerType] || selectedImage.tile?.[layerType];
+    const raw = selectedImage.tile?.[layerType];
     if (!raw) return null;
     let url = raw.replace(/^http:\/\//, "https://");
     url += (url.includes("?") ? "&" : "?") + `appid=${API_KEY}`;
@@ -403,7 +404,7 @@ export default function NdviSection({
                     <SelectContent>
                       {satImages.map((img, i) => (
                         <SelectItem key={i} value={String(i)} className="text-xs">
-                          {format(fromUnixTime(img.dt), "dd/MM/yyyy")} {img.cl > 0.3 ? "☁️" : "☀️"}
+                          {format(fromUnixTime(img.dt), "dd/MM/yyyy")} {img.cl < 0.1 ? "☀️" : img.cl < 0.3 ? "🌤️" : "☁️"}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -441,11 +442,12 @@ export default function NdviSection({
                   positions={leafletCoords}
                   pathOptions={{ color: "#1E88E5", weight: 2, fillOpacity: 0.05 }}
                 />
-                {overlayUrl && bounds && (
-                  <ImageOverlay
-                    url={overlayUrl}
-                    bounds={bounds}
+                {tileUrl && (
+                  <TileLayer
+                    key={tileUrl}
+                    url={tileUrl}
                     opacity={opacity / 100}
+                    attribution="Agromonitoring"
                   />
                 )}
               </MapContainer>
