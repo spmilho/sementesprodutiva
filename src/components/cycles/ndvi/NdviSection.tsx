@@ -114,19 +114,23 @@ export default function NdviSection({
   // Create polygon on Agromonitoring
   const createPolygonMut = useMutation({
     mutationFn: async ({ lat, lng }: { lat: number; lng: number }) => {
-      const offset = 0.004;
+      // Generate a circular polygon (~32 points) based on pivot area
+      const areaHa = pivot?.area_ha || 50;
+      const radiusM = Math.sqrt((areaHa * 10000) / Math.PI);
+      const numPoints = 32;
+      const coords: [number, number][] = [];
+      for (let i = 0; i <= numPoints; i++) {
+        const angle = (2 * Math.PI * i) / numPoints;
+        const dLat = (radiusM * Math.cos(angle)) / 111320;
+        const dLng = (radiusM * Math.sin(angle)) / (111320 * Math.cos((lat * Math.PI) / 180));
+        coords.push([lng + dLng, lat + dLat]);
+      }
       const geoJson = {
         type: "Feature",
         properties: { name: pivotName },
         geometry: {
           type: "Polygon",
-          coordinates: [[
-            [lng - offset, lat - offset],
-            [lng + offset, lat - offset],
-            [lng + offset, lat + offset],
-            [lng - offset, lat + offset],
-            [lng - offset, lat - offset],
-          ]],
+          coordinates: [coords],
         },
       };
 
@@ -388,7 +392,14 @@ export default function NdviSection({
                 className="h-full w-full"
                 scrollWheelZoom={true}
               >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <TileLayer
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                  attribution="Esri"
+                />
+                <TileLayer
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+                  attribution="Esri"
+                />
                 <LeafletPolygon
                   positions={leafletCoords}
                   pathOptions={{ color: "#1E88E5", weight: 2, fillOpacity: 0.05 }}
