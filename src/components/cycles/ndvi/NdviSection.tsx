@@ -17,8 +17,16 @@ import {
 import { MapContainer, TileLayer, ImageOverlay, Polygon as LeafletPolygon } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-const AGRO_API = "http://api.agromonitoring.com/agro/1.0";
 const API_KEY = "13ab2c8b70045ba0a48a6fd8f69e8f4b";
+
+async function ndviProxy(action: string, payload: any) {
+  const { data, error } = await supabase.functions.invoke("ndvi-proxy", {
+    body: { action, payload },
+  });
+  if (error) throw new Error(error.message || "Erro na requisição NDVI");
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
 
 // Phenology stage colors for chart markers
 const STAGE_COLORS: Record<string, string> = {
@@ -106,8 +114,7 @@ export default function NdviSection({
   // Create polygon on Agromonitoring
   const createPolygonMut = useMutation({
     mutationFn: async ({ lat, lng }: { lat: number; lng: number }) => {
-      // Create ~50ha square polygon around center
-      const offset = 0.004; // ~400m
+      const offset = 0.004;
       const geoJson = {
         type: "Feature",
         properties: { name: pivotName },
@@ -123,21 +130,11 @@ export default function NdviSection({
         },
       };
 
-      const res = await fetch(`${AGRO_API}/polygons?appid=${API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: `${pivotName} - ${cycleId.slice(0, 8)}`,
-          geo_json: geoJson,
-        }),
+      const agroData = await ndviProxy("create_polygon", {
+        name: `${pivotName} - ${cycleId.slice(0, 8)}`,
+        geo_json: geoJson,
       });
-      if (!res.ok) {
-        const err = await res.text();
-        throw new Error(`Erro ao criar polígono: ${err}`);
-      }
-      const agroData = await res.json();
 
-      // Save to Supabase
       const { error } = await (supabase as any).from("ndvi_polygons").insert({
         cycle_id: cycleId,
         org_id: orgId,
@@ -163,11 +160,11 @@ export default function NdviSection({
       if (!polygon?.agro_polygon_id) return [];
       const end = getUnixTime(new Date());
       const start = getUnixTime(subDays(new Date(), 180));
-      const res = await fetch(
-        `${AGRO_API}/image/search?start=${start}&end=${end}&polyid=${polygon.agro_polygon_id}&appid=${API_KEY}`
-      );
-      if (!res.ok) throw new Error("Erro ao buscar imagens");
-      const data: SatImage[] = await res.json();
+      const data: SatImage[] = await ndviProxy("search_images", {
+        polyid: polygon.agro_polygon_id,
+        start,
+        end,
+      });
       return data.sort((a, b) => b.dt - a.dt);
     },
     enabled: !!polygon?.agro_polygon_id,
@@ -184,9 +181,7 @@ export default function NdviSection({
       const results = await Promise.all(
         imagesToFetch.map(async (img) => {
           try {
-            const res = await fetch(`${img.stats.ndvi}&appid=${API_KEY}`);
-            if (!res.ok) return { dt: img.dt, mean: null, min: null, max: null, median: null };
-            const stats: NdviStats = await res.json();
+            const stats: NdviStats = await ndviProxy("get_stats", { url: img.stats.ndvi });
             return { dt: img.dt, ...stats };
           } catch {
             return { dt: img.dt, mean: null, min: null, max: null, median: null };
