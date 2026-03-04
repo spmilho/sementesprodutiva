@@ -2244,6 +2244,9 @@ export type Database = {
           row_spacing: number
           seed_lot_id: string | null
           seeds_per_meter: number
+          spacing_ff_cm: number | null
+          spacing_fm_cm: number | null
+          spacing_mm_cm: number | null
           target_population: number
           type: string
           updated_at: string
@@ -2263,6 +2266,9 @@ export type Database = {
           row_spacing?: number
           seed_lot_id?: string | null
           seeds_per_meter: number
+          spacing_ff_cm?: number | null
+          spacing_fm_cm?: number | null
+          spacing_mm_cm?: number | null
           target_population?: number
           type: string
           updated_at?: string
@@ -2282,6 +2288,9 @@ export type Database = {
           row_spacing?: number
           seed_lot_id?: string | null
           seeds_per_meter?: number
+          spacing_ff_cm?: number | null
+          spacing_fm_cm?: number | null
+          spacing_mm_cm?: number | null
           target_population?: number
           type?: string
           updated_at?: string

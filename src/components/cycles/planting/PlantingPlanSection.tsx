@@ -31,6 +31,7 @@ interface Props {
   femaleArea: number;
   maleArea: number;
   spacingFemaleFemaleCm?: number | null;
+  spacingFemaleMaleCm?: number | null;
   spacingMaleMaleCm?: number | null;
 }
 
@@ -41,14 +42,16 @@ const schema = z.object({
   gleba_id: z.string().optional(),
   planned_area: z.coerce.number().positive("Área deve ser > 0"),
   seeds_per_meter: z.coerce.number().positive("Sem/metro deve ser > 0").default(5.5),
-  row_spacing: z.coerce.number().int().positive().default(70),
+  spacing_ff_cm: z.coerce.number().int().positive().default(70),
+  spacing_fm_cm: z.coerce.number().int().positive().default(70),
+  spacing_mm_cm: z.coerce.number().int().positive().default(70),
   planting_order: z.coerce.number().int().positive().default(1),
   observations: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, seedLots, femaleArea, maleArea, spacingFemaleFemaleCm, spacingMaleMaleCm }: Props) {
+export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, seedLots, femaleArea, maleArea, spacingFemaleFemaleCm, spacingFemaleMaleCm, spacingMaleMaleCm }: Props) {
   const queryClient = useQueryClient();
   const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -56,7 +59,7 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { seeds_per_meter: 5.5, row_spacing: spacingFemaleFemaleCm || 70, planting_order: 1 },
+    defaultValues: { seeds_per_meter: 5.5, spacing_ff_cm: spacingFemaleFemaleCm || 70, spacing_fm_cm: spacingFemaleMaleCm || 70, spacing_mm_cm: spacingMaleMaleCm || 70, planting_order: 1 },
   });
 
   const watchType = form.watch("type");
@@ -89,7 +92,7 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
 
   const openNew = () => {
     setEditingId(null);
-    form.reset({ seeds_per_meter: 5.5, row_spacing: 70, planting_order: (plans.length || 0) + 1 });
+    form.reset({ seeds_per_meter: 5.5, spacing_ff_cm: spacingFemaleFemaleCm || 70, spacing_fm_cm: spacingFemaleMaleCm || 70, spacing_mm_cm: spacingMaleMaleCm || 70, planting_order: (plans.length || 0) + 1 });
     setDialogOpen(true);
   };
 
@@ -102,7 +105,9 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
       gleba_id: p.gleba_id || undefined,
       planned_area: p.planned_area,
       seeds_per_meter: p.seeds_per_meter || 5.5,
-      row_spacing: p.row_spacing,
+      spacing_ff_cm: p.spacing_ff_cm || p.row_spacing || spacingFemaleFemaleCm || 70,
+      spacing_fm_cm: p.spacing_fm_cm || spacingFemaleMaleCm || 70,
+      spacing_mm_cm: p.spacing_mm_cm || spacingMaleMaleCm || 70,
       planting_order: p.planting_order,
       observations: p.observations || "",
     });
@@ -120,7 +125,10 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
         planned_area: values.planned_area,
         target_population: null,
         germination_rate: null,
-        row_spacing: values.row_spacing,
+        row_spacing: values.spacing_ff_cm,
+        spacing_ff_cm: values.spacing_ff_cm,
+        spacing_fm_cm: values.spacing_fm_cm,
+        spacing_mm_cm: values.spacing_mm_cm,
         seeds_per_meter: values.seeds_per_meter,
         planting_order: values.planting_order,
         observations: values.observations || null,
@@ -174,6 +182,7 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
                   <TableHead className="text-xs">Lote</TableHead>
                   <TableHead className="text-xs text-right">Área(ha)</TableHead>
                   <TableHead className="text-xs text-right">Sem/metro</TableHead>
+                  <TableHead className="text-xs text-center">Espaç.</TableHead>
                   <TableHead className="text-xs text-center">Ordem</TableHead>
                   <TableHead className="text-xs text-center w-20">Ações</TableHead>
                 </TableRow>
@@ -191,6 +200,7 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
                       <TableCell className="text-sm text-muted-foreground">{lot?.lot_number || "—"}</TableCell>
                       <TableCell className="text-sm text-right">{p.planned_area}</TableCell>
                       <TableCell className="text-sm text-right font-mono">{p.seeds_per_meter}</TableCell>
+                      <TableCell className="text-xs text-center text-muted-foreground">{p.spacing_ff_cm || p.row_spacing || "—"}/{p.spacing_fm_cm || "—"}/{p.spacing_mm_cm || "—"}</TableCell>
                       <TableCell className="text-sm text-center">{p.planting_order}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-1">
@@ -231,9 +241,9 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
                 <Controller name="type" control={form.control} render={({ field }) => (
                   <Select value={field.value} onValueChange={(v) => {
                     field.onChange(v);
-                    const isFem = isFemaleType(v);
-                    const defaultSpacing = isFem ? (spacingFemaleFemaleCm || 70) : (spacingMaleMaleCm || 70);
-                    form.setValue("row_spacing", defaultSpacing);
+                    form.setValue("spacing_ff_cm", spacingFemaleFemaleCm || 70);
+                    form.setValue("spacing_fm_cm", spacingFemaleMaleCm || 70);
+                    form.setValue("spacing_mm_cm", spacingMaleMaleCm || 70);
                   }}>
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                     <SelectContent>
@@ -275,7 +285,7 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Área planejada (ha) *</Label>
                 <Input type="number" step="0.01" {...form.register("planned_area")} />
@@ -284,14 +294,27 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
                 <Label>Pop. Alvo (sem/metro) *</Label>
                 <Input type="number" step="0.01" {...form.register("seeds_per_meter")} />
               </div>
+            </div>
+
+            <p className="text-xs font-semibold text-muted-foreground uppercase pt-2">Espaçamentos (cm)</p>
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label>Espaçamento (cm) *</Label>
-                <Input type="number" {...form.register("row_spacing")} />
+                <Label>F×F (cm) *</Label>
+                <Input type="number" {...form.register("spacing_ff_cm")} />
               </div>
               <div className="space-y-1.5">
-                <Label>Ordem</Label>
-                <Input type="number" {...form.register("planting_order")} />
+                <Label>F×M (cm) *</Label>
+                <Input type="number" {...form.register("spacing_fm_cm")} />
               </div>
+              <div className="space-y-1.5">
+                <Label>M×M (cm) *</Label>
+                <Input type="number" {...form.register("spacing_mm_cm")} />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Ordem</Label>
+              <Input type="number" {...form.register("planting_order")} />
             </div>
 
             <div className="space-y-1.5">

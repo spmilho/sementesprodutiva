@@ -21,6 +21,7 @@ export interface UnifiedPlantingTabProps {
   femalePlantingFinished?: boolean;
   onFinishToggle?: (type: "male" | "female", finished: boolean) => void;
   spacingFemaleFemaleCm?: number | null;
+  spacingFemaleMaleCm?: number | null;
   spacingMaleMaleCm?: number | null;
 }
 
@@ -154,6 +155,7 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
         femaleArea={props.femaleArea}
         maleArea={props.maleArea}
         spacingFemaleFemaleCm={props.spacingFemaleFemaleCm}
+        spacingFemaleMaleCm={props.spacingFemaleMaleCm}
         spacingMaleMaleCm={props.spacingMaleMaleCm}
       />
 
