@@ -1,19 +1,24 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Edit, Loader2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ArrowLeft, Edit, Loader2, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { PHASES, getPhasesByStage, getClassification, getScorePoints } from "@/components/field-evaluation/constants";
 import { useRole } from "@/hooks/useRole";
+import { toast } from "sonner";
 
 export default function FieldEvaluationDetail() {
   const { id: cycleId, visitId } = useParams<{ id: string; visitId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { isAdmin } = useRole();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const { data: visit, isLoading } = useQuery({
     queryKey: ["field-visit", visitId],
@@ -55,6 +60,21 @@ export default function FieldEvaluationDetail() {
     enabled: !!visitId,
   });
 
+  const deleteMut = useMutation({
+    mutationFn: async () => {
+      await (supabase as any).from("field_visit_photos").delete().eq("visit_id", visitId!);
+      await (supabase as any).from("field_visit_scores").delete().eq("visit_id", visitId!);
+      const { error } = await (supabase as any).from("field_visits").delete().eq("id", visitId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["field-visits", cycleId] });
+      toast.success("Avaliação excluída com sucesso.");
+      navigate(`/ciclos/${cycleId}`);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!visit) return <div className="p-8 text-center text-muted-foreground">Avaliação não encontrada.</div>;
 
@@ -79,11 +99,16 @@ export default function FieldEvaluationDetail() {
             {visit.technician_name && ` • ${visit.technician_name}`}
           </p>
         </div>
-        {canEdit && (
-          <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/ciclos/${cycleId}/avaliacoes/nova?edit=${visitId}`)}>
-            <Edit className="h-3.5 w-3.5" /> Editar
+        <div className="flex items-center gap-2">
+          {canEdit && (
+            <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/ciclos/${cycleId}/avaliacoes/${visitId}/editar`)}>
+              <Edit className="h-3.5 w-3.5" /> Editar
+            </Button>
+          )}
+          <Button variant="outline" size="sm" className="gap-1 text-destructive hover:text-destructive" onClick={() => setShowDeleteDialog(true)}>
+            <Trash2 className="h-3.5 w-3.5" /> Excluir
           </Button>
-        )}
+        </div>
       </div>
 
       {/* Score hero */}
@@ -166,6 +191,28 @@ export default function FieldEvaluationDetail() {
       <Button variant="outline" className="w-full" onClick={() => navigate(`/ciclos/${cycleId}`)}>
         Voltar ao Ciclo
       </Button>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir avaliação?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é irreversível. Todos os scores e fotos desta avaliação serão removidos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteMut.mutate()}
+              disabled={deleteMut.isPending}
+            >
+              {deleteMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
