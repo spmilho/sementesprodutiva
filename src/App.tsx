@@ -58,6 +58,7 @@ const App = () => (
                     <Route path="/ciclos/:id/avaliacoes" element={<FieldEvaluationList />} />
                     <Route path="/ciclos/:id/avaliacoes/nova" element={<FieldEvaluationForm />} />
                     <Route path="/ciclos/:id/avaliacoes/:visitId" element={<FieldEvaluationDetail />} />
+                    <Route path="/ciclos/:id/avaliacoes/:visitId/editar" element={<FieldEvaluationForm />} />
                     <Route path="/mapa" element={<MapaIntegrado />} />
                     <Route path="/ubs" element={<UbsCapacityPlanning />} />
                     <Route path="/configuracoes" element={<Configuracoes />} />
