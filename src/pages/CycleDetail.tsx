@@ -432,7 +432,7 @@ export default function CycleDetail() {
           <ReportTab cycleId={id!} orgId={cycle.org_id} cycle={cycle} />
         </TabsContent>
 
-        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento", "roguing", "manejo", "pragas", "estimativa", "umidade", "colheita", "documentos", "mapa", "relatorio"].includes(t.value)).map((t) => (
+        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento", "roguing", "manejo", "pragas", "estimativa", "umidade", "colheita", "documentos", "mapa", "avaliacoes", "relatorio"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>
