@@ -42,8 +42,8 @@ export default function DetasselingForecast({ cycleId, detasselingDap }: Props) 
   const { data: plantingPlans = [] } = useQuery({
     queryKey: ["forecast-planting-plan", cycleId],
     queryFn: async () => {
-      const { data } = await sb.from("planting_plan").select("gleba_id, planned_date, parent_type")
-        .eq("cycle_id", cycleId).eq("parent_type", "female").is("deleted_at", null);
+      const { data } = await sb.from("planting_plan").select("gleba_id, planned_date, type")
+        .eq("cycle_id", cycleId).eq("type", "female").is("deleted_at", null);
       return data || [];
     },
   });

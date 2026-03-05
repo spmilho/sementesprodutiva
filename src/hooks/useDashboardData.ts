@@ -66,7 +66,7 @@ export function useDashboardData(filters: {
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("planting_plan")
-        .select("cycle_id, parent_type, area_ha, planned_date")
+        .select("cycle_id, type, planned_area, planned_date")
         .is("deleted_at", null);
       return data || [];
     },
@@ -80,7 +80,7 @@ export function useDashboardData(filters: {
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("planting_actual")
-        .select("cycle_id, parent_type, area_planted_ha, planting_date")
+        .select("cycle_id, type, area_planted_ha, planting_date")
         .is("deleted_at", null);
       return data || [];
     },
