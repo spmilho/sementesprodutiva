@@ -119,7 +119,7 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
       const row: any = {
         cycle_id: cycleId, org_id: orgId,
         planned_date: format(values.planned_date, "yyyy-MM-dd"),
-        type: values.type,
+        type: isFemaleType(values.type) ? "female" : "male",
         seed_lot_id: values.seed_lot_id || null,
         gleba_id: values.gleba_id || null,
         planned_area: values.planned_area,
