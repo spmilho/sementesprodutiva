@@ -100,7 +100,7 @@ export default function Dashboard() {
     for (const c of filtered) {
       if (["completed", "cancelled"].includes(c.status)) continue;
       totalArea += c.female_area;
-      const actuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && a.parent_type === "female");
+      const actuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && a.type === "female");
       plantedArea += actuals.reduce((s: number, a: any) => s + (a.area_planted_ha || 0), 0);
     }
     return totalArea > 0 ? Math.min(100, Math.round((plantedArea / totalArea) * 100)) : 0;
@@ -112,7 +112,7 @@ export default function Dashboard() {
     for (const c of filtered) {
       if (["completed", "cancelled"].includes(c.status)) continue;
       totalArea += c.male_area;
-      const actuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && a.parent_type === "male");
+      const actuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && a.type === "male");
       plantedArea += actuals.reduce((s: number, a: any) => s + (a.area_planted_ha || 0), 0);
     }
     return totalArea > 0 ? Math.min(100, Math.round((plantedArea / totalArea) * 100)) : 0;
@@ -159,14 +159,14 @@ export default function Dashboard() {
 
   // Plantio: accumulated planned vs actual by date
   const plantingChartData = useMemo(() => {
-    const plans = plantingPlans.filter((p: any) => cycleIds.has(p.cycle_id) && p.parent_type === "female");
-    const actuals = plantingActuals.filter((a: any) => cycleIds.has(a.cycle_id) && a.parent_type === "female");
+    const plans = plantingPlans.filter((p: any) => cycleIds.has(p.cycle_id) && p.type === "female");
+    const actuals = plantingActuals.filter((a: any) => cycleIds.has(a.cycle_id) && a.type === "female");
     const dateMap = new Map<string, { planned: number; actual: number }>();
     for (const p of plans) {
       if (!p.planned_date) continue;
       const d = p.planned_date;
       const entry = dateMap.get(d) || { planned: 0, actual: 0 };
-      entry.planned += p.area_ha || 0;
+      entry.planned += p.planned_area || 0;
       dateMap.set(d, entry);
     }
     for (const a of actuals) {
@@ -282,7 +282,7 @@ export default function Dashboard() {
 
       // Detasseling DAP overdue
       if (c.detasseling_dap) {
-        const cycleActuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && a.parent_type === "female");
+        const cycleActuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && a.type === "female");
         if (cycleActuals.length > 0) {
           const earliestPlanting = cycleActuals.map((a: any) => a.planting_date).sort()[0];
           if (earliestPlanting) {
