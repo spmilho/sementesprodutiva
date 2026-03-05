@@ -664,6 +664,238 @@ export type Database = {
           },
         ]
       }
+      feed_comments: {
+        Row: {
+          comment_text: string
+          created_at: string
+          id: string
+          is_deleted: boolean
+          parent_comment_id: string | null
+          post_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_text: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          parent_comment_id?: string | null
+          post_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_text?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          parent_comment_id?: string | null
+          post_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "feed_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_media: {
+        Row: {
+          created_at: string
+          id: string
+          media_type: string
+          media_url: string
+          order_index: number
+          post_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          media_type?: string
+          media_url: string
+          order_index?: number
+          post_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          media_type?: string
+          media_url?: string
+          order_index?: number
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_media_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_moderation_log: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          moderator_user_id: string | null
+          reason: string | null
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          id?: string
+          moderator_user_id?: string | null
+          reason?: string | null
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          moderator_user_id?: string | null
+          reason?: string | null
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
+      feed_posts: {
+        Row: {
+          author_user_id: string
+          caption: string | null
+          cliente: string | null
+          created_at: string
+          fazenda: string | null
+          gps_lat: number | null
+          gps_lng: number | null
+          hibrido: string | null
+          id: string
+          is_hidden: boolean
+          location_text: string | null
+          pivo: string | null
+          safra: string | null
+          stage: string | null
+          tags: string[] | null
+          talhao: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_user_id: string
+          caption?: string | null
+          cliente?: string | null
+          created_at?: string
+          fazenda?: string | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          hibrido?: string | null
+          id?: string
+          is_hidden?: boolean
+          location_text?: string | null
+          pivo?: string | null
+          safra?: string | null
+          stage?: string | null
+          tags?: string[] | null
+          talhao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_user_id?: string
+          caption?: string | null
+          cliente?: string | null
+          created_at?: string
+          fazenda?: string | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          hibrido?: string | null
+          id?: string
+          is_hidden?: boolean
+          location_text?: string | null
+          pivo?: string | null
+          safra?: string | null
+          stage?: string | null
+          tags?: string[] | null
+          talhao?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      feed_user_permissions: {
+        Row: {
+          can_access_feed: boolean
+          created_at: string
+          id: string
+          is_banned: boolean
+          role_feed: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_access_feed?: boolean
+          created_at?: string
+          id?: string
+          is_banned?: boolean
+          role_feed?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_access_feed?: boolean
+          created_at?: string
+          id?: string
+          is_banned?: boolean
+          role_feed?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       fertilization_records: {
         Row: {
           application_date: string
@@ -3581,6 +3813,9 @@ export type Database = {
         }
         Returns: undefined
       }
+      feed_get_role: { Args: { _user_id: string }; Returns: string }
+      feed_has_access: { Args: { _user_id: string }; Returns: boolean }
+      feed_is_mod_or_admin: { Args: { _user_id: string }; Returns: boolean }
       get_user_emails_for_admin: {
         Args: never
         Returns: {

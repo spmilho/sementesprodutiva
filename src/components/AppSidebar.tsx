@@ -1,4 +1,4 @@
-import { LayoutDashboard, Layers, Map, Settings, LogOut, ShieldCheck, Factory } from "lucide-react";
+import { LayoutDashboard, Layers, Map, Settings, LogOut, ShieldCheck, Factory, Camera } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
 import { NavLink } from "@/components/NavLink";
@@ -21,6 +21,7 @@ const mainItems = [
   { title: "Ciclos de Produção", url: "/ciclos", icon: Layers },
   { title: "Mapa Integrado", url: "/mapa", icon: Map },
   { title: "Capacidade UBS", url: "/ubs", icon: Factory },
+  { title: "Feed de Campo", url: "/feed", icon: Camera },
 ];
 
 const managementItems = [
