@@ -11,9 +11,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, UserPlus, Pencil, KeyRound, Trash2, RefreshCw, Eye, EyeOff, Copy, Mail, CheckCircle2 } from "lucide-react";
+import { Search, UserPlus, Pencil, KeyRound, Trash2, RefreshCw, Eye, EyeOff, Copy, Mail, CheckCircle2, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Switch } from "@/components/ui/switch";
+
+const FEED_ROLES = [
+  { value: "viewer", label: "Viewer", desc: "Ver, curtir e comentar" },
+  { value: "poster", label: "Poster", desc: "Viewer + criar/editar seus posts" },
+  { value: "moderator", label: "Moderador", desc: "Poster + moderar conteúdo" },
+  { value: "admin", label: "Admin Feed", desc: "Gerenciar acessos do feed" },
+];
 
 const ROLE_BADGE: Record<AppRole, { label: string; description: string; className: string }> = {
   admin: { label: "Admin", description: "Acesso total", className: "bg-red-100 text-red-700 border-red-200" },
@@ -29,6 +37,9 @@ interface UserRow {
   role: AppRole | null;
   client_id: string | null;
   created_at: string | null;
+  feed_access: boolean;
+  feed_role: string | null;
+  feed_perm_id: string | null;
 }
 
 function generatePassword(length = 8): string {
@@ -60,6 +71,8 @@ export default function UsersTab() {
   const [showPassword, setShowPassword] = useState(false);
   const [newRole, setNewRole] = useState<AppRole>("field_user");
   const [newClientId, setNewClientId] = useState("");
+  const [newFeedAccess, setNewFeedAccess] = useState(false);
+  const [newFeedRole, setNewFeedRole] = useState("viewer");
 
   // Success modal state
   const [successOpen, setSuccessOpen] = useState(false);
@@ -71,6 +84,8 @@ export default function UsersTab() {
   const [editName, setEditName] = useState("");
   const [editRole, setEditRole] = useState<AppRole>("field_user");
   const [editClientId, setEditClientId] = useState("");
+  const [editFeedAccess, setEditFeedAccess] = useState(false);
+  const [editFeedRole, setEditFeedRole] = useState("viewer");
 
   // Reset password state
   const [resetOpen, setResetOpen] = useState(false);
@@ -84,18 +99,22 @@ export default function UsersTab() {
     queryKey: ["settings-users"],
     enabled: isAdmin,
     queryFn: async () => {
-      const [profilesRes, rolesRes, authRes] = await Promise.all([
+      const [profilesRes, rolesRes, authRes, feedPermsRes] = await Promise.all([
         supabase.from("profiles").select("id, full_name, org_id, created_at"),
         (supabase as any).from("user_roles").select("user_id, role, client_id"),
         (supabase as any).rpc("get_user_emails_for_admin"),
+        (supabase as any).from("feed_user_permissions").select("*"),
       ]);
       const emailMap: Record<string, string> = {};
       if (authRes.data) for (const u of authRes.data) emailMap[u.id] = u.email;
       const roleMap = new Map<string, any>();
       if (rolesRes.data) for (const r of rolesRes.data) roleMap.set(r.user_id, r);
+      const feedMap = new Map<string, any>();
+      if (feedPermsRes.data) for (const f of feedPermsRes.data) feedMap.set(f.user_id, f);
 
       return (profilesRes.data || []).map((p: any) => {
         const r = roleMap.get(p.id);
+        const f = feedMap.get(p.id);
         return {
           user_id: p.id,
           email: emailMap[p.id] || p.id,
@@ -103,6 +122,9 @@ export default function UsersTab() {
           role: r?.role ?? null,
           client_id: r?.client_id ?? null,
           created_at: p.created_at,
+          feed_access: !!f?.can_access_feed,
+          feed_role: f?.role_feed ?? null,
+          feed_perm_id: f?.id ?? null,
         } as UserRow;
       });
     },
@@ -133,6 +155,15 @@ export default function UsersTab() {
       });
       if (res.error) throw new Error(res.error.message || "Erro ao criar usuário");
       if (res.data?.error) throw new Error(res.data.error);
+
+      // Handle feed permissions for new user
+      if (newFeedAccess && res.data?.user_id) {
+        await (supabase as any).from("feed_user_permissions").insert({
+          user_id: res.data.user_id,
+          can_access_feed: true,
+          role_feed: newFeedRole,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings-users"] });
@@ -145,12 +176,14 @@ export default function UsersTab() {
       setNewPassword("");
       setNewRole("field_user");
       setNewClientId("");
+      setNewFeedAccess(false);
+      setNewFeedRole("viewer");
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const updateRole = useMutation({
-    mutationFn: async ({ userId, role, clientId, name }: { userId: string; role: AppRole; clientId?: string | null; name?: string }) => {
+    mutationFn: async ({ userId, role, clientId, name, feedAccess, feedRole }: { userId: string; role: AppRole; clientId?: string | null; name?: string; feedAccess: boolean; feedRole: string }) => {
       const { error } = await (supabase as any).rpc("admin_upsert_role", {
         _user_id: userId,
         _role: role,
@@ -159,6 +192,18 @@ export default function UsersTab() {
       if (error) throw error;
       if (name) {
         await supabase.from("profiles").update({ full_name: name }).eq("id", userId);
+      }
+
+      // Handle feed permissions
+      const existingPerm = editUser?.feed_perm_id;
+      if (feedAccess) {
+        if (existingPerm) {
+          await (supabase as any).from("feed_user_permissions").update({ can_access_feed: true, role_feed: feedRole, is_banned: false }).eq("id", existingPerm);
+        } else {
+          await (supabase as any).from("feed_user_permissions").upsert({ user_id: userId, can_access_feed: true, role_feed: feedRole }, { onConflict: "user_id" });
+        }
+      } else if (existingPerm) {
+        await (supabase as any).from("feed_user_permissions").update({ can_access_feed: false }).eq("id", existingPerm);
       }
     },
     onSuccess: () => {
@@ -215,6 +260,8 @@ export default function UsersTab() {
     setEditName(u.full_name || "");
     setEditRole(u.role || "field_user");
     setEditClientId(u.client_id || "");
+    setEditFeedAccess(u.feed_access);
+    setEditFeedRole(u.feed_role || "viewer");
     setEditOpen(true);
   };
 
@@ -273,11 +320,18 @@ export default function UsersTab() {
                         <TableCell className="font-medium text-sm">{u.full_name || "—"}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                         <TableCell>
-                          {badge ? (
-                            <Badge variant="outline" className={badge.className}>{badge.label}</Badge>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">Sem perfil</span>
-                          )}
+                          <div className="flex flex-wrap gap-1">
+                            {badge ? (
+                              <Badge variant="outline" className={badge.className}>{badge.label}</Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Sem perfil</span>
+                            )}
+                            {u.feed_access && (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]">
+                                <Camera className="h-3 w-3 mr-0.5" /> Feed
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
                           {u.created_at ? format(new Date(u.created_at), "dd/MM/yyyy") : "—"}
@@ -377,6 +431,33 @@ export default function UsersTab() {
                 </Select>
               </div>
             )}
+
+            {/* Feed de Campo */}
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="flex items-center gap-2"><Camera className="h-4 w-4" /> Acesso ao Feed de Campo</Label>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Permissão independente do perfil do app</p>
+                </div>
+                <Switch checked={newFeedAccess} onCheckedChange={setNewFeedAccess} />
+              </div>
+              {newFeedAccess && (
+                <div className="space-y-2">
+                  <Label>Papel no Feed</Label>
+                  <Select value={newFeedRole} onValueChange={setNewFeedRole}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {FEED_ROLES.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>
+                          <span className="font-medium">{r.label}</span>
+                          <span className="text-muted-foreground ml-1">— {r.desc}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -457,10 +538,37 @@ export default function UsersTab() {
                 </Select>
               </div>
             )}
+
+            {/* Feed de Campo */}
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="flex items-center gap-2"><Camera className="h-4 w-4" /> Acesso ao Feed de Campo</Label>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Permissão independente do perfil do app</p>
+                </div>
+                <Switch checked={editFeedAccess} onCheckedChange={setEditFeedAccess} />
+              </div>
+              {editFeedAccess && (
+                <div className="space-y-2">
+                  <Label>Papel no Feed</Label>
+                  <Select value={editFeedRole} onValueChange={setEditFeedRole}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {FEED_ROLES.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>
+                          <span className="font-medium">{r.label}</span>
+                          <span className="text-muted-foreground ml-1">— {r.desc}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button
-              onClick={() => editUser && updateRole.mutate({ userId: editUser.user_id, role: editRole, clientId: editClientId, name: editName })}
+              onClick={() => editUser && updateRole.mutate({ userId: editUser.user_id, role: editRole, clientId: editClientId, name: editName, feedAccess: editFeedAccess, feedRole: editFeedRole })}
               disabled={updateRole.isPending}
             >
               {updateRole.isPending ? "Salvando..." : "Salvar"}
