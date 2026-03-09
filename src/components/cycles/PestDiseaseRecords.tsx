@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOfflineSyncContext } from "@/components/Layout";
 import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
-import { Plus, Trash2, ImageIcon, Loader2, MapPin, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, ImageIcon, Loader2, MapPin, AlertTriangle, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -52,7 +52,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
   const queryClient = useQueryClient();
   const { addRecord } = useOfflineSyncContext();
   const [open, setOpen] = useState(false);
-  const [nameFilter, setNameFilter] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Form
@@ -84,23 +84,66 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
     },
   });
 
+  const resetForm = () => {
+    setDate(format(new Date(), "yyyy-MM-dd")); setPestName(""); setPestType("Praga");
+    setIncidence(""); setSeverity("Baixa"); setScore("1"); setStage(""); setParent("Ambos");
+    setArea(""); setAction(""); setNde(false); setNotes(""); setLat(""); setLng("");
+    setEditingId(null);
+  };
+
+  const openForEdit = (r: any) => {
+    setEditingId(r.id);
+    setDate(r.observation_date || format(new Date(), "yyyy-MM-dd"));
+    setPestName(r.pest_name || "");
+    setPestType(r.pest_type || "Praga");
+    setIncidence(r.incidence_pct != null ? String(r.incidence_pct) : "");
+    setSeverity(r.severity || "Baixa");
+    setScore(r.severity_score != null ? String(r.severity_score) : "1");
+    setStage(r.growth_stage || "");
+    setParent(r.affected_parent || "Ambos");
+    setArea(r.affected_area_ha != null ? String(r.affected_area_ha) : "");
+    setAction(r.action_taken || "");
+    setNde(r.economic_damage_reached || false);
+    setNotes(r.notes || "");
+    setLat(r.gps_latitude != null ? String(r.gps_latitude) : "");
+    setLng(r.gps_longitude != null ? String(r.gps_longitude) : "");
+    setOpen(true);
+  };
+
+  const buildPayload = () => ({
+    observation_date: date,
+    pest_name: pestName, pest_type: pestType,
+    incidence_pct: incidence ? parseFloat(incidence) : null,
+    severity, severity_score: parseInt(score),
+    growth_stage: stage || null, affected_parent: parent,
+    affected_area_ha: area ? parseFloat(area) : null,
+    action_taken: action || null, economic_damage_reached: nde,
+    notes: notes || null,
+    gps_latitude: lat ? parseFloat(lat) : null,
+    gps_longitude: lng ? parseFloat(lng) : null,
+  });
+
   const insertMut = useMutation({
     mutationFn: async () => {
       const { error } = await addRecord("pest_disease_records", {
-        cycle_id: cycleId, org_id: orgId, observation_date: date,
-        pest_name: pestName, pest_type: pestType,
-        incidence_pct: incidence ? parseFloat(incidence) : null,
-        severity, severity_score: parseInt(score),
-        growth_stage: stage || null, affected_parent: parent,
-        affected_area_ha: area ? parseFloat(area) : null,
-        action_taken: action || null, economic_damage_reached: nde,
-        notes: notes || null,
-        gps_latitude: lat ? parseFloat(lat) : null,
-        gps_longitude: lng ? parseFloat(lng) : null,
+        cycle_id: cycleId, org_id: orgId, ...buildPayload(),
       }, cycleId);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk }); toast.success("Ocorrência registrada!"); resetForm(); setOpen(false); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: async () => {
+      if (!editingId) return;
+      const { error } = await (supabase as any)
+        .from("pest_disease_records")
+        .update(buildPayload())
+        .eq("id", editingId);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk }); toast.success("Ocorrência atualizada!"); resetForm(); setOpen(false); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -112,12 +155,6 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: qk }); toast.success("Removido!"); },
     onError: (e: any) => toast.error(e.message),
   });
-
-  const resetForm = () => {
-    setDate(format(new Date(), "yyyy-MM-dd")); setPestName(""); setPestType("Praga");
-    setIncidence(""); setSeverity("Baixa"); setScore("1"); setStage(""); setParent("Ambos");
-    setArea(""); setAction(""); setNde(false); setNotes(""); setLat(""); setLng("");
-  };
 
   const captureGPS = () => {
     navigator.geolocation.getCurrentPosition(
@@ -166,6 +203,15 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
   }, [records]);
 
   const canSave = pestName && date && score;
+  const isSaving = insertMut.isPending || updateMut.isPending;
+
+  const handleSave = () => {
+    if (editingId) {
+      updateMut.mutate();
+    } else {
+      insertMut.mutate();
+    }
+  };
 
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
@@ -179,12 +225,12 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
         <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Última Inspeção</p><div className="flex items-center gap-1 mt-1"><p className={`text-sm font-semibold ${lastInspection.alert ? "text-destructive" : "text-foreground"}`}>{lastInspection.text}</p>{lastInspection.alert && <AlertTriangle className="h-4 w-4 text-destructive" />}</div></CardContent></Card>
       </div>
 
-      {/* Add */}
+      {/* Add / Edit Dialog */}
       <div className="flex justify-end">
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Registrar Ocorrência</Button></DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>Nova Ocorrência Fitossanitária</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editingId ? "Editar Ocorrência" : "Nova Ocorrência Fitossanitária"}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Data *</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
@@ -235,8 +281,9 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
 
               <div><Label>Observações</Label><Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} /></div>
 
-              <Button className="w-full" disabled={!canSave || insertMut.isPending} onClick={() => insertMut.mutate()}>
-                {insertMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}Salvar
+              <Button className="w-full" disabled={!canSave || isSaving} onClick={handleSave}>
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                {editingId ? "Atualizar" : "Salvar"}
               </Button>
             </div>
           </DialogContent>
@@ -272,7 +319,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
               <TableHead>Data</TableHead><TableHead>Nome</TableHead><TableHead>Tipo</TableHead>
               <TableHead>Sev.</TableHead><TableHead>Nota</TableHead><TableHead>Inc. %</TableHead>
               <TableHead>Parental</TableHead><TableHead>Estádio</TableHead><TableHead>NDE</TableHead>
-              <TableHead>Ação</TableHead><TableHead>Fotos</TableHead><TableHead className="w-10"></TableHead>
+              <TableHead>Ação</TableHead><TableHead>Fotos</TableHead><TableHead className="w-20"></TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {records.map((r: any) => (
@@ -289,9 +336,14 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
                   <TableCell className="text-xs max-w-[120px] truncate">{r.action_taken || "—"}</TableCell>
                   <TableCell>{r.photos?.length ? <ImageIcon className="h-4 w-4 text-muted-foreground" /> : "—"}</TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (confirm("Remover?")) deleteMut.mutate(r.id); }}>
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openForEdit(r)}>
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (confirm("Remover?")) deleteMut.mutate(r.id); }}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
