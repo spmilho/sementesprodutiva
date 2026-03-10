@@ -11,6 +11,8 @@ export function SinoNotificacoes() {
   const { notificacoes, naoLidas, loading, marcarLida, marcarTodasLidas } = useNotificacoes();
   const painelRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { navegarPara } = useNotificacaoNav();
 
   // Close on outside click
   useEffect(() => {
