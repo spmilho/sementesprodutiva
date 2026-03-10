@@ -2541,9 +2541,11 @@ export type Database = {
           concluida_em: string | null
           criado_em: string | null
           criado_por: string | null
+          esforco: string | null
           how: string
           how_much: string | null
           id: string
+          impacto: string | null
           ocultar_concluida: boolean | null
           prioridade: string
           status: string
@@ -2559,9 +2561,11 @@ export type Database = {
           concluida_em?: string | null
           criado_em?: string | null
           criado_por?: string | null
+          esforco?: string | null
           how: string
           how_much?: string | null
           id?: string
+          impacto?: string | null
           ocultar_concluida?: boolean | null
           prioridade?: string
           status?: string
@@ -2577,9 +2581,11 @@ export type Database = {
           concluida_em?: string | null
           criado_em?: string | null
           criado_por?: string | null
+          esforco?: string | null
           how?: string
           how_much?: string | null
           id?: string
+          impacto?: string | null
           ocultar_concluida?: boolean | null
           prioridade?: string
           status?: string
