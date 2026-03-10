@@ -140,10 +140,16 @@ export function useProfiles() {
   const [profiles, setProfiles] = useState<{ id: string; full_name: string | null }[]>([]);
 
   useEffect(() => {
+    // First get all profile IDs, then fetch names via SECURITY DEFINER RPC
     (supabase as any)
       .from("profiles")
-      .select("id, full_name")
-      .then(({ data }: any) => { if (data) setProfiles(data); });
+      .select("id")
+      .then(async ({ data }: any) => {
+        if (!data || data.length === 0) return;
+        const ids = data.map((p: any) => p.id);
+        const { data: fullProfiles } = await (supabase as any).rpc("get_profiles_by_ids", { _ids: ids });
+        if (fullProfiles) setProfiles(fullProfiles);
+      });
   }, []);
 
   return profiles;
