@@ -80,10 +80,12 @@ export default function FeedPostCard({ post }: Props) {
         <div className="flex items-center justify-between px-4 pt-3 pb-2">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">
-              {(post.author_email ?? post.author_user_id ?? "?").charAt(0).toUpperCase()}
+              {post.autor?.full_name
+                ? post.autor.full_name.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()
+                : "?"}
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground leading-tight">{post.author_email ?? "Usuário"}</p>
+              <p className="text-sm font-medium text-foreground leading-tight">{post.autor?.full_name || post.autor?.email || "Usuário"}</p>
               <p className="text-[11px] text-muted-foreground">
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}
                 {post.location_text && ` · ${post.location_text}`}
