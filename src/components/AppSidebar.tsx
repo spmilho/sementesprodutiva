@@ -1,4 +1,4 @@
-import { LayoutDashboard, Layers, Map, Settings, LogOut, ShieldCheck, Factory, Camera } from "lucide-react";
+import { LayoutDashboard, Layers, Map, Settings, LogOut, ShieldCheck, Factory, Camera, ClipboardList } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
 import { NavLink } from "@/components/NavLink";
