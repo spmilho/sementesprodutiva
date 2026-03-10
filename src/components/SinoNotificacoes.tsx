@@ -3,7 +3,8 @@ import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNotificacoes, CONFIG_TIPO, type Notificacao } from "@/hooks/useNotificacoes";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useNotificacaoNav } from "@/contexts/NotificacaoNavContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function SinoNotificacoes() {

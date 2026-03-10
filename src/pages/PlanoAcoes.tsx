@@ -20,12 +20,14 @@ export default function PlanoAcoes() {
   const { isAdmin } = useRole();
   const { hasAccess, loading: accessLoading } = usePlanoAcoesAccess();
   const profiles = useProfiles();
+  const { destino, limparDestino } = useNotificacaoNav();
 
   const [mostrarConcluidas, setMostrarConcluidas] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
   const [controlAcessoAberto, setControlAcessoAberto] = useState(false);
   const [acaoEditando, setAcaoEditando] = useState<Acao | null>(null);
   const [acaoSelecionada, setAcaoSelecionada] = useState<Acao | null>(null);
+  const [abaDrawer, setAbaDrawer] = useState<"detalhes" | "comentarios">("comentarios");
   const [filtros, setFiltros] = useState<FiltrosState>({
     status: "todos", prioridade: "todos", responsavel: "todos", categoria: "todos", busca: "",
   });
