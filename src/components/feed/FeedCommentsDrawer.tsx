@@ -36,14 +36,11 @@ export default function FeedCommentsDrawer({ open, onClose, postId }: Props) {
         .order("created_at", { ascending: true });
       if (error) throw error;
 
-      // Fetch author profiles separately
+      // Fetch commenter names via RPC
       const userIds = [...new Set((data ?? []).map((c: any) => c.user_id).filter(Boolean))];
       let profilesMap: Record<string, any> = {};
       if (userIds.length > 0) {
-        const { data: profiles } = await (supabase as any)
-          .from("profiles")
-          .select("id, full_name")
-          .in("id", userIds);
+        const { data: profiles } = await (supabase as any).rpc("get_profiles_by_ids", { _ids: userIds });
         (profiles ?? []).forEach((p: any) => { profilesMap[p.id] = p; });
       }
 

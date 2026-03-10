@@ -4174,6 +4174,13 @@ export type Database = {
       feed_get_role: { Args: { _user_id: string }; Returns: string }
       feed_has_access: { Args: { _user_id: string }; Returns: boolean }
       feed_is_mod_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      get_profiles_by_ids: {
+        Args: { _ids: string[] }
+        Returns: {
+          full_name: string
+          id: string
+        }[]
+      }
       get_user_emails_for_admin: {
         Args: never
         Returns: {

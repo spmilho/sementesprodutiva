@@ -19,15 +19,11 @@ export default function FeedMyPosts({ userId }: Props) {
         .limit(50);
       if (error) throw error;
 
-      // Fetch author profile
+      // Fetch author profile via RPC
       let autor: any = null;
       if (userId) {
-        const { data: profile } = await (supabase as any)
-          .from("profiles")
-          .select("id, full_name")
-          .eq("id", userId)
-          .single();
-        autor = profile;
+        const { data: profiles } = await (supabase as any).rpc("get_profiles_by_ids", { _ids: [userId] });
+        autor = profiles?.[0] || null;
       }
 
       return (data ?? []).map((p: any) => ({ ...p, autor }));
