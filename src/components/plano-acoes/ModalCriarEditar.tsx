@@ -66,6 +66,7 @@ export function ModalCriarEditar({ open, onClose, acao }: Props) {
       what, why, where_local: whereLocal, who_resp: whoResp,
       when_prazo: format(whenPrazo, "yyyy-MM-dd"), how,
       how_much: howMuch || null, prioridade, categoria: categoria || null, status,
+      impacto, esforco,
     };
 
     if (isEdit) {
