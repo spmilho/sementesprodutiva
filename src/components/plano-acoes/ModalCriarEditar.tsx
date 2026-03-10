@@ -49,9 +49,11 @@ export function ModalCriarEditar({ open, onClose, acao }: Props) {
       setWhoResp(acao.who_resp || ""); setWhenPrazo(new Date(acao.when_prazo + "T12:00:00"));
       setHow(acao.how); setHowMuch(acao.how_much || ""); setPrioridade(acao.prioridade);
       setCategoria(acao.categoria || ""); setStatus(acao.status);
+      setImpacto((acao as any).impacto || "medio"); setEsforco((acao as any).esforco || "medio");
     } else {
       setWhat(""); setWhy(""); setWhereLocal(""); setWhoResp(""); setWhenPrazo(undefined);
       setHow(""); setHowMuch(""); setPrioridade("media"); setCategoria(""); setStatus("aberta");
+      setImpacto("medio"); setEsforco("medio");
     }
   }, [acao, open]);
 
