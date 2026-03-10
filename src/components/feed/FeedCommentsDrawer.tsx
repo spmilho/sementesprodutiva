@@ -30,12 +30,27 @@ export default function FeedCommentsDrawer({ open, onClose, postId }: Props) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("feed_comments")
-        .select("*, autor:user_id(id, full_name)")
+        .select("*")
         .eq("post_id", postId)
         .eq("is_deleted", false)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return data as any[];
+
+      // Fetch author profiles separately
+      const userIds = [...new Set((data ?? []).map((c: any) => c.user_id).filter(Boolean))];
+      let profilesMap: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await (supabase as any)
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", userIds);
+        (profiles ?? []).forEach((p: any) => { profilesMap[p.id] = p; });
+      }
+
+      return (data ?? []).map((c: any) => ({
+        ...c,
+        autor: profilesMap[c.user_id] || null,
+      }));
     },
   });
 
