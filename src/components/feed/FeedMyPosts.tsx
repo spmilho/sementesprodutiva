@@ -13,12 +13,24 @@ export default function FeedMyPosts({ userId }: Props) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("feed_posts")
-        .select("*, feed_media(*), feed_likes(id, user_id), feed_comments(id), autor:author_user_id(id, full_name)")
+        .select("*, feed_media(*), feed_likes(id, user_id), feed_comments(id)")
         .eq("author_user_id", userId)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      return data as any[];
+
+      // Fetch author profile
+      let autor: any = null;
+      if (userId) {
+        const { data: profile } = await (supabase as any)
+          .from("profiles")
+          .select("id, full_name")
+          .eq("id", userId)
+          .single();
+        autor = profile;
+      }
+
+      return (data ?? []).map((p: any) => ({ ...p, autor }));
     },
   });
 

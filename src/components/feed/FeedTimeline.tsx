@@ -17,7 +17,7 @@ export default function FeedTimeline() {
     queryFn: async () => {
       let q = (supabase as any)
         .from("feed_posts")
-        .select("*, feed_media(*), feed_likes(id, user_id), feed_comments(id), autor:author_user_id(id, full_name)")
+        .select("*, feed_media(*), feed_likes(id, user_id), feed_comments(id)")
         .eq("is_hidden", false)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -28,7 +28,22 @@ export default function FeedTimeline() {
 
       const { data, error } = await q;
       if (error) throw error;
-      return data as any[];
+
+      // Fetch author profiles separately (FK points to auth.users, not profiles)
+      const authorIds = [...new Set((data ?? []).map((p: any) => p.author_user_id).filter(Boolean))];
+      let profilesMap: Record<string, any> = {};
+      if (authorIds.length > 0) {
+        const { data: profiles } = await (supabase as any)
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", authorIds);
+        (profiles ?? []).forEach((p: any) => { profilesMap[p.id] = p; });
+      }
+
+      return (data ?? []).map((p: any) => ({
+        ...p,
+        autor: profilesMap[p.author_user_id] || null,
+      }));
     },
   });
 
