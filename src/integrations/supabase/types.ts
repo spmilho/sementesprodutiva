@@ -2685,6 +2685,52 @@ export type Database = {
           },
         ]
       }
+      plano_acoes_mencoes: {
+        Row: {
+          acao_id: string
+          comentario_id: string
+          criado_em: string | null
+          id: string
+          usuario_id: string
+        }
+        Insert: {
+          acao_id: string
+          comentario_id: string
+          criado_em?: string | null
+          id?: string
+          usuario_id: string
+        }
+        Update: {
+          acao_id?: string
+          comentario_id?: string
+          criado_em?: string | null
+          id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_acoes_mencoes_acao_id_fkey"
+            columns: ["acao_id"]
+            isOneToOne: false
+            referencedRelation: "plano_acoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plano_acoes_mencoes_comentario_id_fkey"
+            columns: ["comentario_id"]
+            isOneToOne: false
+            referencedRelation: "plano_acoes_comentarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plano_acoes_mencoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plano_acoes_notif_log: {
         Row: {
           acao_id: string
