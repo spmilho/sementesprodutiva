@@ -39,7 +39,7 @@ export default function FeedPostCard({ post }: Props) {
 
   const media = (post.feed_media ?? []).sort((a: any, b: any) => a.order_index - b.order_index);
   const likes = post.feed_likes ?? [];
-  const commentsCount = (post.feed_comments ?? []).length;
+  const commentsCount = (post.feed_comments ?? []).filter((c: any) => !c.is_deleted).length;
   const isLiked = likes.some((l: any) => l.user_id === user?.id);
   const isOwner = post.author_user_id === user?.id;
 
