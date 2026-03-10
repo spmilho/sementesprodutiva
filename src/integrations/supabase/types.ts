@@ -2101,6 +2101,63 @@ export type Database = {
           },
         ]
       }
+      notificacoes: {
+        Row: {
+          criado_em: string | null
+          gerado_por: string | null
+          id: string
+          lida: boolean | null
+          lida_em: string | null
+          mensagem: string
+          modulo: string | null
+          referencia_id: string | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          criado_em?: string | null
+          gerado_por?: string | null
+          id?: string
+          lida?: boolean | null
+          lida_em?: string | null
+          mensagem: string
+          modulo?: string | null
+          referencia_id?: string | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          criado_em?: string | null
+          gerado_por?: string | null
+          id?: string
+          lida?: boolean | null
+          lida_em?: string | null
+          mensagem?: string
+          modulo?: string | null
+          referencia_id?: string | null
+          tipo?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacoes_gerado_por_fkey"
+            columns: ["gerado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificacoes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nutrition_targets: {
         Row: {
           cycle_id: string
@@ -4095,6 +4152,18 @@ export type Database = {
           _user_id: string
         }
         Returns: undefined
+      }
+      criar_notificacao: {
+        Args: {
+          p_gerado_por?: string
+          p_mensagem: string
+          p_modulo?: string
+          p_referencia_id?: string
+          p_tipo: string
+          p_titulo: string
+          p_user_id: string
+        }
+        Returns: string
       }
       feed_get_role: { Args: { _user_id: string }; Returns: string }
       feed_has_access: { Args: { _user_id: string }; Returns: boolean }

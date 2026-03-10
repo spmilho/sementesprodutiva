@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { useOfflineSync } from "@/hooks/use-offline-sync";
+import { SinoNotificacoes } from "@/components/SinoNotificacoes";
 import { createContext, useContext } from "react";
 
 type OfflineSyncContextType = ReturnType<typeof useOfflineSync>;
@@ -31,7 +32,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
               <div className="h-5 w-px bg-border" />
               <span className="text-sm text-muted-foreground">Caderno de Campo</span>
-              <div className="ml-auto">
+              <div className="ml-auto flex items-center gap-1">
+                <SinoNotificacoes />
                 <OfflineIndicator syncStatus={offlineSync.syncStatus} pendingCount={offlineSync.pendingCount} />
               </div>
             </header>

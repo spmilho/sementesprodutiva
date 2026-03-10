@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Plus, Settings, Eye, EyeOff, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -26,7 +27,21 @@ export default function PlanoAcoes() {
     status: "todos", prioridade: "todos", responsavel: "todos", categoria: "todos", busca: "",
   });
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const { acoes, loading, refetch } = usePlanoAcoes(mostrarConcluidas);
+
+  // Deep link: open drawer when ?acao=ID is in URL
+  useEffect(() => {
+    const acaoId = searchParams.get("acao");
+    if (acaoId && acoes.length > 0 && !acaoSelecionada) {
+      const found = acoes.find(a => a.id === acaoId);
+      if (found) {
+        setAcaoSelecionada(found);
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, acoes, acaoSelecionada, setSearchParams]);
 
   const acoesFiltradas = acoes.filter(a => {
     if (filtros.status !== "todos" && a.status !== filtros.status) return false;

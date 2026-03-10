@@ -182,7 +182,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // ─── PRAZO 2 DIAS (Cron) ────────────────────────────────────────────
+    // ─── PRAZO 2 DIAS (Cron) — agora cria notificações in-app ─────────
     if (body.tipo === "prazo_2dias" || !body.tipo) {
       const d = new Date();
       d.setDate(d.getDate() + 2);
@@ -208,22 +208,34 @@ serve(async (req) => {
 
         if (jaEnviou?.length) continue;
 
-        const html = `
-          <div style="font-family:Arial,sans-serif;max-width:600px;">
-            <div style="background:#f97316;padding:20px;border-radius:8px 8px 0 0;">
-              <h2 style="color:white;margin:0;">⏰ Prazo se encerrando em 2 dias</h2>
-            </div>
-            <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
-              <p style="font-size:15px;font-weight:600;">${acao.what}</p>
-              <p>Prazo: ${new Date(acao.when_prazo + "T12:00:00").toLocaleDateString("pt-BR")}</p>
-              <p>Prioridade: ${(acao.prioridade || "").toUpperCase()}</p>
-              <p style="color:#888;font-size:12px;margin-top:16px;border-top:1px solid #eee;padding-top:12px;">
-                Acesse o Arena Produtiva para atualizar o status desta ação.
-              </p>
-            </div>
-          </div>`;
+        // Buscar todos os destinatários
+        const { data: acessos } = await supabase
+          .from("plano_acoes_acesso")
+          .select("user_id")
+          .eq("habilitado", true);
 
-        await enviarEmail(emails, `⏰ Ação vence em 2 dias: ${(acao.what || "").substring(0, 60)}`, html);
+        const { data: admins } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("role", "Admin")
+          .eq("is_active", true);
+
+        const destinatarios = new Set<string>();
+        acessos?.forEach((a: any) => destinatarios.add(a.user_id));
+        admins?.forEach((a: any) => destinatarios.add(a.id));
+
+        for (const userId of destinatarios) {
+          await supabase.rpc("criar_notificacao", {
+            p_user_id: userId,
+            p_tipo: "prazo_acao",
+            p_titulo: "⏰ Ação vence em 2 dias",
+            p_mensagem: (acao.what || "").substring(0, 120),
+            p_modulo: "plano_acoes",
+            p_referencia_id: acao.id,
+            p_gerado_por: null,
+          });
+        }
+
         await supabase.from("plano_acoes_notif_log").insert({ acao_id: acao.id, tipo: "prazo_2dias" });
       }
 
