@@ -140,9 +140,7 @@ export function useProfiles() {
   const [profiles, setProfiles] = useState<{ id: string; full_name: string | null }[]>([]);
 
   useEffect(() => {
-    (supabase as any)
-      .from("profiles")
-      .select("id, full_name")
+    (supabase as any).rpc("get_all_profiles")
       .then(({ data }: any) => { if (data) setProfiles(data); });
   }, []);
 
