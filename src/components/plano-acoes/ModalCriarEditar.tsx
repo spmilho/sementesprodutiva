@@ -40,6 +40,8 @@ export function ModalCriarEditar({ open, onClose, acao }: Props) {
   const [prioridade, setPrioridade] = useState<PrioridadeAcao>("media");
   const [categoria, setCategoria] = useState("");
   const [status, setStatus] = useState<StatusAcao>("aberta");
+  const [impacto, setImpacto] = useState("medio");
+  const [esforco, setEsforco] = useState("medio");
 
   useEffect(() => {
     if (acao) {
@@ -47,9 +49,11 @@ export function ModalCriarEditar({ open, onClose, acao }: Props) {
       setWhoResp(acao.who_resp || ""); setWhenPrazo(new Date(acao.when_prazo + "T12:00:00"));
       setHow(acao.how); setHowMuch(acao.how_much || ""); setPrioridade(acao.prioridade);
       setCategoria(acao.categoria || ""); setStatus(acao.status);
+      setImpacto((acao as any).impacto || "medio"); setEsforco((acao as any).esforco || "medio");
     } else {
       setWhat(""); setWhy(""); setWhereLocal(""); setWhoResp(""); setWhenPrazo(undefined);
       setHow(""); setHowMuch(""); setPrioridade("media"); setCategoria(""); setStatus("aberta");
+      setImpacto("medio"); setEsforco("medio");
     }
   }, [acao, open]);
 
@@ -62,6 +66,7 @@ export function ModalCriarEditar({ open, onClose, acao }: Props) {
       what, why, where_local: whereLocal, who_resp: whoResp,
       when_prazo: format(whenPrazo, "yyyy-MM-dd"), how,
       how_much: howMuch || null, prioridade, categoria: categoria || null, status,
+      impacto, esforco,
     };
 
     if (isEdit) {
@@ -171,6 +176,32 @@ export function ModalCriarEditar({ open, onClose, acao }: Props) {
                   <SelectItem value="critica">🔴 Crítica</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Impacto</Label>
+              <Select value={impacto} onValueChange={setImpacto}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="alto">↑ Alto impacto</SelectItem>
+                  <SelectItem value="medio">~ Médio impacto</SelectItem>
+                  <SelectItem value="baixo">↓ Baixo impacto</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Qual o ganho esperado?</p>
+            </div>
+            <div>
+              <Label>Esforço</Label>
+              <Select value={esforco} onValueChange={setEsforco}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="alto">◆ Alto esforço</SelectItem>
+                  <SelectItem value="medio">◆ Médio esforço</SelectItem>
+                  <SelectItem value="baixo">◆ Baixo esforço</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Quanto custa executar?</p>
             </div>
           </div>
           <div>
