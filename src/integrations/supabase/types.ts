@@ -2477,6 +2477,243 @@ export type Database = {
           },
         ]
       }
+      plano_acoes: {
+        Row: {
+          atualizado_em: string | null
+          categoria: string | null
+          concluida_em: string | null
+          criado_em: string | null
+          criado_por: string | null
+          how: string
+          how_much: string | null
+          id: string
+          ocultar_concluida: boolean | null
+          prioridade: string
+          status: string
+          what: string
+          when_prazo: string
+          where_local: string
+          who_resp: string | null
+          why: string
+        }
+        Insert: {
+          atualizado_em?: string | null
+          categoria?: string | null
+          concluida_em?: string | null
+          criado_em?: string | null
+          criado_por?: string | null
+          how: string
+          how_much?: string | null
+          id?: string
+          ocultar_concluida?: boolean | null
+          prioridade?: string
+          status?: string
+          what: string
+          when_prazo: string
+          where_local: string
+          who_resp?: string | null
+          why: string
+        }
+        Update: {
+          atualizado_em?: string | null
+          categoria?: string | null
+          concluida_em?: string | null
+          criado_em?: string | null
+          criado_por?: string | null
+          how?: string
+          how_much?: string | null
+          id?: string
+          ocultar_concluida?: boolean | null
+          prioridade?: string
+          status?: string
+          what?: string
+          when_prazo?: string
+          where_local?: string
+          who_resp?: string | null
+          why?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_acoes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plano_acoes_who_resp_fkey"
+            columns: ["who_resp"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plano_acoes_acesso: {
+        Row: {
+          habilitado: boolean | null
+          habilitado_em: string | null
+          habilitado_por: string | null
+          user_id: string
+        }
+        Insert: {
+          habilitado?: boolean | null
+          habilitado_em?: string | null
+          habilitado_por?: string | null
+          user_id: string
+        }
+        Update: {
+          habilitado?: boolean | null
+          habilitado_em?: string | null
+          habilitado_por?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_acoes_acesso_habilitado_por_fkey"
+            columns: ["habilitado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plano_acoes_acesso_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plano_acoes_anexos: {
+        Row: {
+          acao_id: string
+          comentario_id: string | null
+          criado_em: string | null
+          enviado_por: string | null
+          id: string
+          nome_arquivo: string
+          tamanho_bytes: number | null
+          tipo_mime: string | null
+          url: string
+        }
+        Insert: {
+          acao_id: string
+          comentario_id?: string | null
+          criado_em?: string | null
+          enviado_por?: string | null
+          id?: string
+          nome_arquivo: string
+          tamanho_bytes?: number | null
+          tipo_mime?: string | null
+          url: string
+        }
+        Update: {
+          acao_id?: string
+          comentario_id?: string | null
+          criado_em?: string | null
+          enviado_por?: string | null
+          id?: string
+          nome_arquivo?: string
+          tamanho_bytes?: number | null
+          tipo_mime?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_acoes_anexos_acao_id_fkey"
+            columns: ["acao_id"]
+            isOneToOne: false
+            referencedRelation: "plano_acoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plano_acoes_anexos_comentario_id_fkey"
+            columns: ["comentario_id"]
+            isOneToOne: false
+            referencedRelation: "plano_acoes_comentarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plano_acoes_anexos_enviado_por_fkey"
+            columns: ["enviado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plano_acoes_comentarios: {
+        Row: {
+          acao_id: string
+          autor_id: string
+          criado_em: string | null
+          editado_em: string | null
+          id: string
+          texto: string
+        }
+        Insert: {
+          acao_id: string
+          autor_id: string
+          criado_em?: string | null
+          editado_em?: string | null
+          id?: string
+          texto: string
+        }
+        Update: {
+          acao_id?: string
+          autor_id?: string
+          criado_em?: string | null
+          editado_em?: string | null
+          id?: string
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_acoes_comentarios_acao_id_fkey"
+            columns: ["acao_id"]
+            isOneToOne: false
+            referencedRelation: "plano_acoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plano_acoes_comentarios_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plano_acoes_notif_log: {
+        Row: {
+          acao_id: string
+          enviado_em: string | null
+          id: string
+          tipo: string
+        }
+        Insert: {
+          acao_id: string
+          enviado_em?: string | null
+          id?: string
+          tipo: string
+        }
+        Update: {
+          acao_id?: string
+          enviado_em?: string | null
+          id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_acoes_notif_log_acao_id_fkey"
+            columns: ["acao_id"]
+            isOneToOne: false
+            referencedRelation: "plano_acoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       planting_actual: {
         Row: {
           actual_area: number
@@ -3823,6 +4060,7 @@ export type Database = {
           id: string
         }[]
       }
+      has_plano_acoes_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
