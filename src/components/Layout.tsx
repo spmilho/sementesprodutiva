@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { useOfflineSync } from "@/hooks/use-offline-sync";
+import { SinoNotificacoes } from "@/components/SinoNotificacoes";
 import { createContext, useContext } from "react";
 
 type OfflineSyncContextType = ReturnType<typeof useOfflineSync>;
