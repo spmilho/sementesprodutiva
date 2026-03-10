@@ -98,7 +98,7 @@ export default function FeedPostCard({ post }: Props) {
                 : "?"}
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground leading-tight">{post.autor?.full_name || post.autor?.email || "Usuário"}</p>
+              <p className="text-sm font-medium text-foreground leading-tight">{post.autor?.full_name?.trim() || "Desconhecido"}</p>
               <p className="text-[11px] text-muted-foreground">
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}
                 {post.location_text && ` · ${post.location_text}`}
