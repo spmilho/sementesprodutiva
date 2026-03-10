@@ -40,7 +40,7 @@ async function enviarEmail(para: string[], assunto: string, html: string) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Arena Produtiva <notificacoes@suaempresa.com.br>",
+      from: "Produtiva Sementes (Produção de Milho) <onboarding@resend.dev>",
       to: para,
       subject: assunto,
       html,
