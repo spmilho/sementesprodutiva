@@ -17,7 +17,7 @@ export default function FeedTimeline() {
     queryFn: async () => {
       let q = (supabase as any)
         .from("feed_posts")
-        .select("*, feed_media(*), feed_likes(id, user_id), feed_comments(id)")
+        .select("*, feed_media(*), feed_likes(id, user_id), feed_comments(id), autor:author_user_id(id, full_name, email)")
         .eq("is_hidden", false)
         .order("created_at", { ascending: false })
         .limit(50);

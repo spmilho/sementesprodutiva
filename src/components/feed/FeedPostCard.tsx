@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeedPermission } from "@/hooks/useFeedPermission";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,12 +6,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Share2, MoreVertical, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreVertical, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import FeedCommentsDrawer from "./FeedCommentsDrawer";
+
+function FeedImage({ src, className }: { src: string; className?: string }) {
+  const [error, setError] = useState(false);
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 h-full w-full bg-muted text-muted-foreground">
+        <ImageOff className="h-8 w-8" />
+        <span className="text-xs">Foto indisponível</span>
+      </div>
+    );
+  }
+  return <img src={src} alt="" className={className} onError={() => setError(true)} loading="lazy" />;
+}
 
 interface Props {
   post: any;
@@ -80,10 +93,12 @@ export default function FeedPostCard({ post }: Props) {
         <div className="flex items-center justify-between px-4 pt-3 pb-2">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">
-              {(post.author_email ?? post.author_user_id ?? "?").charAt(0).toUpperCase()}
+              {post.autor?.full_name
+                ? post.autor.full_name.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()
+                : "?"}
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground leading-tight">{post.author_email ?? "Usuário"}</p>
+              <p className="text-sm font-medium text-foreground leading-tight">{post.autor?.full_name || post.autor?.email || "Usuário"}</p>
               <p className="text-[11px] text-muted-foreground">
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}
                 {post.location_text && ` · ${post.location_text}`}
@@ -124,9 +139,8 @@ export default function FeedPostCard({ post }: Props) {
                 className="w-full h-full object-contain"
               />
             ) : (
-              <img
+              <FeedImage
                 src={media[mediaIndex].media_url}
-                alt=""
                 className="w-full h-full object-cover"
               />
             )}
