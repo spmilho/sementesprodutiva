@@ -43,7 +43,7 @@ function renderTextoComMencoes(texto: string) {
   });
 }
 
-export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch }: Props) {
+export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch, abaInicial = "comentarios" }: Props) {
   const { user } = useAuth();
   const { isAdmin } = useRole();
   const profiles = useProfiles();
