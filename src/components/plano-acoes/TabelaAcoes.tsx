@@ -1,6 +1,5 @@
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { MoreVertical, MessageSquare, Paperclip, Trash2 } from "lucide-react";
+import { MoreVertical, MessageSquare, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
@@ -8,7 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { BadgePrioridade, BadgeStatus } from "./badges";
 import type { Acao, StatusAcao } from "@/hooks/usePlanoAcoes";
 import { useState } from "react";
@@ -82,8 +81,10 @@ export function TabelaAcoes({ acoes, onSelecionar, onEditar, onRefetch }: Props)
             >
               <TableCell><BadgePrioridade p={a.prioridade} /></TableCell>
               <TableCell>
-                <span className={a.status === "concluida" ? "line-through" : ""}>{a.what}</span>
-                {a.categoria && <span className="ml-2 text-xs text-muted-foreground">· {a.categoria}</span>}
+                <div className="flex items-center gap-2">
+                  <span className={a.status === "concluida" ? "line-through" : ""}>{a.what}</span>
+                  {a.categoria && <span className="text-xs text-muted-foreground">· {a.categoria}</span>}
+                </div>
               </TableCell>
               <TableCell className="text-sm">{a.responsavel?.full_name || "—"}</TableCell>
               <TableCell className={`text-sm ${isVencida(a) ? "text-red-600 font-semibold" : ""}`}>
@@ -96,7 +97,9 @@ export function TabelaAcoes({ acoes, onSelecionar, onEditar, onRefetch }: Props)
                     <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onSelecionar(a)}>Abrir detalhe</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onSelecionar(a)}>
+                      <MessageSquare className="h-3.5 w-3.5 mr-1.5" /> Ver detalhes e comentários
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onEditar(a)}>Editar</DropdownMenuItem>
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>Mudar status</DropdownMenuSubTrigger>

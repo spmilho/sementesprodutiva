@@ -71,8 +71,36 @@ export function ModalCriarEditar({ open, onClose, acao }: Props) {
       toast({ title: "Ação atualizada" });
     } else {
       payload.criado_por = user?.id;
-      await (supabase as any).from("plano_acoes").insert(payload);
+      const { data: novaAcao, error } = await (supabase as any)
+        .from("plano_acoes")
+        .insert(payload)
+        .select("*, responsavel:who_resp(full_name)")
+        .single();
+
+      if (error) {
+        toast({ title: "Erro ao salvar ação", variant: "destructive" });
+        setSaving(false);
+        return;
+      }
+
       toast({ title: "Ação criada" });
+
+      // Get creator profile name for the notification
+      const creatorProfile = profiles.find(p => p.id === user?.id);
+
+      // Fire email notification for new action (non-blocking)
+      supabase.functions.invoke("notificar-plano-acoes", {
+        body: {
+          tipo: "nova_acao",
+          acao_what: payload.what,
+          acao_why: payload.why,
+          acao_where: payload.where_local,
+          when_prazo: payload.when_prazo,
+          prioridade: payload.prioridade,
+          responsavel_nome: novaAcao?.responsavel?.full_name || null,
+          criador_nome: creatorProfile?.full_name || "Usuário",
+        },
+      }).catch(() => {/* silent */});
     }
     setSaving(false);
     onClose();
