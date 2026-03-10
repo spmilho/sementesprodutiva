@@ -1,10 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { format } from "date-fns";
-import { Pencil, Send, ImagePlus, X, MessageSquare } from "lucide-react";
+import { Pencil, Send, ImagePlus, X, MessageSquare, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
-import { useComentarios } from "@/hooks/usePlanoAcoes";
+import { useComentarios, useProfiles } from "@/hooks/usePlanoAcoes";
 import type { Acao, StatusAcao } from "@/hooks/usePlanoAcoes";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { BadgePrioridade, BadgeStatus } from "./badges";
+import { BadgePrioridade } from "./badges";
 import { toast } from "@/hooks/use-toast";
 
 interface Props {
@@ -23,16 +23,51 @@ interface Props {
   onRefetch: () => void;
 }
 
+interface UsuarioMencao {
+  id: string;
+  full_name: string | null;
+}
+
+function renderTextoComMencoes(texto: string) {
+  const partes = texto.split(/(@[\w]+)/g);
+  return partes.map((parte, i) => {
+    if (parte.startsWith("@")) {
+      return (
+        <span key={i} className="text-primary font-semibold">
+          {parte.replace(/_/g, " ")}
+        </span>
+      );
+    }
+    return <span key={i}>{parte}</span>;
+  });
+}
+
 export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch }: Props) {
   const { user } = useAuth();
   const { isAdmin } = useRole();
+  const profiles = useProfiles();
   const { comentarios, refetch: refetchComentarios } = useComentarios(acao.id);
+
+  // Comment form state
   const [texto, setTexto] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [editTexto, setEditTexto] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Mention state
+  const [dropdownAberto, setDropdownAberto] = useState(false);
+  const [dropdownIndex, setDropdownIndex] = useState(0);
+  const [queryMencao, setQueryMencao] = useState("");
+  const [posicaoCursor, setPosicaoCursor] = useState(0);
+  const [mencoesSelecionadas, setMencoesSelecionadas] = useState<UsuarioMencao[]>([]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const usuariosFiltrados = profiles
+    .filter(u => (u.full_name || "").toLowerCase().includes(queryMencao.toLowerCase()))
+    .slice(0, 6);
 
   const changeStatus = async (s: StatusAcao) => {
     const update: any = { status: s };
@@ -43,6 +78,64 @@ export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch }: Props)
     toast({ title: "Status atualizado" });
   };
 
+  // Mention: detect @ while typing
+  const handleTextoChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    const cursor = e.target.selectionStart || 0;
+    setTexto(val);
+    setPosicaoCursor(cursor);
+
+    const antes = val.substring(0, cursor);
+    const match = antes.match(/@(\w*)$/);
+    if (match) {
+      setQueryMencao(match[1]);
+      setDropdownAberto(true);
+      setDropdownIndex(0);
+    } else {
+      setDropdownAberto(false);
+      setQueryMencao("");
+    }
+  }, []);
+
+  const inserirMencao = (usuario: UsuarioMencao) => {
+    const nome = (usuario.full_name || "").replace(/\s+/g, "_");
+    const antes = texto.substring(0, posicaoCursor).replace(/@\w*$/, `@${nome} `);
+    const depois = texto.substring(posicaoCursor);
+    setTexto(antes + depois);
+    setDropdownAberto(false);
+    setQueryMencao("");
+
+    if (!mencoesSelecionadas.find(m => m.id === usuario.id)) {
+      setMencoesSelecionadas(prev => [...prev, usuario]);
+    }
+
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(antes.length, antes.length);
+      }
+    }, 0);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (dropdownAberto && usuariosFiltrados.length > 0) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setDropdownIndex(i => Math.min(i + 1, usuariosFiltrados.length - 1)); return; }
+      if (e.key === "ArrowUp") { e.preventDefault(); setDropdownIndex(i => Math.max(i - 1, 0)); return; }
+      if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); inserirMencao(usuariosFiltrados[dropdownIndex]); return; }
+      if (e.key === "Escape") { setDropdownAberto(false); return; }
+    }
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); enviarComentario(); }
+  };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setDropdownAberto(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   const enviarComentario = async () => {
     if (!texto.trim() && !arquivo) return;
     setEnviando(true);
@@ -52,6 +145,13 @@ export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch }: Props)
         .from("plano_acoes_comentarios")
         .insert({ acao_id: acao.id, autor_id: user?.id, texto: texto.trim() || "(anexo)" })
         .select().single();
+
+      // Save mentions
+      if (mencoesSelecionadas.length > 0 && comentario) {
+        await (supabase as any).from("plano_acoes_mencoes").insert(
+          mencoesSelecionadas.map(u => ({ comentario_id: comentario.id, acao_id: acao.id, usuario_id: u.id }))
+        );
+      }
 
       if (arquivo && comentario) {
         const path = `${acao.id}/${Date.now()}_${arquivo.name}`;
@@ -66,7 +166,21 @@ export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch }: Props)
         }
       }
 
-      setTexto(""); setArquivo(null);
+      // Notify mentions
+      if (mencoesSelecionadas.length > 0) {
+        supabase.functions.invoke("notificar-plano-acoes", {
+          body: {
+            tipo: "mencao",
+            acao_id: acao.id,
+            acao_what: acao.what,
+            comentario_texto: texto.trim(),
+            autor_nome: profiles.find(p => p.id === user?.id)?.full_name || "Usuário",
+            mencionados: mencoesSelecionadas.map(u => ({ id: u.id, full_name: u.full_name })),
+          },
+        }).catch(() => {});
+      }
+
+      setTexto(""); setArquivo(null); setMencoesSelecionadas([]);
       refetchComentarios();
     } finally {
       setEnviando(false);
@@ -169,7 +283,7 @@ export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch }: Props)
                         </div>
                       ) : (
                         <>
-                          <p className="text-sm whitespace-pre-wrap">{c.texto}</p>
+                          <p className="text-sm whitespace-pre-wrap">{renderTextoComMencoes(c.texto)}</p>
                           {c.anexos?.map(a => (
                             <div key={a.id}>
                               {a.tipo_mime?.startsWith("image/") ? (
@@ -184,7 +298,7 @@ export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch }: Props)
                               <button className="text-[10px] text-muted-foreground hover:text-foreground" onClick={() => { setEditandoId(c.id); setEditTexto(c.texto); }}>Editar</button>
                             )}
                             {(isAdmin || c.autor_id === user?.id) && (
-                              <button className="text-[10px] text-red-500 hover:text-red-700" onClick={() => excluirComentario(c.id)}>Excluir</button>
+                              <button className="text-[10px] text-destructive hover:text-destructive/80" onClick={() => excluirComentario(c.id)}>Excluir</button>
                             )}
                           </div>
                         </>
@@ -195,7 +309,7 @@ export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch }: Props)
               </div>
             </ScrollArea>
 
-            {/* Comment input */}
+            {/* Comment input with @mention */}
             <div className="border-t p-3 space-y-2">
               {arquivo && (
                 <div className="flex items-center gap-2 bg-muted rounded p-1.5 text-xs">
@@ -203,24 +317,63 @@ export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch }: Props)
                   <button onClick={() => setArquivo(null)}><X className="h-3 w-3" /></button>
                 </div>
               )}
-              <div className="flex gap-2">
-                <Textarea
-                  placeholder="Escrever comentário..."
-                  value={texto}
-                  onChange={e => setTexto(e.target.value)}
-                  className="min-h-[40px] flex-1"
-                  onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) enviarComentario(); }}
-                />
-                <div className="flex flex-col gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => fileRef.current?.click()}>
-                    <ImagePlus className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" className="h-8 w-8" onClick={enviarComentario} disabled={enviando || (!texto.trim() && !arquivo)}>
-                    <Send className="h-4 w-4" />
-                  </Button>
+
+              <div className="relative">
+                {/* Mention dropdown */}
+                {dropdownAberto && usuariosFiltrados.length > 0 && (
+                  <div ref={dropdownRef} className="absolute bottom-full left-0 right-0 mb-1 bg-popover border rounded-lg shadow-lg z-50 max-h-48 overflow-auto">
+                    <p className="text-[10px] text-muted-foreground px-3 pt-2 pb-1">Mencionar usuário</p>
+                    {usuariosFiltrados.map((u, i) => (
+                      <button
+                        key={u.id}
+                        className={`w-full text-left px-3 py-2 flex items-center gap-2 text-sm hover:bg-accent transition-colors ${i === dropdownIndex ? "bg-accent" : ""}`}
+                        onMouseDown={e => { e.preventDefault(); inserirMencao(u); }}
+                      >
+                        <span className="h-6 w-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-medium">
+                          {(u.full_name || "?").charAt(0).toUpperCase()}
+                        </span>
+                        <span className="truncate">{u.full_name || "Sem nome"}</span>
+                      </button>
+                    ))}
+                    <p className="text-[10px] text-muted-foreground px-3 py-1.5 border-t">↑↓ navegar · Enter selecionar · Esc fechar</p>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Textarea
+                    ref={textareaRef}
+                    placeholder="Escrever comentário... (@para mencionar)"
+                    value={texto}
+                    onChange={handleTextoChange}
+                    onKeyDown={handleKeyDown}
+                    className="min-h-[40px] flex-1"
+                  />
+                  <div className="flex flex-col gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => fileRef.current?.click()}>
+                      <ImagePlus className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" className="h-8 w-8" onClick={enviarComentario} disabled={enviando || (!texto.trim() && !arquivo)}>
+                      {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
               </div>
-              <p className="text-[10px] text-muted-foreground">Ctrl+Enter para enviar</p>
+
+              {/* Mention chips */}
+              {mencoesSelecionadas.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {mencoesSelecionadas.map(u => (
+                    <span key={u.id} className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-medium">
+                      @{u.full_name}
+                      <button onClick={() => setMencoesSelecionadas(prev => prev.filter(m => m.id !== u.id))} className="hover:text-destructive ml-0.5">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-[10px] text-muted-foreground">Ctrl+Enter para enviar · @ para mencionar</p>
               <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={e => e.target.files?.[0] && setArquivo(e.target.files[0])} />
             </div>
           </TabsContent>
