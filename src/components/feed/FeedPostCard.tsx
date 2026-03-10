@@ -13,6 +13,19 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import FeedCommentsDrawer from "./FeedCommentsDrawer";
 
+function FeedImage({ src, className }: { src: string; className?: string }) {
+  const [error, setError] = useState(false);
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 h-full w-full bg-muted text-muted-foreground">
+        <ImageOff className="h-8 w-8" />
+        <span className="text-xs">Foto indisponível</span>
+      </div>
+    );
+  }
+  return <img src={src} alt="" className={className} onError={() => setError(true)} loading="lazy" />;
+}
+
 interface Props {
   post: any;
 }
