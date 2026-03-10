@@ -45,6 +45,26 @@ export default function PlanoAcoes() {
     }
   }, [searchParams, acoes, acaoSelecionada, setSearchParams]);
 
+  // Notification context: open drawer when navigating from notification
+  useEffect(() => {
+    if (!destino || destino.modulo !== "plano_acoes") return;
+    if (loading) return;
+
+    const acao = acoes.find(a => a.id === destino.referenciaId);
+    if (acao) {
+      if (acao.status === "concluida") setMostrarConcluidas(true);
+      setAcaoSelecionada(acao);
+      if (["comentario_acao", "mencao_comentario"].includes(destino.tipo || "")) {
+        setAbaDrawer("comentarios");
+      } else {
+        setAbaDrawer("detalhes");
+      }
+      limparDestino();
+    } else {
+      setMostrarConcluidas(true);
+    }
+  }, [destino, acoes, loading, limparDestino]);
+
   const acoesFiltradas = acoes.filter(a => {
     if (filtros.status !== "todos" && a.status !== filtros.status) return false;
     if (filtros.prioridade !== "todos" && a.prioridade !== filtros.prioridade) return false;
