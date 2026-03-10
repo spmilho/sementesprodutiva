@@ -66,6 +66,7 @@ const App = () => (
                     <Route path="/configuracoes" element={<Configuracoes />} />
                     <Route path="/usuarios" element={<UserManagement />} />
                     <Route path="/feed" element={<FeedCampo />} />
+                    <Route path="/plano-acao" element={<PlanoAcoes />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Layout>

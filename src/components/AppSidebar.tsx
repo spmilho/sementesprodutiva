@@ -22,6 +22,7 @@ const mainItems = [
   { title: "Mapa Integrado", url: "/mapa", icon: Map },
   { title: "Capacidade UBS", url: "/ubs", icon: Factory },
   { title: "Feed de Campo", url: "/feed", icon: Camera },
+  { title: "Plano de Ação", url: "/plano-acao", icon: ClipboardList },
 ];
 
 const managementItems = [
