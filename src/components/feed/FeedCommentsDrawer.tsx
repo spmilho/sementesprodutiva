@@ -132,10 +132,10 @@ export default function FeedCommentsDrawer({ open, onClose, postId }: Props) {
             </div>
           )}
           <div className="flex gap-2">
-            <Input
-              placeholder="Escreva um comentário..."
+            <FeedMentionInput
+              placeholder="Escreva um comentário... use @ para mencionar"
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(val) => setText(val)}
               onKeyDown={(e) => e.key === "Enter" && text.trim() && addComment.mutate()}
             />
             <Button size="icon" disabled={!text.trim() || addComment.isPending} onClick={() => addComment.mutate()}>
