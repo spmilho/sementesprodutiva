@@ -21,6 +21,7 @@ interface Props {
   onClose: () => void;
   onEditar: () => void;
   onRefetch: () => void;
+  abaInicial?: "detalhes" | "comentarios";
 }
 
 interface UsuarioMencao {
@@ -42,7 +43,7 @@ function renderTextoComMencoes(texto: string) {
   });
 }
 
-export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch }: Props) {
+export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch, abaInicial = "comentarios" }: Props) {
   const { user } = useAuth();
   const { isAdmin } = useRole();
   const profiles = useProfiles();
@@ -220,7 +221,7 @@ export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch }: Props)
           </div>
         </SheetHeader>
 
-        <Tabs defaultValue="comentarios" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs defaultValue={abaInicial} className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="mx-4 grid w-auto grid-cols-2">
             <TabsTrigger value="detalhes">📋 Detalhes</TabsTrigger>
             <TabsTrigger value="comentarios" className="flex items-center gap-1.5">

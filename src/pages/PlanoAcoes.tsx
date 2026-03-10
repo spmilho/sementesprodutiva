@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useNotificacaoNav } from "@/contexts/NotificacaoNavContext";
 import { Plus, Settings, Eye, EyeOff, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -19,12 +20,14 @@ export default function PlanoAcoes() {
   const { isAdmin } = useRole();
   const { hasAccess, loading: accessLoading } = usePlanoAcoesAccess();
   const profiles = useProfiles();
+  const { destino, limparDestino } = useNotificacaoNav();
 
   const [mostrarConcluidas, setMostrarConcluidas] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
   const [controlAcessoAberto, setControlAcessoAberto] = useState(false);
   const [acaoEditando, setAcaoEditando] = useState<Acao | null>(null);
   const [acaoSelecionada, setAcaoSelecionada] = useState<Acao | null>(null);
+  const [abaDrawer, setAbaDrawer] = useState<"detalhes" | "comentarios">("comentarios");
   const [filtros, setFiltros] = useState<FiltrosState>({
     status: "todos", prioridade: "todos", responsavel: "todos", categoria: "todos", busca: "",
   });
@@ -44,6 +47,26 @@ export default function PlanoAcoes() {
       }
     }
   }, [searchParams, acoes, acaoSelecionada, setSearchParams]);
+
+  // Notification context: open drawer when navigating from notification
+  useEffect(() => {
+    if (!destino || destino.modulo !== "plano_acoes") return;
+    if (loading) return;
+
+    const acao = acoes.find(a => a.id === destino.referenciaId);
+    if (acao) {
+      if (acao.status === "concluida") setMostrarConcluidas(true);
+      setAcaoSelecionada(acao);
+      if (["comentario_acao", "mencao_comentario"].includes(destino.tipo || "")) {
+        setAbaDrawer("comentarios");
+      } else {
+        setAbaDrawer("detalhes");
+      }
+      limparDestino();
+    } else {
+      setMostrarConcluidas(true);
+    }
+  }, [destino, acoes, loading, limparDestino]);
 
   const acoesFiltradas = acoes.filter(a => {
     if (filtros.status !== "todos" && a.status !== filtros.status) return false;
@@ -122,7 +145,11 @@ export default function PlanoAcoes() {
       {acaoSelecionada && (
         <DrawerDetalheAcao
           acao={acaoSelecionada}
-          onClose={() => setAcaoSelecionada(null)}
+          abaInicial={abaDrawer}
+          onClose={() => {
+            setAcaoSelecionada(null);
+            setAbaDrawer("comentarios");
+          }}
           onEditar={() => handleEditar(acaoSelecionada)}
           onRefetch={() => { refetch(); }}
         />

@@ -3,7 +3,8 @@ import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNotificacoes, CONFIG_TIPO, type Notificacao } from "@/hooks/useNotificacoes";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useNotificacaoNav } from "@/contexts/NotificacaoNavContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function SinoNotificacoes() {
@@ -11,6 +12,8 @@ export function SinoNotificacoes() {
   const { notificacoes, naoLidas, loading, marcarLida, marcarTodasLidas } = useNotificacoes();
   const painelRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { navegarPara } = useNotificacaoNav();
 
   // Close on outside click
   useEffect(() => {
@@ -23,12 +26,25 @@ export function SinoNotificacoes() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const ROTA_POR_MODULO: Record<string, string> = {
+    plano_acoes: "/plano-acao",
+  };
+
   const handleClick = async (notif: Notificacao) => {
     if (!notif.lida) await marcarLida(notif.id);
     setAberto(false);
 
-    if (notif.modulo === "plano_acoes" && notif.referencia_id) {
-      navigate(`/plano-acoes?acao=${notif.referencia_id}`);
+    if (!notif.modulo || !notif.referencia_id) return;
+
+    navegarPara({
+      modulo: notif.modulo,
+      referenciaId: notif.referencia_id,
+      tipo: notif.tipo,
+    });
+
+    const rotaAlvo = ROTA_POR_MODULO[notif.modulo];
+    if (rotaAlvo && !location.pathname.startsWith(rotaAlvo)) {
+      navigate(rotaAlvo);
     }
   };
 
