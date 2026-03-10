@@ -29,14 +29,11 @@ export default function FeedTimeline() {
       const { data, error } = await q;
       if (error) throw error;
 
-      // Fetch author profiles separately (FK points to auth.users, not profiles)
+      // Fetch author names via SECURITY DEFINER RPC (bypasses profiles RLS)
       const authorIds = [...new Set((data ?? []).map((p: any) => p.author_user_id).filter(Boolean))];
       let profilesMap: Record<string, any> = {};
       if (authorIds.length > 0) {
-        const { data: profiles } = await (supabase as any)
-          .from("profiles")
-          .select("id, full_name")
-          .in("id", authorIds);
+        const { data: profiles } = await (supabase as any).rpc("get_profiles_by_ids", { _ids: authorIds });
         (profiles ?? []).forEach((p: any) => { profilesMap[p.id] = p; });
       }
 
