@@ -126,9 +126,8 @@ export default function FeedPostCard({ post }: Props) {
                 className="w-full h-full object-contain"
               />
             ) : (
-              <img
+              <FeedImage
                 src={media[mediaIndex].media_url}
-                alt=""
                 className="w-full h-full object-cover"
               />
             )}
