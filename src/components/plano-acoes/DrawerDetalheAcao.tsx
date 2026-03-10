@@ -247,6 +247,10 @@ export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch }: Props)
                   <Field label="QUANDO" value={format(new Date(acao.when_prazo + "T12:00:00"), "dd/MM/yyyy")} />
                   <Field label="CATEGORIA" value={acao.categoria || "—"} />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="IMPACTO" value={(acao as any).impacto === "alto" ? "↑ Alto" : (acao as any).impacto === "baixo" ? "↓ Baixo" : "~ Médio"} />
+                  <Field label="ESFORÇO" value={(acao as any).esforco === "alto" ? "◆ Alto" : (acao as any).esforco === "baixo" ? "◆ Baixo" : "◆ Médio"} />
+                </div>
                 <Field label="COMO" value={acao.how} />
                 {acao.how_much && <Field label="QUANTO CUSTA" value={acao.how_much} />}
               </div>

@@ -178,6 +178,32 @@ export function ModalCriarEditar({ open, onClose, acao }: Props) {
               </Select>
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Impacto</Label>
+              <Select value={impacto} onValueChange={setImpacto}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="alto">↑ Alto impacto</SelectItem>
+                  <SelectItem value="medio">~ Médio impacto</SelectItem>
+                  <SelectItem value="baixo">↓ Baixo impacto</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Qual o ganho esperado?</p>
+            </div>
+            <div>
+              <Label>Esforço</Label>
+              <Select value={esforco} onValueChange={setEsforco}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="alto">◆ Alto esforço</SelectItem>
+                  <SelectItem value="medio">◆ Médio esforço</SelectItem>
+                  <SelectItem value="baixo">◆ Baixo esforço</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Quanto custa executar?</p>
+            </div>
+          </div>
           <div>
             <Label>COMO (How) *</Label>
             <Textarea placeholder="Passos, método, plano de execução" value={how} onChange={e => setHow(e.target.value)} />

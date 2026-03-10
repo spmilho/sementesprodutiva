@@ -81,9 +81,19 @@ export function TabelaAcoes({ acoes, onSelecionar, onEditar, onRefetch }: Props)
             >
               <TableCell><BadgePrioridade p={a.prioridade} /></TableCell>
               <TableCell>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className={a.status === "concluida" ? "line-through" : ""}>{a.what}</span>
                   {a.categoria && <span className="text-xs text-muted-foreground">· {a.categoria}</span>}
+                  {(a as any).impacto && (a as any).impacto !== "medio" && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${(a as any).impacto === "alto" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                      {(a as any).impacto === "alto" ? "↑ Impacto" : "↓ Impacto"}
+                    </span>
+                  )}
+                  {(a as any).esforco && (a as any).esforco !== "medio" && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${(a as any).esforco === "baixo" ? "bg-green-500/10 text-green-600" : "bg-destructive/10 text-destructive"}`}>
+                      {(a as any).esforco === "baixo" ? "◆ Fácil" : "◆ Difícil"}
+                    </span>
+                  )}
                 </div>
               </TableCell>
               <TableCell className="text-sm">{a.responsavel?.full_name || "—"}</TableCell>

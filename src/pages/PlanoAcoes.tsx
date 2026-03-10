@@ -96,14 +96,26 @@ export default function PlanoAcoes() {
         </div>
       </div>
 
-      <DashboardAcoes acoes={acoes} />
-      <FiltrosAcoes filtros={filtros} onChange={setFiltros} responsaveis={profiles} />
+      <Tabs defaultValue="lista">
+        <TabsList>
+          <TabsTrigger value="lista">📋 Lista</TabsTrigger>
+          <TabsTrigger value="matriz">🎯 Matriz</TabsTrigger>
+        </TabsList>
 
-      {loading ? (
-        <p className="text-center text-muted-foreground py-8">Carregando ações...</p>
-      ) : (
-        <TabelaAcoes acoes={acoesFiltradas} onSelecionar={setAcaoSelecionada} onEditar={handleEditar} onRefetch={refetch} />
-      )}
+        <TabsContent value="lista" className="space-y-4 mt-4">
+          <DashboardAcoes acoes={acoes} />
+          <FiltrosAcoes filtros={filtros} onChange={setFiltros} responsaveis={profiles} />
+          {loading ? (
+            <p className="text-center text-muted-foreground py-8">Carregando ações...</p>
+          ) : (
+            <TabelaAcoes acoes={acoesFiltradas} onSelecionar={setAcaoSelecionada} onEditar={handleEditar} onRefetch={refetch} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="matriz" className="mt-4">
+          <MatrizImpactoEsforco acoes={acoes} onAbrirDetalhe={setAcaoSelecionada} />
+        </TabsContent>
+      </Tabs>
 
       <ModalCriarEditar open={modalAberto} onClose={handleFecharModal} acao={acaoEditando} />
 
