@@ -30,7 +30,7 @@ export default function FeedCommentsDrawer({ open, onClose, postId }: Props) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("feed_comments")
-        .select("*")
+        .select("*, autor:user_id(id, full_name)")
         .eq("post_id", postId)
         .eq("is_deleted", false)
         .order("created_at", { ascending: true });
@@ -152,13 +152,18 @@ function CommentItem({
   isReply?: boolean;
 }) {
   const isOwner = comment.user_id === userId;
+  const nome = comment.autor?.full_name?.trim() || '';
+  const iniciais = nome
+    ? nome.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
+    : '?';
 
   return (
     <div className="group flex gap-2">
       <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold shrink-0 mt-0.5">
-        {(comment.user_id ?? "?").charAt(0).toUpperCase()}
+        {iniciais}
       </div>
       <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-foreground leading-tight">{nome || 'Desconhecido'}</p>
         <p className="text-sm text-foreground">{comment.comment_text}</p>
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
           <span>{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ptBR })}</span>
