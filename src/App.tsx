@@ -18,6 +18,7 @@ import UbsCapacityPlanning from "./pages/UbsCapacityPlanning";
 import Configuracoes from "./pages/Configuracoes";
 import UserManagement from "./pages/UserManagement";
 import FeedCampo from "./pages/FeedCampo";
+import PlanoAcoes from "./pages/PlanoAcoes";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
@@ -65,6 +66,7 @@ const App = () => (
                     <Route path="/configuracoes" element={<Configuracoes />} />
                     <Route path="/usuarios" element={<UserManagement />} />
                     <Route path="/feed" element={<FeedCampo />} />
+                    <Route path="/plano-acao" element={<PlanoAcoes />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Layout>
