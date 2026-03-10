@@ -30,7 +30,7 @@ export default function FeedCommentsDrawer({ open, onClose, postId }: Props) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("feed_comments")
-        .select("*")
+        .select("*, autor:user_id(id, full_name)")
         .eq("post_id", postId)
         .eq("is_deleted", false)
         .order("created_at", { ascending: true });
