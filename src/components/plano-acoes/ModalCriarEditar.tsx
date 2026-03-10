@@ -40,6 +40,8 @@ export function ModalCriarEditar({ open, onClose, acao }: Props) {
   const [prioridade, setPrioridade] = useState<PrioridadeAcao>("media");
   const [categoria, setCategoria] = useState("");
   const [status, setStatus] = useState<StatusAcao>("aberta");
+  const [impacto, setImpacto] = useState("medio");
+  const [esforco, setEsforco] = useState("medio");
 
   useEffect(() => {
     if (acao) {
