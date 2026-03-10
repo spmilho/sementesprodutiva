@@ -21,6 +21,7 @@ interface Props {
   onClose: () => void;
   onEditar: () => void;
   onRefetch: () => void;
+  abaInicial?: "detalhes" | "comentarios";
 }
 
 interface UsuarioMencao {
