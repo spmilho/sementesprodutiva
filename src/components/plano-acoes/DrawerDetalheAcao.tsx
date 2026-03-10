@@ -221,7 +221,7 @@ export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch, abaInici
           </div>
         </SheetHeader>
 
-        <Tabs defaultValue="comentarios" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs defaultValue={abaInicial} className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="mx-4 grid w-auto grid-cols-2">
             <TabsTrigger value="detalhes">📋 Detalhes</TabsTrigger>
             <TabsTrigger value="comentarios" className="flex items-center gap-1.5">

@@ -142,7 +142,11 @@ export default function PlanoAcoes() {
       {acaoSelecionada && (
         <DrawerDetalheAcao
           acao={acaoSelecionada}
-          onClose={() => setAcaoSelecionada(null)}
+          abaInicial={abaDrawer}
+          onClose={() => {
+            setAcaoSelecionada(null);
+            setAbaDrawer("comentarios");
+          }}
           onEditar={() => handleEditar(acaoSelecionada)}
           onRefetch={() => { refetch(); }}
         />

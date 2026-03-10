@@ -25,12 +25,25 @@ export function SinoNotificacoes() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const ROTA_POR_MODULO: Record<string, string> = {
+    plano_acoes: "/plano-acao",
+  };
+
   const handleClick = async (notif: Notificacao) => {
     if (!notif.lida) await marcarLida(notif.id);
     setAberto(false);
 
-    if (notif.modulo === "plano_acoes" && notif.referencia_id) {
-      navigate(`/plano-acoes?acao=${notif.referencia_id}`);
+    if (!notif.modulo || !notif.referencia_id) return;
+
+    navegarPara({
+      modulo: notif.modulo,
+      referenciaId: notif.referencia_id,
+      tipo: notif.tipo,
+    });
+
+    const rotaAlvo = ROTA_POR_MODULO[notif.modulo];
+    if (rotaAlvo && !location.pathname.startsWith(rotaAlvo)) {
+      navigate(rotaAlvo);
     }
   };
 
