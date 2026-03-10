@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useNotificacaoNav } from "@/contexts/NotificacaoNavContext";
 import { Plus, Settings, Eye, EyeOff, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
