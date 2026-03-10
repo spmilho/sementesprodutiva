@@ -13,7 +13,7 @@ export default function FeedMyPosts({ userId }: Props) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("feed_posts")
-        .select("*, feed_media(*), feed_likes(id, user_id), feed_comments(id)")
+        .select("*, feed_media(*), feed_likes(id, user_id), feed_comments(id, is_deleted)")
         .eq("author_user_id", userId)
         .order("created_at", { ascending: false })
         .limit(50);
