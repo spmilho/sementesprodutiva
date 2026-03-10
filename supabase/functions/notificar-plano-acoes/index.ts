@@ -111,6 +111,52 @@ serve(async (req) => {
       return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ─── MENÇÃO ─────────────────────────────────────────────────────────
+    if (body.tipo === "mencao") {
+      const { acao_what, comentario_texto, autor_nome, mencionados } = body;
+      if (!mencionados?.length) {
+        return new Response(JSON.stringify({ ok: true, msg: "sem mencoes" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Fetch emails for mentioned users
+      const userIds = mencionados.map((m: any) => m.id);
+      const { data: perfis } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .in("id", userIds);
+
+      for (const usuario of mencionados) {
+        const perfil = perfis?.find((p: any) => p.id === usuario.id);
+        const email = perfil?.email;
+        if (!email) continue;
+
+        const html = `
+          <div style="font-family:Arial,sans-serif;max-width:600px;">
+            <div style="background:#518955;padding:20px;border-radius:8px 8px 0 0;">
+              <h2 style="color:white;margin:0;">👋 Você foi mencionado em um comentário</h2>
+            </div>
+            <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
+              <p style="margin:0 0 8px;font-size:14px;">${autor_nome} mencionou você em um comentário da ação:</p>
+              <div style="background:white;border-radius:8px;padding:16px;margin-bottom:16px;">
+                <p style="margin:0 0 4px;font-size:11px;text-transform:uppercase;color:#888;">AÇÃO</p>
+                <p style="margin:0;font-size:15px;font-weight:600;">${acao_what}</p>
+              </div>
+              <div style="background:white;border-radius:8px;padding:16px;margin-bottom:16px;border-left:4px solid #518955;">
+                <p style="margin:0 0 4px;font-size:11px;text-transform:uppercase;color:#888;">COMENTÁRIO</p>
+                <p style="margin:0;font-size:14px;">${comentario_texto}</p>
+              </div>
+              <p style="color:#888;font-size:12px;margin:16px 0 0;border-top:1px solid #eee;padding-top:12px;">
+                Acesse o Arena Produtiva para responder este comentário.
+              </p>
+            </div>
+          </div>`;
+
+        await enviarEmail([email], `👋 ${autor_nome} mencionou você: ${(acao_what || "").substring(0, 50)}`, html);
+      }
+
+      return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ─── NOVO COMENTÁRIO ────────────────────────────────────────────────
     if (body.tipo === "novo_comentario") {
       const { acao_what, comentario_texto, autor_nome } = body;
