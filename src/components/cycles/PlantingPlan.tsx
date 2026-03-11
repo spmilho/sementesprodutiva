@@ -90,7 +90,16 @@ export default function PlantingPlan({
   });
 
   const totalFemale = useMemo(() => plans.filter((p: any) => p.type === "female").reduce((s: number, p: any) => s + p.planned_area, 0), [plans]);
-  const totalMale = useMemo(() => plans.filter((p: any) => p.type === "male").reduce((s: number, p: any) => s + p.planned_area, 0), [plans]);
+  const totalMale = useMemo(() => {
+    const maleRecords = plans.filter((p: any) => p.type === "male" || p.type === "male_1" || p.type === "male_2" || p.type === "male_3");
+    if (maleRecords.length === 0) return 0;
+    const bySubType: Record<string, number> = {};
+    maleRecords.forEach((p: any) => {
+      const st = p.type === "male" ? "male_1" : p.type;
+      bySubType[st] = (bySubType[st] || 0) + (p.planned_area || 0);
+    });
+    return Math.max(...Object.values(bySubType));
+  }, [plans]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),

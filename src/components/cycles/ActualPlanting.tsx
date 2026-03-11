@@ -87,11 +87,29 @@ export default function ActualPlanting({
     },
   });
 
-  // Totals
+  // Totals — male sub-types share same rows, so use MAX not SUM
   const totalFemaleActual = useMemo(() => actuals.filter((a: any) => a.type === "female").reduce((s: number, a: any) => s + a.actual_area, 0), [actuals]);
-  const totalMaleActual = useMemo(() => actuals.filter((a: any) => a.type === "male").reduce((s: number, a: any) => s + a.actual_area, 0), [actuals]);
+  const totalMaleActual = useMemo(() => {
+    const maleRecords = actuals.filter((a: any) => a.type === "male" || a.type === "male_1" || a.type === "male_2" || a.type === "male_3");
+    if (maleRecords.length === 0) return 0;
+    const bySubType: Record<string, number> = {};
+    maleRecords.forEach((a: any) => {
+      const st = a.type === "male" ? "male_1" : a.type;
+      bySubType[st] = (bySubType[st] || 0) + (a.actual_area || 0);
+    });
+    return Math.max(...Object.values(bySubType));
+  }, [actuals]);
   const totalFemalePlanned = useMemo(() => plans.filter((p: any) => p.type === "female").reduce((s: number, p: any) => s + p.planned_area, 0), [plans]);
-  const totalMalePlanned = useMemo(() => plans.filter((p: any) => p.type === "male").reduce((s: number, p: any) => s + p.planned_area, 0), [plans]);
+  const totalMalePlanned = useMemo(() => {
+    const maleRecords = plans.filter((p: any) => p.type === "male" || p.type === "male_1" || p.type === "male_2" || p.type === "male_3");
+    if (maleRecords.length === 0) return 0;
+    const bySubType: Record<string, number> = {};
+    maleRecords.forEach((p: any) => {
+      const st = p.type === "male" ? "male_1" : p.type;
+      bySubType[st] = (bySubType[st] || 0) + (p.planned_area || 0);
+    });
+    return Math.max(...Object.values(bySubType));
+  }, [plans]);
 
   const femaleDeviation = totalFemaleActual - totalFemalePlanned;
   const maleDeviation = totalMaleActual - totalMalePlanned;

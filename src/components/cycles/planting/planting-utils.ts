@@ -66,3 +66,40 @@ export function isFemaleType(type: string) {
 export function isMaleType(type: string) {
   return type === "male" || type === "male_1" || type === "male_2" || type === "male_3";
 }
+
+/**
+ * Calculates total male area correctly: male sub-types (male_1, male_2, male_3)
+ * occupy the SAME physical rows, so their areas should NOT be summed.
+ * Instead, we group by sub-type, sum within each (for multiple glebas), 
+ * and take the MAX across sub-types.
+ */
+export function calcMaleTotalArea(records: any[], areaField: string = "actual_area"): number {
+  const maleRecords = records.filter((r: any) => isMaleType(r.type));
+  if (maleRecords.length === 0) return 0;
+
+  // Group by normalized sub-type
+  const bySubType: Record<string, number> = {};
+  maleRecords.forEach((r: any) => {
+    const subType = r.type === "male" ? "male_1" : r.type;
+    bySubType[subType] = (bySubType[subType] || 0) + (r[areaField] || 0);
+  });
+
+  // Male sub-types share the same rows, so total male area = max of any sub-type
+  return Math.max(...Object.values(bySubType));
+}
+
+/**
+ * Same logic for per-gleba male area calculation.
+ */
+export function calcMaleAreaForGleba(records: any[], glebaId: string, areaField: string = "actual_area"): number {
+  const filtered = records.filter((r: any) => (r.gleba_id || "none") === glebaId && isMaleType(r.type));
+  if (filtered.length === 0) return 0;
+
+  const bySubType: Record<string, number> = {};
+  filtered.forEach((r: any) => {
+    const subType = r.type === "male" ? "male_1" : r.type;
+    bySubType[subType] = (bySubType[subType] || 0) + (r[areaField] || 0);
+  });
+
+  return Math.max(...Object.values(bySubType));
+}

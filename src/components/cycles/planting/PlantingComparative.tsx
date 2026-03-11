@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { isFemaleType, isMaleType, getOverallStatus } from "./planting-utils";
+import { isFemaleType, isMaleType, getOverallStatus, calcMaleTotalArea, calcMaleAreaForGleba } from "./planting-utils";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
@@ -18,9 +18,9 @@ interface Props {
 
 export default function PlantingComparative({ plans, actuals, standCounts, glebas, femaleArea, maleArea }: Props) {
   const totalFemalePlan = useMemo(() => plans.filter((p: any) => isFemaleType(p.type)).reduce((s: number, p: any) => s + p.planned_area, 0), [plans]);
-  const totalMalePlan = useMemo(() => plans.filter((p: any) => isMaleType(p.type)).reduce((s: number, p: any) => s + p.planned_area, 0), [plans]);
+  const totalMalePlan = useMemo(() => calcMaleTotalArea(plans, "planned_area"), [plans]);
   const totalFemaleActual = useMemo(() => actuals.filter((a: any) => isFemaleType(a.type)).reduce((s: number, a: any) => s + a.actual_area, 0), [actuals]);
-  const totalMaleActual = useMemo(() => actuals.filter((a: any) => isMaleType(a.type)).reduce((s: number, a: any) => s + a.actual_area, 0), [actuals]);
+  const totalMaleActual = useMemo(() => calcMaleTotalArea(actuals, "actual_area"), [actuals]);
 
   const chartData = useMemo(() => {
     const glebaIds = new Set<string>();
@@ -30,9 +30,9 @@ export default function PlantingComparative({ plans, actuals, standCounts, gleba
     return Array.from(glebaIds).map(gid => {
       const name = gid === "none" ? "Geral" : glebas.find((g: any) => g.id === gid)?.name || "Geral";
       const planF = plans.filter((p: any) => (p.gleba_id || "none") === gid && isFemaleType(p.type)).reduce((s: number, p: any) => s + p.planned_area, 0);
-      const planM = plans.filter((p: any) => (p.gleba_id || "none") === gid && isMaleType(p.type)).reduce((s: number, p: any) => s + p.planned_area, 0);
+      const planM = calcMaleAreaForGleba(plans, gid, "planned_area");
       const realF = actuals.filter((a: any) => (a.gleba_id || "none") === gid && isFemaleType(a.type)).reduce((s: number, a: any) => s + a.actual_area, 0);
-      const realM = actuals.filter((a: any) => (a.gleba_id || "none") === gid && isMaleType(a.type)).reduce((s: number, a: any) => s + a.actual_area, 0);
+      const realM = calcMaleAreaForGleba(actuals, gid, "actual_area");
       return { name, planF, planM, realF, realM };
     });
   }, [plans, actuals, glebas]);
