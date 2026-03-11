@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { isFemaleType, isMaleType, getOverallStatus } from "./planting-utils";
+import { isFemaleType, isMaleType, getOverallStatus, calcMaleTotalArea, calcMaleAreaForGleba } from "./planting-utils";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
