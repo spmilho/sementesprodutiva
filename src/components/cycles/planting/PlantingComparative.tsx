@@ -18,9 +18,9 @@ interface Props {
 
 export default function PlantingComparative({ plans, actuals, standCounts, glebas, femaleArea, maleArea }: Props) {
   const totalFemalePlan = useMemo(() => plans.filter((p: any) => isFemaleType(p.type)).reduce((s: number, p: any) => s + p.planned_area, 0), [plans]);
-  const totalMalePlan = useMemo(() => plans.filter((p: any) => isMaleType(p.type)).reduce((s: number, p: any) => s + p.planned_area, 0), [plans]);
+  const totalMalePlan = useMemo(() => calcMaleTotalArea(plans, "planned_area"), [plans]);
   const totalFemaleActual = useMemo(() => actuals.filter((a: any) => isFemaleType(a.type)).reduce((s: number, a: any) => s + a.actual_area, 0), [actuals]);
-  const totalMaleActual = useMemo(() => actuals.filter((a: any) => isMaleType(a.type)).reduce((s: number, a: any) => s + a.actual_area, 0), [actuals]);
+  const totalMaleActual = useMemo(() => calcMaleTotalArea(actuals, "actual_area"), [actuals]);
 
   const chartData = useMemo(() => {
     const glebaIds = new Set<string>();
