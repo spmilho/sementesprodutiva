@@ -30,9 +30,9 @@ export default function PlantingComparative({ plans, actuals, standCounts, gleba
     return Array.from(glebaIds).map(gid => {
       const name = gid === "none" ? "Geral" : glebas.find((g: any) => g.id === gid)?.name || "Geral";
       const planF = plans.filter((p: any) => (p.gleba_id || "none") === gid && isFemaleType(p.type)).reduce((s: number, p: any) => s + p.planned_area, 0);
-      const planM = plans.filter((p: any) => (p.gleba_id || "none") === gid && isMaleType(p.type)).reduce((s: number, p: any) => s + p.planned_area, 0);
+      const planM = calcMaleAreaForGleba(plans, gid, "planned_area");
       const realF = actuals.filter((a: any) => (a.gleba_id || "none") === gid && isFemaleType(a.type)).reduce((s: number, a: any) => s + a.actual_area, 0);
-      const realM = actuals.filter((a: any) => (a.gleba_id || "none") === gid && isMaleType(a.type)).reduce((s: number, a: any) => s + a.actual_area, 0);
+      const realM = calcMaleAreaForGleba(actuals, gid, "actual_area");
       return { name, planF, planM, realF, realM };
     });
   }, [plans, actuals, glebas]);
