@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { calcStats, getCvLabel, getOverallStatus, isFemaleType, isMaleType, getPlantingTypeInfo } from "./planting-utils";
+import { calcStats, getCvLabel, getOverallStatus, isFemaleType, isMaleType, getPlantingTypeInfo, calcMaleAreaForGleba } from "./planting-utils";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ResponsiveContainer,
 } from "recharts";
