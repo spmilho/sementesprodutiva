@@ -15,6 +15,7 @@ import ContratoAcessoModal from "@/components/contratos/ContratoAcessoModal";
 
 export default function Configuracoes() {
   const { isAdmin, isManager, loading } = useRole();
+  const [showContratoAccess, setShowContratoAccess] = useState(false);
 
   if (loading) return <div className="p-8 text-muted-foreground">Carregando...</div>;
   if (!isAdmin && !isManager) return <Navigate to="/" replace />;
