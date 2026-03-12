@@ -60,7 +60,6 @@ export default function Configuracoes() {
               <FileSignature className="h-3.5 w-3.5" /> Acesso Contratos
             </TabsTrigger>
           )}
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="organization">
