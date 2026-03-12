@@ -240,7 +240,7 @@ export default function CycleDetail() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <SummaryCard label="Área Total" value={`${cycle.total_area} ha`} />
+        <SummaryCard label="Área Total" value={`${cycle.pivot_area ?? cycle.total_area} ha`} />
         <SummaryCard label="Área Fêmea" value={`${cycle.female_area} ha`} />
         <SummaryCard label="Área Macho" value={`${cycle.male_area} ha`} />
         <SummaryCard label="Produção Esperada" value={expectedProduction} />
