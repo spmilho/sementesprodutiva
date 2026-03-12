@@ -406,7 +406,7 @@ export default function Dashboard() {
         <KPICard title="Plantio ♀" value={`${femalePlantingPct}%`} icon={Sprout} progress={femalePlantingPct} description="ponderado por área" />
         <KPICard title="Plantio ♂" value={`${malePlantingPct}%`} icon={Sprout} progress={malePlantingPct} description="ponderado por área" />
         <KPICard title="Despendoamento" value={`${detasselingPct}%`} icon={Scissors} progress={detasselingPct} description="1ª passada" />
-        <KPICard title="Colheita" value={`${harvestedArea} / ${totalFemaleArea} ha`} icon={Wheat} progress={harvestPct} description={`${harvestPct}%`} />
+        <KPICard title="Colheita" value={`${harvestedArea} / ${totalHarvestArea} ha`} icon={Wheat} progress={harvestPct} description={`${harvestPct}%`} />
         <KPICard title="Produção" value={`${totalProduction} t`} icon={Target} description="acumulada" />
       </div>
 
