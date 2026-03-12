@@ -168,7 +168,7 @@ export default function CycleDetail() {
                 <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400">sem contrato</Badge>
               </div>
             )}
-            {!editingContract && (
+            {!editingContract && !isClient && (
               <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => setEditingContract(true)}>
                 {cycle.contract_number ? "editar" : "adicionar contrato"}
               </Button>
