@@ -49,7 +49,7 @@ function ContractIdentifier({ contractNumber, fieldName }: { contractNumber?: st
 export default function Cycles() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAdmin } = useRole();
+  const { isAdmin, isClient } = useRole();
   const [search, setSearch] = useState("");
   const [filterSeason, setFilterSeason] = useState("all");
   const [filterClient, setFilterClient] = useState("all");
