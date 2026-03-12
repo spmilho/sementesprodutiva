@@ -49,6 +49,7 @@ interface NdviSectionProps {
   orgId: string;
   pivotId?: string;
   pivotName: string;
+  hybridName?: string;
   phenologyRecords: any[];
 }
 
