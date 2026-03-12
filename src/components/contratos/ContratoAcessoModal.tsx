@@ -33,7 +33,7 @@ export default function ContratoAcessoModal({ open, onClose }: Props) {
     const list = (profiles || [])
       .filter((p: any) => p.id !== user?.id)
       .map((p: any) => {
-        const acc = acessoMap.get(p.id);
+        const acc: any = acessoMap.get(p.id);
         return {
           id: p.id,
           full_name: p.full_name,
