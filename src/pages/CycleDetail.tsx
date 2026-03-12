@@ -399,6 +399,7 @@ export default function CycleDetail() {
           />
         </TabsContent>
 
+        <TabsContent value="estimativa">
           <YieldEstimateTab
             cycleId={id!}
             orgId={cycle.org_id}
