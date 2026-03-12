@@ -42,6 +42,7 @@ const schema = z.object({
   actual_area: z.coerce.number().positive("Área deve ser > 0"),
   row_spacing: z.coerce.number().int().positive().default(70),
   seeds_per_meter: z.coerce.number().positive().optional().or(z.literal("")),
+  cv_percent: z.coerce.number().min(0).optional().or(z.literal("")),
   planter_speed: z.coerce.number().positive().optional().or(z.literal("")),
   sowing_depth_cm: z.coerce.number().positive().optional().or(z.literal("")),
   soil_condition: z.string().optional(),
