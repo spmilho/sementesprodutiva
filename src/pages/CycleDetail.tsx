@@ -328,15 +328,16 @@ export default function CycleDetail() {
           />
         </TabsContent>
 
-        <TabsContent value="nutricao">
-          <Nutrition
+        <TabsContent value="manejo">
+          <ManejoTab
             cycleId={id!}
             orgId={cycle.org_id}
             contractNumber={cycle.contract_number}
             pivotName={cycle.field_name}
             hybridName={cycle.hybrid_name}
             cooperatorName={(cycle as any).cooperators?.name}
-            totalArea={cycle.total_area}
+            totalArea={cycle.pivot_area ?? cycle.total_area}
+            femaleArea={cycle.female_area}
           />
         </TabsContent>
 
@@ -352,7 +353,6 @@ export default function CycleDetail() {
             pivotId={cycle.pivot_id}
           />
         </TabsContent>
-
 
         <TabsContent value="nicking">
           <NickingSync
@@ -382,10 +382,6 @@ export default function CycleDetail() {
 
         <TabsContent value="roguing">
           <Roguing cycleId={id!} orgId={cycle.org_id} />
-        </TabsContent>
-
-        <TabsContent value="manejo">
-          <ChemicalApplications cycleId={id!} orgId={cycle.org_id} />
         </TabsContent>
 
         <TabsContent value="pragas">
