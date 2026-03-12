@@ -99,7 +99,7 @@ export default function Dashboard() {
     let totalArea = 0, plantedArea = 0;
     for (const c of filtered) {
       if (["completed", "cancelled"].includes(c.status)) continue;
-      totalArea += c.female_area;
+      totalArea += c.total_area;
       const actuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && (a.type === "female"));
       plantedArea += actuals.reduce((s: number, a: any) => s + (a.actual_area || 0), 0);
     }
@@ -111,7 +111,7 @@ export default function Dashboard() {
     let totalArea = 0, plantedArea = 0;
     for (const c of filtered) {
       if (["completed", "cancelled"].includes(c.status)) continue;
-      totalArea += c.male_area;
+      totalArea += c.total_area;
       const actuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && (a.type === "male" || a.type === "male_1" || a.type === "male_2" || a.type === "male_3"));
       plantedArea += actuals.reduce((s: number, a: any) => s + (a.actual_area || 0), 0);
     }
@@ -124,7 +124,7 @@ export default function Dashboard() {
     if (relevantCycles.length === 0) return 0;
     let totalArea = 0, workedArea = 0;
     for (const c of relevantCycles) {
-      totalArea += c.female_area;
+      totalArea += c.total_area;
       const records = detasseling.filter((d: any) => d.cycle_id === c.id);
       workedArea += records.reduce((s: number, d: any) => s + (d.area_worked_ha || 0), 0);
     }
@@ -132,18 +132,18 @@ export default function Dashboard() {
   }, [filtered, detasseling]);
 
   // Área colhida
-  const { harvestedArea, totalFemaleArea } = useMemo(() => {
+  const { harvestedArea, totalHarvestArea } = useMemo(() => {
     let harvested = 0, total = 0;
     for (const c of filtered) {
       if (["cancelled"].includes(c.status)) continue;
-      total += c.female_area;
+      total += c.total_area;
       const records = harvestRecords.filter((h: any) => h.cycle_id === c.id);
       harvested += records.reduce((s: number, h: any) => s + (h.area_harvested_ha || 0), 0);
     }
-    return { harvestedArea: Math.round(harvested * 10) / 10, totalFemaleArea: Math.round(total * 10) / 10 };
+    return { harvestedArea: Math.round(harvested * 10) / 10, totalHarvestArea: Math.round(total * 10) / 10 };
   }, [filtered, harvestRecords]);
 
-  const harvestPct = totalFemaleArea > 0 ? Math.round((harvestedArea / totalFemaleArea) * 100) : 0;
+  const harvestPct = totalHarvestArea > 0 ? Math.round((harvestedArea / totalHarvestArea) * 100) : 0;
 
   // Produção total
   const totalProduction = useMemo(() => {
@@ -406,7 +406,7 @@ export default function Dashboard() {
         <KPICard title="Plantio ♀" value={`${femalePlantingPct}%`} icon={Sprout} progress={femalePlantingPct} description="ponderado por área" />
         <KPICard title="Plantio ♂" value={`${malePlantingPct}%`} icon={Sprout} progress={malePlantingPct} description="ponderado por área" />
         <KPICard title="Despendoamento" value={`${detasselingPct}%`} icon={Scissors} progress={detasselingPct} description="1ª passada" />
-        <KPICard title="Colheita" value={`${harvestedArea} / ${totalFemaleArea} ha`} icon={Wheat} progress={harvestPct} description={`${harvestPct}%`} />
+        <KPICard title="Colheita" value={`${harvestedArea} / ${totalHarvestArea} ha`} icon={Wheat} progress={harvestPct} description={`${harvestPct}%`} />
         <KPICard title="Produção" value={`${totalProduction} t`} icon={Target} description="acumulada" />
       </div>
 
@@ -449,7 +449,7 @@ export default function Dashboard() {
                   <Tooltip />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Line type="monotone" dataKey="acumReal" name="Realizado" stroke={CHART_COLORS.accent} strokeWidth={2.5} dot={{ r: 3 }} />
-                  <ReferenceLine y={totalFemaleArea} stroke={CHART_COLORS.muted} strokeDasharray="5 5" label={{ value: `Meta: ${totalFemaleArea} ha`, fontSize: 10 }} />
+                  <ReferenceLine y={totalHarvestArea} stroke={CHART_COLORS.muted} strokeDasharray="5 5" label={{ value: `Meta: ${totalHarvestArea} ha`, fontSize: 10 }} />
                 </ComposedChart>
               </ResponsiveContainer>
             ) : (
