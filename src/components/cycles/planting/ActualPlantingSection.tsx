@@ -133,7 +133,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
         actual_area: values.actual_area,
         row_spacing: values.row_spacing,
         seeds_per_meter: values.seeds_per_meter || null,
-        cv_percent: values.cv_percent || null,
+        
         planter_speed: values.planter_speed || null,
         sowing_depth_cm: values.sowing_depth_cm || null,
         soil_condition: values.soil_condition || null,
