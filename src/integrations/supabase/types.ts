@@ -1858,6 +1858,82 @@ export type Database = {
           },
         ]
       }
+      irrigation_records: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          depth_mm: number
+          duration_hours: number | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          sector: string | null
+          source: string
+          source_file_id: string | null
+          start_date: string
+          system_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          depth_mm: number
+          duration_hours?: number | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          sector?: string | null
+          source?: string
+          source_file_id?: string | null
+          start_date: string
+          system_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          depth_mm?: number
+          duration_hours?: number | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          sector?: string | null
+          source?: string
+          source_file_id?: string | null
+          start_date?: string
+          system_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "irrigation_records_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "irrigation_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "irrigation_records_source_file_id_fkey"
+            columns: ["source_file_id"]
+            isOneToOne: false
+            referencedRelation: "water_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       moisture_samples: {
         Row: {
           created_at: string
@@ -3565,6 +3641,73 @@ export type Database = {
           },
         ]
       }
+      rainfall_records: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          id: string
+          method: string | null
+          notes: string | null
+          org_id: string
+          precipitation_mm: number
+          record_date: string
+          source: string
+          source_file_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          id?: string
+          method?: string | null
+          notes?: string | null
+          org_id: string
+          precipitation_mm: number
+          record_date: string
+          source?: string
+          source_file_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          id?: string
+          method?: string | null
+          notes?: string | null
+          org_id?: string
+          precipitation_mm?: number
+          record_date?: string
+          source?: string
+          source_file_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rainfall_records_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rainfall_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rainfall_records_source_file_id_fkey"
+            columns: ["source_file_id"]
+            isOneToOne: false
+            referencedRelation: "water_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roguing_records: {
         Row: {
           affected_area_m2: number | null
@@ -4281,6 +4424,78 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_files: {
+        Row: {
+          content_type: string
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          description: string | null
+          extracted_html: string | null
+          extracted_images: string[] | null
+          file_name: string
+          file_size_bytes: number
+          file_type: string
+          file_url: string
+          id: string
+          org_id: string
+          parsed_data: Json | null
+          reference_date: string | null
+        }
+        Insert: {
+          content_type?: string
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          description?: string | null
+          extracted_html?: string | null
+          extracted_images?: string[] | null
+          file_name: string
+          file_size_bytes?: number
+          file_type: string
+          file_url: string
+          id?: string
+          org_id: string
+          parsed_data?: Json | null
+          reference_date?: string | null
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          description?: string | null
+          extracted_html?: string | null
+          extracted_images?: string[] | null
+          file_name?: string
+          file_size_bytes?: number
+          file_type?: string
+          file_url?: string
+          id?: string
+          org_id?: string
+          parsed_data?: Json | null
+          reference_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_files_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_files_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
