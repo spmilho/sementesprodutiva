@@ -9,6 +9,7 @@ import PlantingPlanSection from "./PlantingPlanSection";
 import ActualPlantingSection from "./ActualPlantingSection";
 import StandCountSection from "./StandCountSection";
 import PlantingComparative from "./PlantingComparative";
+import PlantingCvSection from "./PlantingCvSection";
 import { PLANTING_TYPES } from "./planting-utils";
 
 export interface UnifiedPlantingTabProps {
