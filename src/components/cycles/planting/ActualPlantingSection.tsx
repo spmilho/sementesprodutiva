@@ -147,17 +147,9 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
         if (error) throw error;
       }
     },
-    onSuccess: (_data: any, variables: FormValues) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planting_actual", cycleId] });
-      queryClient.invalidateQueries({ queryKey: ["planting_cv_points", cycleId] });
-      if (!editingId) {
-        // Auto-expand the latest record to show CV% points
-        setTimeout(() => {
-          const latest = actuals[actuals.length - 1];
-          if (latest) setExpandedId(latest.id);
-        }, 500);
-      }
-      toast.success(editingId ? "Plantio atualizado!" : "Plantio registrado! Expanda a linha para adicionar pontos de CV%.");
+      toast.success(editingId ? "Plantio atualizado!" : "Plantio registrado!");
       setDialogOpen(false);
     },
     onError: (err: any) => toast.error(err.message),
