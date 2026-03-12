@@ -73,7 +73,7 @@ interface NdviStats {
 type DateFilterMode = "planting" | "custom" | "all";
 
 export default function NdviSection({
-  cycleId, orgId, pivotId, pivotName, phenologyRecords,
+  cycleId, orgId, pivotId, pivotName, hybridName, phenologyRecords,
 }: NdviSectionProps) {
   const queryClient = useQueryClient();
   const [opacity, setOpacity] = useState(70);
