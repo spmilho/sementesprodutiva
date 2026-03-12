@@ -60,7 +60,7 @@ export default function CycleDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAdmin } = useRole();
+  const { isAdmin, isClient } = useRole();
   const [editingContract, setEditingContract] = useState(false);
   const contractInputRef = useRef<HTMLInputElement>(null);
 
@@ -168,7 +168,7 @@ export default function CycleDetail() {
                 <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400">sem contrato</Badge>
               </div>
             )}
-            {!editingContract && (
+            {!editingContract && !isClient && (
               <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => setEditingContract(true)}>
                 {cycle.contract_number ? "editar" : "adicionar contrato"}
               </Button>
@@ -200,40 +200,42 @@ export default function CycleDetail() {
             <span>Safra {cycle.season}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {isAdmin && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10">
-                  <Trash2 className="h-4 w-4 mr-1" /> Excluir
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir ciclo?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Tem certeza que deseja excluir o ciclo <strong>{cycle.contract_number || cycle.field_name}</strong> ({cycle.hybrid_name})?
-                    Todos os dados associados ficarão inacessíveis. Esta ação não pode ser desfeita.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={() => deleteCycleMutation.mutate()}
-                    disabled={deleteCycleMutation.isPending}
-                  >
-                    Excluir
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-          <Select value={cycle.status} onValueChange={(v) => statusMutation.mutate(v)}>
-            <SelectTrigger className="w-[160px] h-9"><SelectValue /></SelectTrigger>
-            <SelectContent>{Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
+        {!isClient && (
+          <div className="flex items-center gap-2 shrink-0">
+            {isAdmin && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                    <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir ciclo?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja excluir o ciclo <strong>{cycle.contract_number || cycle.field_name}</strong> ({cycle.hybrid_name})?
+                      Todos os dados associados ficarão inacessíveis. Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={() => deleteCycleMutation.mutate()}
+                      disabled={deleteCycleMutation.isPending}
+                    >
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            <Select value={cycle.status} onValueChange={(v) => statusMutation.mutate(v)}>
+              <SelectTrigger className="w-[160px] h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>{Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}

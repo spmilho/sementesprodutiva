@@ -49,7 +49,7 @@ function ContractIdentifier({ contractNumber, fieldName }: { contractNumber?: st
 export default function Cycles() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAdmin } = useRole();
+  const { isAdmin, isClient } = useRole();
   const [search, setSearch] = useState("");
   const [filterSeason, setFilterSeason] = useState("all");
   const [filterClient, setFilterClient] = useState("all");
@@ -130,9 +130,11 @@ export default function Cycles() {
           <h1 className="text-2xl font-bold text-foreground">Ciclos de Produção</h1>
           <p className="text-sm text-muted-foreground">{cycles.length} ciclos cadastrados</p>
         </div>
-        <Button className="gap-2" onClick={() => navigate("/ciclos/novo")}>
-          <Plus className="h-4 w-4" /> Novo Ciclo
-        </Button>
+        {!isClient && (
+          <Button className="gap-2" onClick={() => navigate("/ciclos/novo")}>
+            <Plus className="h-4 w-4" /> Novo Ciclo
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
