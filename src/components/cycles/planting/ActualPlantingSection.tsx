@@ -218,9 +218,6 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                       <TableCell className="text-sm text-right">{a.actual_area}</TableCell>
                       <TableCell className="text-sm text-right">{a.row_spacing || "—"}</TableCell>
                       <TableCell className="text-sm text-right font-mono">{a.seeds_per_meter || "—"}</TableCell>
-                      <TableCell className="text-sm text-right">
-                        {cvLabel ? <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cvLabel.bg)}>{cvVal.toFixed(1)}%</span> : <span className="text-xs text-muted-foreground">—</span>}
-                      </TableCell>
                       <TableCell className="text-sm text-right hidden md:table-cell">{a.planter_speed || "—"}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-1">
