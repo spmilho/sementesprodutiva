@@ -1,12 +1,15 @@
 import { useMemo } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import PlantingDashboard from "./PlantingDashboard";
 import PlantingPlanSection from "./PlantingPlanSection";
 import ActualPlantingSection from "./ActualPlantingSection";
 import StandCountSection from "./StandCountSection";
 import PlantingComparative from "./PlantingComparative";
+import { PLANTING_TYPES } from "./planting-utils";
 
 export interface UnifiedPlantingTabProps {
   cycleId: string;
@@ -19,7 +22,10 @@ export interface UnifiedPlantingTabProps {
   hybridName?: string;
   malePlantingFinished?: boolean;
   femalePlantingFinished?: boolean;
-  onFinishToggle?: (type: "male" | "female", finished: boolean) => void;
+  male1PlantingFinished?: boolean;
+  male2PlantingFinished?: boolean;
+  male3PlantingFinished?: boolean;
+  onFinishToggle?: (type: string, finished: boolean) => void;
   spacingFemaleFemaleCm?: number | null;
   spacingFemaleMaleCm?: number | null;
   spacingMaleMaleCm?: number | null;
