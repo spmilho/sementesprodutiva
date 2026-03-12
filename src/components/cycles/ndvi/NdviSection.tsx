@@ -377,12 +377,29 @@ export default function NdviSection({
   // Chart data
   const showAllWithPlanting = dateFilterMode === "all" && plantingTimestamp !== null;
   
+  // Build a map of date (dd/MM) → stage label from phenology records
+  const phenoDateStageMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const r of phenologyRecords) {
+      const d = format(new Date(r.observation_date + "T12:00:00"), "dd/MM");
+      // If multiple stages on same date, concatenate
+      if (map[d]) {
+        if (!map[d].includes(r.stage)) map[d] += `/${r.stage}`;
+      } else {
+        map[d] = r.stage;
+      }
+    }
+    return map;
+  }, [phenologyRecords]);
+
   const chartData = useMemo(() => {
     const timeline = dateFilterMode === "all" ? ndviTimeline : filteredTimeline;
     return timeline.map((point) => {
       const isPrePlanting = showAllWithPlanting && plantingTimestamp && point.dt < plantingTimestamp;
+      const dateLabel = format(fromUnixTime(point.dt), "dd/MM");
+      const stage = phenoDateStageMap[dateLabel] || null;
       return {
-        date: format(fromUnixTime(point.dt), "dd/MM"),
+        date: dateLabel,
         fullDate: format(fromUnixTime(point.dt), "dd/MM/yyyy"),
         rawDate: fromUnixTime(point.dt),
         dt: point.dt,
@@ -390,9 +407,10 @@ export default function NdviSection({
         min: point.min ? Number(Number(point.min).toFixed(3)) : null,
         max: point.max ? Number(Number(point.max).toFixed(3)) : null,
         isPrePlanting,
+        stage,
       };
     });
-  }, [ndviTimeline, filteredTimeline, dateFilterMode, showAllWithPlanting, plantingTimestamp]);
+  }, [ndviTimeline, filteredTimeline, dateFilterMode, showAllWithPlanting, plantingTimestamp, phenoDateStageMap]);
 
   // Planting date formatted for chart reference line
   const plantingChartDate = plantingDateObj ? format(plantingDateObj, "dd/MM") : null;
