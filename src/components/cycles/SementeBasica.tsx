@@ -687,23 +687,6 @@ export default function SementeBasica({
         </div>
       )}
 
-      {/* TS Progress */}
-      {lots.length > 0 && (
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Lotes com TS completo</span>
-              <span className="font-medium">{lotsWithTs.length} de {lots.length}</span>
-            </div>
-            <Progress value={tsProgress} className="h-2" />
-            {lotsPendingTs.length > 0 && (
-              <div className="text-xs text-muted-foreground mt-1">
-                Pendentes: {lotsPendingTs.map((l: any) => l.lot_number).join(", ")}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* ═══════ DIALOG: CADASTRAR LOTE ═══════ */}
       <Dialog open={lotDialogOpen} onOpenChange={setLotDialogOpen}>
