@@ -157,31 +157,43 @@ export default function Dashboard() {
 
   // ═══ CHARTS ═══
 
-  // Plantio: accumulated planned vs actual by date
+  // Plantio: accumulated planned vs actual by date, split by F/M1/M2
   const plantingChartData = useMemo(() => {
-    const plans = plantingPlans.filter((p: any) => cycleIds.has(p.cycle_id) && p.type === "female");
-    const actuals = plantingActuals.filter((a: any) => cycleIds.has(a.cycle_id) && a.type === "female");
-    const dateMap = new Map<string, { planned: number; actual: number }>();
-    for (const p of plans) {
-      if (!p.planned_date) continue;
-      const d = p.planned_date;
-      const entry = dateMap.get(d) || { planned: 0, actual: 0 };
-      entry.planned += p.planned_area || 0;
-      dateMap.set(d, entry);
-    }
-    for (const a of actuals) {
-      if (!a.planting_date) continue;
-      const d = a.planting_date;
-      const entry = dateMap.get(d) || { planned: 0, actual: 0 };
-      entry.actual += a.actual_area || 0;
-      dateMap.set(d, entry);
+    const typeGroups = [
+      { key: "female", filter: (t: string) => t === "female" },
+      { key: "male_1", filter: (t: string) => t === "male" || t === "male_1" },
+      { key: "male_2", filter: (t: string) => t === "male_2" },
+    ];
+    const dateMap = new Map<string, Record<string, number>>();
+    for (const g of typeGroups) {
+      const plans = plantingPlans.filter((p: any) => cycleIds.has(p.cycle_id) && g.filter(p.type));
+      const actuals = plantingActuals.filter((a: any) => cycleIds.has(a.cycle_id) && g.filter(a.type));
+      for (const p of plans) {
+        if (!p.planned_date) continue;
+        const entry = dateMap.get(p.planned_date) || {};
+        entry[`plan_${g.key}`] = (entry[`plan_${g.key}`] || 0) + (p.planned_area || 0);
+        dateMap.set(p.planned_date, entry);
+      }
+      for (const a of actuals) {
+        if (!a.planting_date) continue;
+        const entry = dateMap.get(a.planting_date) || {};
+        entry[`real_${g.key}`] = (entry[`real_${g.key}`] || 0) + (a.actual_area || 0);
+        dateMap.set(a.planting_date, entry);
+      }
     }
     const sorted = [...dateMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-    let accPlan = 0, accReal = 0;
+    const acc: Record<string, number> = { plan_female: 0, real_female: 0, plan_male_1: 0, real_male_1: 0, plan_male_2: 0, real_male_2: 0 };
     return sorted.map(([date, v]) => {
-      accPlan += v.planned;
-      accReal += v.actual;
-      return { date: format(parseISO(date), "dd/MM"), acumPlan: Math.round(accPlan * 10) / 10, acumReal: Math.round(accReal * 10) / 10 };
+      for (const k of Object.keys(acc)) acc[k] += v[k] || 0;
+      return {
+        date: format(parseISO(date), "dd/MM"),
+        planF: Math.round(acc.plan_female * 10) / 10,
+        realF: Math.round(acc.real_female * 10) / 10,
+        planM1: Math.round(acc.plan_male_1 * 10) / 10,
+        realM1: Math.round(acc.real_male_1 * 10) / 10,
+        planM2: Math.round(acc.plan_male_2 * 10) / 10,
+        realM2: Math.round(acc.real_male_2 * 10) / 10,
+      };
     });
   }, [plantingPlans, plantingActuals, cycleIds]);
 
@@ -414,19 +426,26 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">Plantio ♀: Acumulado Plan. × Real (ha)</CardTitle>
+            <CardTitle className="text-sm font-semibold">Plantio Acumulado: Plan. × Real (ha)</CardTitle>
           </CardHeader>
           <CardContent>
             {plantingChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
+              <ResponsiveContainer width="100%" height={300}>
                 <ComposedChart data={plantingChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(110,12%,87%)" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Line type="monotone" dataKey="acumPlan" name="Planejado" stroke={CHART_COLORS.muted} strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                  <Line type="monotone" dataKey="acumReal" name="Realizado" stroke={CHART_COLORS.primary} strokeWidth={2.5} dot={{ r: 3 }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  {/* Fêmea */}
+                  <Line type="monotone" dataKey="planF" name="Plan. Fêmea" stroke={CHART_COLORS.blue} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+                  <Line type="monotone" dataKey="realF" name="Real Fêmea" stroke={CHART_COLORS.blue} strokeWidth={2.5} dot={{ r: 3 }} />
+                  {/* Macho 1 */}
+                  <Line type="monotone" dataKey="planM1" name="Plan. M1" stroke={CHART_COLORS.primary} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+                  <Line type="monotone" dataKey="realM1" name="Real M1" stroke={CHART_COLORS.primary} strokeWidth={2.5} dot={{ r: 3 }} />
+                  {/* Macho 2 */}
+                  <Line type="monotone" dataKey="planM2" name="Plan. M2" stroke={CHART_COLORS.orange} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+                  <Line type="monotone" dataKey="realM2" name="Real M2" stroke={CHART_COLORS.orange} strokeWidth={2.5} dot={{ r: 3 }} />
                 </ComposedChart>
               </ResponsiveContainer>
             ) : (
