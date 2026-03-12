@@ -13,9 +13,11 @@ interface Props {
   standCounts: any[];
   standPoints: any[];
   glebas: any[];
+  femaleArea?: number;
+  maleArea?: number;
 }
 
-export default function PlantingDashboard({ plans, actuals, cvPoints, standCounts, standPoints, glebas }: Props) {
+export default function PlantingDashboard({ plans, actuals, cvPoints, standCounts, standPoints, glebas, femaleArea, maleArea }: Props) {
   // Calculate CV% planting per type
   const cvPlantingStats = useMemo(() => {
     const result: Record<string, { cv: number; mean: number; n: number }> = {};
@@ -125,10 +127,8 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
       const glebaName = gid === "none" ? "Geral" : glebas.find((g: any) => g.id === gid)?.name || "Geral";
       for (const pType of ["female", "male"]) {
         const filteredActuals = actuals.filter((a: any) => (a.gleba_id || "none") === gid && (pType === "female" ? isFemaleType(a.type) : isMaleType(a.type)));
-        // For male, use MAX across sub-types (they share the same rows)
-        const area = pType === "female"
-          ? filteredActuals.reduce((s: number, a: any) => s + (a.actual_area || 0), 0)
-          : calcMaleAreaForGleba(actuals, gid, "actual_area");
+        // Use cycle-defined areas instead of summing from actuals
+        const area = pType === "female" ? (femaleArea ?? 0) : (maleArea ?? 0);
         const pts = filteredActuals.flatMap((a: any) => cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))).filter(v => v > 0);
         const plantingStats = calcStats(pts);
 
