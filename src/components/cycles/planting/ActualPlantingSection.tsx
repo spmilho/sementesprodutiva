@@ -209,43 +209,29 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                   const ti = getPlantingTypeInfo(a.type);
                   const lot = seedLots.find((l: any) => l.id === a.seed_lot_id);
                   const gleba = glebas.find((g: any) => g.id === a.gleba_id);
-                  const pts = cvPoints.filter((p: any) => p.planting_actual_id === a.id);
-                  const stats = calcStats(pts.map((p: any) => Number(p.seeds_per_meter)));
-                  const cvLabel = stats.n > 0 ? getCvLabel(stats.cv) : null;
-                  const isExpanded = expandedId === a.id;
+                  const cvVal = a.cv_percent;
+                  const cvLabel = cvVal != null ? getCvLabel(cvVal) : null;
 
                   return (
-                    <>
-                      <TableRow key={a.id} className="cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : a.id)}>
-                        <TableCell className="p-1">
-                          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        </TableCell>
-                        <TableCell className="text-sm">{format(new Date(a.planting_date + "T12:00:00"), "dd/MM/yyyy")}</TableCell>
-                        <TableCell><span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", ti.badgeClass)}>{ti.badge}</span></TableCell>
-                        <TableCell className="text-sm">{gleba?.name || "—"}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{lot?.lot_number || "—"}</TableCell>
-                        <TableCell className="text-sm text-right">{a.actual_area}</TableCell>
-                        <TableCell className="text-sm text-right">{a.row_spacing || "—"}</TableCell>
-                        <TableCell className="text-sm text-right font-mono">{stats.n > 0 ? stats.mean.toFixed(2) : (a.seeds_per_meter || "—")}</TableCell>
-                        <TableCell className="text-sm text-right">
-                          {cvLabel ? <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium cursor-pointer", cvLabel.bg)}>{stats.cv.toFixed(1)}%</span> : <span className="text-xs text-muted-foreground cursor-pointer hover:text-primary">+ CV%</span>}
-                        </TableCell>
-                        <TableCell className="text-sm text-right hidden md:table-cell">{a.planter_speed || "—"}</TableCell>
-                        <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex justify-center gap-1">
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(a)}><Pencil className="h-3.5 w-3.5" /></Button>
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => deleteMutation.mutate(a.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      {isExpanded && (
-                        <TableRow key={a.id + "-cv"}>
-                          <TableCell colSpan={11} className="bg-muted/30 p-4">
-                            <PlantingCvPoints plantingActualId={a.id} cycleId={cycleId} existingPoints={pts} />
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </>
+                    <TableRow key={a.id}>
+                      <TableCell className="text-sm">{format(new Date(a.planting_date + "T12:00:00"), "dd/MM/yyyy")}</TableCell>
+                      <TableCell><span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", ti.badgeClass)}>{ti.badge}</span></TableCell>
+                      <TableCell className="text-sm">{gleba?.name || "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{lot?.lot_number || "—"}</TableCell>
+                      <TableCell className="text-sm text-right">{a.actual_area}</TableCell>
+                      <TableCell className="text-sm text-right">{a.row_spacing || "—"}</TableCell>
+                      <TableCell className="text-sm text-right font-mono">{a.seeds_per_meter || "—"}</TableCell>
+                      <TableCell className="text-sm text-right">
+                        {cvLabel ? <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cvLabel.bg)}>{cvVal.toFixed(1)}%</span> : <span className="text-xs text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="text-sm text-right hidden md:table-cell">{a.planter_speed || "—"}</TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex justify-center gap-1">
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(a)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => deleteMutation.mutate(a.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
               </TableBody>
