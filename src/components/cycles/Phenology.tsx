@@ -45,6 +45,23 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 function StageTimeline({ records, stages }: { records: any[]; stages: readonly string[] }) {
+  // Build date maps for male and female
+  const maleDateMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    records.filter(r => r.type === "male").forEach(r => {
+      if (!m[r.stage] || r.observation_date < m[r.stage]) m[r.stage] = r.observation_date;
+    });
+    return m;
+  }, [records]);
+
+  const femaleDateMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    records.filter(r => r.type === "female").forEach(r => {
+      if (!m[r.stage] || r.observation_date < m[r.stage]) m[r.stage] = r.observation_date;
+    });
+    return m;
+  }, [records]);
+
   const lastMaleIdx = useMemo(() => {
     const maleRecords = records.filter((r) => r.type === "male");
     if (!maleRecords.length) return -1;
@@ -56,6 +73,11 @@ function StageTimeline({ records, stages }: { records: any[]; stages: readonly s
     if (!femaleRecords.length) return -1;
     return Math.max(...femaleRecords.map((r) => stages.indexOf(r.stage)));
   }, [records, stages]);
+
+  const formatShortDate = (dateStr: string) => {
+    const d = dateStr.split("-");
+    return `${d[2]}/${d[1]}`;
+  };
 
   return (
     <Card>
@@ -71,15 +93,19 @@ function StageTimeline({ records, stages }: { records: any[]; stages: readonly s
             {stages.map((s, i) => {
               const isCurrent = i === lastMaleIdx;
               const isPast = i <= lastMaleIdx && lastMaleIdx >= 0;
+              const dateStr = maleDateMap[s];
               return (
                 <div key={s} className="flex items-center">
-                  <div className="flex flex-col items-center min-w-[40px]">
+                  <div className="flex flex-col items-center min-w-[50px]">
                     <div className={cn(
                       "w-4 h-4 rounded-full border-2 transition-all",
                       isPast ? "bg-blue-500 border-blue-500" : "bg-muted border-muted-foreground/30",
                       isCurrent && "ring-2 ring-blue-300 ring-offset-1 w-5 h-5 dark:ring-blue-700"
                     )} />
                     <span className={cn("text-[9px] mt-1", isPast ? "text-foreground font-semibold" : "text-muted-foreground")}>{s}</span>
+                    {dateStr && (
+                      <span className="text-[8px] text-muted-foreground leading-tight">{formatShortDate(dateStr)}</span>
+                    )}
                   </div>
                   {i < stages.length - 1 && (
                     <div className={cn("h-0.5 w-3 -mt-3", isPast && i < lastMaleIdx ? "bg-blue-500" : "bg-muted-foreground/20")} />
@@ -99,15 +125,19 @@ function StageTimeline({ records, stages }: { records: any[]; stages: readonly s
             {stages.map((s, i) => {
               const isCurrent = i === lastFemaleIdx;
               const isPast = i <= lastFemaleIdx && lastFemaleIdx >= 0;
+              const dateStr = femaleDateMap[s];
               return (
                 <div key={s} className="flex items-center">
-                  <div className="flex flex-col items-center min-w-[40px]">
+                  <div className="flex flex-col items-center min-w-[50px]">
                     <div className={cn(
                       "w-4 h-4 rounded-full border-2 transition-all",
                       isPast ? "bg-pink-500 border-pink-500" : "bg-muted border-muted-foreground/30",
                       isCurrent && "ring-2 ring-pink-300 ring-offset-1 w-5 h-5 dark:ring-pink-700"
                     )} />
                     <span className={cn("text-[9px] mt-1", isPast ? "text-foreground font-semibold" : "text-muted-foreground")}>{s}</span>
+                    {dateStr && (
+                      <span className="text-[8px] text-muted-foreground leading-tight">{formatShortDate(dateStr)}</span>
+                    )}
                   </div>
                   {i < stages.length - 1 && (
                     <div className={cn("h-0.5 w-3 -mt-3", isPast && i < lastFemaleIdx ? "bg-pink-500" : "bg-muted-foreground/20")} />
