@@ -124,7 +124,7 @@ export default function Dashboard() {
     if (relevantCycles.length === 0) return 0;
     let totalArea = 0, workedArea = 0;
     for (const c of relevantCycles) {
-      totalArea += c.female_area;
+      totalArea += c.total_area;
       const records = detasseling.filter((d: any) => d.cycle_id === c.id);
       workedArea += records.reduce((s: number, d: any) => s + (d.area_worked_ha || 0), 0);
     }
