@@ -80,7 +80,7 @@ export default function PlantingComparative({ plans, actuals, standCounts, gleba
     <div className="space-y-4">
       <h3 className="text-base font-semibold text-foreground border-b pb-2">📊 Comparativo Planejado x Realizado</h3>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Card><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground">Fêmea</p>
           <p className="text-sm">Plan: {totals.planF.toFixed(2)} ha → Real: <strong>{totals.realF.toFixed(2)} ha</strong></p>
@@ -89,23 +89,9 @@ export default function PlantingComparative({ plans, actuals, standCounts, gleba
           </p>
         </CardContent></Card>
         <Card><CardContent className="p-3 space-y-1">
-          <p className="text-[10px] text-muted-foreground">Macho 1</p>
-          <p className="text-sm">Plan: {totals.planM1.toFixed(2)} ha → Real: <strong>{totals.realM1.toFixed(2)} ha</strong></p>
-          <p className={cn("text-xs font-semibold", devM1 >= 0 ? "text-green-600" : "text-red-600")}>
-            Desvio: {devM1 >= 0 ? "+" : ""}{devM1.toFixed(2)} ha
-          </p>
-        </CardContent></Card>
-        <Card><CardContent className="p-3 space-y-1">
-          <p className="text-[10px] text-muted-foreground">Macho 2</p>
-          <p className="text-sm">Plan: {totals.planM2.toFixed(2)} ha → Real: <strong>{totals.realM2.toFixed(2)} ha</strong></p>
-          <p className={cn("text-xs font-semibold", devM2 >= 0 ? "text-green-600" : "text-red-600")}>
-            Desvio: {devM2 >= 0 ? "+" : ""}{devM2.toFixed(2)} ha
-          </p>
-        </CardContent></Card>
-        <Card><CardContent className="p-3 space-y-1">
-          <p className="text-[10px] text-muted-foreground">Desvio Geral</p>
-          <p className={cn("text-lg font-bold", devTotal >= 0 ? "text-green-600" : "text-red-600")}>
-            {devTotal >= 0 ? "+" : ""}{devTotal.toFixed(2)} ha
+          <p className="text-[10px] text-muted-foreground">Desvio Fêmea</p>
+          <p className={cn("text-lg font-bold", devF >= 0 ? "text-green-600" : "text-red-600")}>
+            {devF >= 0 ? "+" : ""}{devF.toFixed(2)} ha
           </p>
         </CardContent></Card>
       </div>
