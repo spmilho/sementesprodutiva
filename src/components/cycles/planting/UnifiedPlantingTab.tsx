@@ -122,7 +122,6 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
     female: props.femalePlantingFinished ?? false,
     male_1: props.male1PlantingFinished ?? props.malePlantingFinished ?? false,
     male_2: props.male2PlantingFinished ?? false,
-    male_3: props.male3PlantingFinished ?? false,
   };
 
   return (
