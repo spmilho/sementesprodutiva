@@ -80,12 +80,18 @@ function checkPageBreak(doc: jsPDF, data: ReportData, neededSpace: number): numb
 // COVER PAGE
 // ═══════════════════════════════════════
 
-export function drawCover(doc: jsPDF, data: ReportData) {
+export function drawCover(doc: jsPDF, data: ReportData, coverImageDataUrl?: string) {
   const c = data.cycle;
   const s = data.orgSettings;
   const now = new Date();
 
-  // Gradient background
+  if (coverImageDataUrl) {
+    // Use html2canvas captured cover
+    doc.addImage(coverImageDataUrl, "JPEG", 0, 0, 210, 297);
+    return;
+  }
+
+  // Fallback: gradient background
   doc.setFillColor(27, 94, 32);
   doc.rect(0, 0, 210, 297, "F");
   doc.setFillColor(46, 125, 50);
@@ -105,33 +111,27 @@ export function drawCover(doc: jsPDF, data: ReportData) {
   // Title block at bottom
   const baseY = 190;
 
-  // Green accent line
   doc.setFillColor(76, 175, 80);
   doc.rect(20, baseY, 40, 2, "F");
 
-  // Document type
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(255, 255, 255, 0.8);
   doc.text("RELATÓRIO DE PRODUÇÃO", 20, baseY + 12);
 
-  // Hybrid name
   doc.setFontSize(34);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
   doc.text(c.hybrid_name, 20, baseY + 28);
 
-  // Season
   doc.setFontSize(18);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(255, 255, 255, 0.9);
   doc.text(`Safra ${c.season}`, 20, baseY + 38);
 
-  // Green line
   doc.setFillColor(76, 175, 80);
   doc.rect(20, baseY + 44, 60, 2, "F");
 
-  // Info table
   doc.setFontSize(10);
   doc.setTextColor(255, 255, 255, 0.85);
   const infoLines: [string, string][] = [
@@ -267,24 +267,19 @@ export function drawSeedLots(doc: jsPDF, data: ReportData) {
   const parentLabel = (t: string) => t === "female" ? "Fêmea" : "Macho";
 
   const body = data.seedLots.map((l: any) => {
-    const treat = data.seedLotTreatments.find((t: any) => t.seed_lot_id === l.id);
-    let tsLabel = "⚪ Sem TS";
-    if (treat) {
-      tsLabel = treat.treatment_origin === "in_house" ? "🟢 In-house" : "🔵 Cliente";
-    }
     return [
       parentLabel(l.parent_type), l.lot_number, l.origin_season, fmtDate(l.received_date),
-      `${fmtNum(l.quantity_kg || l.quantity)} ${l.quantity_unit || "kg"}`,
+      `${fmtNum(l.quantity_kg || l.quantity)} kg`,
       fmtNum(l.thousand_seed_weight_g), l.sieve_classification || "—",
       fmtNum(l.germination_pct), fmtNum(l.tetrazolium_vigor_pct),
       fmtNum(l.tetrazolium_viability_pct), fmtNum(l.physical_purity_pct),
-      fmtNum(l.seed_moisture_pct), tsLabel,
+      fmtNum(l.seed_moisture_pct),
     ];
   });
 
   autoTable(doc, {
     startY: y,
-    head: [["Parental", "Lote", "Safra", "Recebido", "Qtd", "PMS(g)", "Peneira", "Germ%", "Vigor%", "Tétraz%", "Purez%", "Umid%", "TS"]],
+    head: [["Parental", "Lote", "Safra", "Recebido", "Qtd (kg)", "PMS(g)", "Peneira", "Germ%", "Vigor%", "Tétraz%", "Purez%", "Umid%"]],
     body,
     headStyles: { fillColor: PRIMARY, fontSize: 7, cellPadding: 1.5 },
     bodyStyles: { fontSize: 7, cellPadding: 1.5 },
@@ -292,13 +287,12 @@ export function drawSeedLots(doc: jsPDF, data: ReportData) {
     margin: { left: MARGIN.left, right: MARGIN.right },
   });
 
-  // Treatment details
-  data.seedLotTreatments.forEach((treat: any) => {
-    const lot = data.seedLots.find((l: any) => l.id === treat.seed_lot_id);
-    if (!lot) return;
+  // Unified treatment section (same treatment for male and female)
+  if (data.seedLotTreatments.length > 0) {
+    const treat = data.seedLotTreatments[0]; // Use first treatment as representative
     y = checkPageBreak(doc, data, 50);
     y = getLastY(doc) + 10;
-    y = subTitle(doc, `Tratamento do Lote ${lot.lot_number} — ${parentLabel(lot.parent_type)}`, y);
+    y = subTitle(doc, "Tratamento da Semente Básica", y);
 
     const infoRows = [
       ["Data TS", fmtDate(treat.treatment_date)],
@@ -320,13 +314,22 @@ export function drawSeedLots(doc: jsPDF, data: ReportData) {
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 40 } },
     });
 
-    const products = data.seedLotTreatmentProducts.filter((p: any) => p.seed_lot_treatment_id === treat.id);
-    if (products.length > 0) {
+    // Collect all unique products across all treatments
+    const allProducts = data.seedLotTreatmentProducts;
+    if (allProducts.length > 0) {
+      // Deduplicate by product_name
+      const seen = new Set<string>();
+      const uniqueProducts = allProducts.filter((p: any) => {
+        if (seen.has(p.product_name)) return false;
+        seen.add(p.product_name);
+        return true;
+      });
+
       const prodY = getLastY(doc) + 5;
       autoTable(doc, {
         startY: prodY,
         head: [["Ordem", "Produto Comercial", "Ingrediente Ativo", "Tipo", "Categoria", "Dose", "Unidade"]],
-        body: products.map((p: any) => [
+        body: uniqueProducts.map((p: any) => [
           p.application_order || "—", p.product_name, p.active_ingredient || "—",
           p.product_type || "—", p.category || "—", fmtNum(p.dose), p.dose_unit,
         ]),
@@ -336,7 +339,7 @@ export function drawSeedLots(doc: jsPDF, data: ReportData) {
         margin: { left: MARGIN.left, right: MARGIN.right },
       });
     }
-  });
+  }
 }
 
 // ═══════════════════════════════════════
