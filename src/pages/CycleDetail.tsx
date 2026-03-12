@@ -16,10 +16,9 @@ import UnifiedPlantingTab from "@/components/cycles/planting/UnifiedPlantingTab"
 import Phenology from "@/components/cycles/Phenology";
 import NickingSync from "@/components/cycles/NickingSync";
 import SementeBasica from "@/components/cycles/SementeBasica";
-import Nutrition from "@/components/cycles/Nutrition";
+import ManejoTab from "@/components/cycles/manejo/ManejoTab";
 import Detasseling from "@/components/cycles/Detasseling";
 import Roguing from "@/components/cycles/Roguing";
-import ChemicalApplications from "@/components/cycles/ChemicalApplications";
 import PestDiseaseRecords from "@/components/cycles/PestDiseaseRecords";
 import YieldEstimateTab from "@/components/cycles/yield-estimate/YieldEstimateTab";
 import MoistureTab from "@/components/cycles/moisture/MoistureTab";
