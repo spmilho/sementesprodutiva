@@ -55,6 +55,12 @@ export default function Configuracoes() {
           <TabsTrigger value="offline" className="gap-1.5 text-xs">
             <WifiOff className="h-3.5 w-3.5" /> Fila Offline
           </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="contrato-acesso" className="gap-1.5 text-xs">
+              <FileSignature className="h-3.5 w-3.5" /> Acesso Contratos
+            </TabsTrigger>
+          )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="organization">
