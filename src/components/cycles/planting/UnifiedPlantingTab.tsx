@@ -112,13 +112,23 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
     enabled: standCounts.length > 0,
   });
 
+  const { data: cvRecords = [] } = useQuery({
+    queryKey: ["planting_cv_records", cycleId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("planting_cv_records").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("type");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
   const isLoading = plansLoading || actualsLoading || standLoading;
 
   if (isLoading) {
     return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
 
-  const hasData = actuals.length > 0 || standCounts.length > 0;
+  const hasData = actuals.length > 0 || standCounts.length > 0 || cvRecords.length > 0;
 
   const finishStatus: Record<string, boolean> = {
     female: props.femalePlantingFinished ?? false,
@@ -168,6 +178,7 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
           plans={plans}
           actuals={actuals}
           cvPoints={cvPoints}
+          cvRecords={cvRecords}
           standCounts={standCounts}
           standPoints={standPoints}
           glebas={glebas}

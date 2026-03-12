@@ -10,6 +10,7 @@ interface Props {
   plans: any[];
   actuals: any[];
   cvPoints: any[];
+  cvRecords: any[];
   standCounts: any[];
   standPoints: any[];
   glebas: any[];
@@ -17,19 +18,46 @@ interface Props {
   maleArea?: number;
 }
 
-export default function PlantingDashboard({ plans, actuals, cvPoints, standCounts, standPoints, glebas, femaleArea, maleArea }: Props) {
-  // Calculate CV% planting per type
+export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords, standCounts, standPoints, glebas, femaleArea, maleArea }: Props) {
+  // Calculate CV% planting per type — prefer manual cvRecords, fallback to cvPoints
   const cvPlantingStats = useMemo(() => {
     const result: Record<string, { cv: number; mean: number; n: number }> = {};
     for (const type of ["female", "male"]) {
-      const filteredActuals = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
-      const allPoints = filteredActuals.flatMap((a: any) =>
-        cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))
-      ).filter(v => v > 0);
-      result[type] = calcStats(allPoints);
+      // Check manual CV records first
+      const manualRecords = cvRecords.filter((r: any) =>
+        type === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
+      );
+      if (manualRecords.length > 0) {
+        const avgCv = manualRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / manualRecords.length;
+        result[type] = { cv: avgCv, mean: 0, n: manualRecords.length };
+      } else {
+        // Fallback to cv_points
+        const filteredActuals = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
+        const allPoints = filteredActuals.flatMap((a: any) =>
+          cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))
+        ).filter(v => v > 0);
+        result[type] = calcStats(allPoints);
+      }
     }
     return result;
-  }, [actuals, cvPoints]);
+  }, [actuals, cvPoints, cvRecords]);
+
+  // Calculate population per hectare from actuals' seeds_per_meter and row_spacing
+  const popStats = useMemo(() => {
+    const result: Record<string, { popPerHa: number; seedsPerMeter: number; spacingCm: number }> = {};
+    for (const type of ["female", "male"]) {
+      const filtered = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
+      if (filtered.length === 0) {
+        result[type] = { popPerHa: 0, seedsPerMeter: 0, spacingCm: 0 };
+        continue;
+      }
+      const avgSeeds = filtered.reduce((s: number, a: any) => s + (Number(a.seeds_per_meter) || 0), 0) / filtered.length;
+      const avgSpacing = filtered.reduce((s: number, a: any) => s + (Number(a.row_spacing) || 0), 0) / filtered.length;
+      const popPerHa = avgSpacing > 0 ? Math.round((avgSeeds / (avgSpacing / 100)) * 10000) : 0;
+      result[type] = { popPerHa, seedsPerMeter: avgSeeds, spacingCm: avgSpacing };
+    }
+    return result;
+  }, [actuals]);
 
   // Stand stats per type (latest count)
   const standStats = useMemo(() => {
@@ -55,7 +83,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
 
   // Chart data by gleba
   const glebaChartData = useMemo(() => {
-    const glebaMap = new Map<string, { name: string; cvPlantingF: number; cvPlantingM: number; cvStandF: number; cvStandM: number; popF: number; popM: number; popPlanF: number; popPlanM: number; emergF: number; emergM: number; ppmF: number; ppmM: number; ppmPlanF: number; ppmPlanM: number }>();
+    const glebaMap = new Map<string, { name: string; cvPlantingF: number; cvPlantingM: number; cvStandF: number; cvStandM: number; popF: number; popM: number; popPlanF: number; popPlanM: number; emergF: number; emergM: number; ppmF: number; ppmM: number; ppmPlanF: number; ppmPlanM: number; popHaF: number; popHaM: number }>();
 
     const getGlebaName = (glebaId: string | null) => {
       if (!glebaId) return "Geral";
@@ -66,18 +94,41 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
     const glebaIds = new Set<string>();
     actuals.forEach((a: any) => glebaIds.add(a.gleba_id || "none"));
     standCounts.forEach((s: any) => glebaIds.add(s.gleba_id || "none"));
+    // If no glebas at all, add "none" so we still show "Geral"
+    if (glebaIds.size === 0 && cvRecords.length > 0) glebaIds.add("none");
 
     glebaIds.forEach(gid => {
       const name = getGlebaName(gid === "none" ? null : gid);
-      const entry = { name, cvPlantingF: 0, cvPlantingM: 0, cvStandF: 0, cvStandM: 0, popF: 0, popM: 0, popPlanF: 0, popPlanM: 0, emergF: 0, emergM: 0, ppmF: 0, ppmM: 0, ppmPlanF: 0, ppmPlanM: 0 };
+      const entry = { name, cvPlantingF: 0, cvPlantingM: 0, cvStandF: 0, cvStandM: 0, popF: 0, popM: 0, popPlanF: 0, popPlanM: 0, emergF: 0, emergM: 0, ppmF: 0, ppmM: 0, ppmPlanF: 0, ppmPlanM: 0, popHaF: 0, popHaM: 0 };
 
-      // CV planting
+      // CV planting - prefer manual cvRecords
+      for (const type of ["female", "male"] as const) {
+        const manualRecords = cvRecords.filter((r: any) =>
+          type === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
+        );
+        if (manualRecords.length > 0) {
+          const avgCv = manualRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / manualRecords.length;
+          if (type === "female") entry.cvPlantingF = avgCv;
+          else entry.cvPlantingM = avgCv;
+        } else {
+          const filtered = actuals.filter((a: any) => (a.gleba_id || "none") === gid && (type === "female" ? isFemaleType(a.type) : isMaleType(a.type)));
+          const pts = filtered.flatMap((a: any) => cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))).filter(v => v > 0);
+          const stats = calcStats(pts);
+          if (type === "female") entry.cvPlantingF = stats.cv;
+          else entry.cvPlantingM = stats.cv;
+        }
+      }
+
+      // Population from actuals (seeds_per_meter / (row_spacing/100) * 10000)
       for (const type of ["female", "male"] as const) {
         const filtered = actuals.filter((a: any) => (a.gleba_id || "none") === gid && (type === "female" ? isFemaleType(a.type) : isMaleType(a.type)));
-        const pts = filtered.flatMap((a: any) => cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))).filter(v => v > 0);
-        const stats = calcStats(pts);
-        if (type === "female") entry.cvPlantingF = stats.cv;
-        else entry.cvPlantingM = stats.cv;
+        if (filtered.length > 0) {
+          const avgSeeds = filtered.reduce((s: number, a: any) => s + (Number(a.seeds_per_meter) || 0), 0) / filtered.length;
+          const avgSpacing = filtered.reduce((s: number, a: any) => s + (Number(a.row_spacing) || 0), 0) / filtered.length;
+          const popHa = avgSpacing > 0 ? Math.round((avgSeeds / (avgSpacing / 100)) * 10000) : 0;
+          if (type === "female") { entry.popHaF = popHa; entry.ppmF = avgSeeds; }
+          else { entry.popHaM = popHa; entry.ppmM = avgSeeds; }
+        }
       }
 
       // Stand
@@ -88,18 +139,16 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
           if (type === "female") {
             entry.cvStandF = latest.cv_stand_pct ?? 0;
             entry.popF = latest.avg_plants_per_ha ?? 0;
-            entry.ppmF = latest.avg_plants_per_meter ?? 0;
             entry.emergF = latest.emergence_pct ?? 0;
           } else {
             entry.cvStandM = latest.cv_stand_pct ?? 0;
             entry.popM = latest.avg_plants_per_ha ?? 0;
-            entry.ppmM = latest.avg_plants_per_meter ?? 0;
             entry.emergM = latest.emergence_pct ?? 0;
           }
         }
       }
 
-      // Planned pop (convert to plants/meter for chart)
+      // Planned pop
       for (const type of ["female", "male"] as const) {
         const filtered = plans.filter((p: any) => (p.gleba_id || "none") === gid && (type === "female" ? isFemaleType(p.type) : isMaleType(p.type)));
         if (filtered.length) {
@@ -114,7 +163,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
     });
 
     return Array.from(glebaMap.values());
-  }, [actuals, cvPoints, standCounts, plans, glebas]);
+  }, [actuals, cvPoints, cvRecords, standCounts, plans, glebas]);
 
   // Summary table data
   const summaryRows = useMemo(() => {
@@ -122,15 +171,39 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
     const glebaIds = new Set<string>();
     actuals.forEach((a: any) => glebaIds.add(a.gleba_id || "none"));
     standCounts.forEach((s: any) => glebaIds.add(s.gleba_id || "none"));
+    if (glebaIds.size === 0 && (cvRecords.length > 0 || actuals.length > 0)) glebaIds.add("none");
 
     glebaIds.forEach(gid => {
       const glebaName = gid === "none" ? "Geral" : glebas.find((g: any) => g.id === gid)?.name || "Geral";
       for (const pType of ["female", "male"]) {
         const filteredActuals = actuals.filter((a: any) => (a.gleba_id || "none") === gid && (pType === "female" ? isFemaleType(a.type) : isMaleType(a.type)));
-        // Use cycle-defined areas instead of summing from actuals
         const area = pType === "female" ? (femaleArea ?? 0) : (maleArea ?? 0);
-        const pts = filteredActuals.flatMap((a: any) => cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))).filter(v => v > 0);
-        const plantingStats = calcStats(pts);
+
+        // CV% from manual records or cv_points
+        const manualCvRecords = cvRecords.filter((r: any) =>
+          pType === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
+        );
+        let cvPlanting = 0;
+        let seedsPerMeter = 0;
+        if (manualCvRecords.length > 0) {
+          cvPlanting = manualCvRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / manualCvRecords.length;
+        } else {
+          const pts = filteredActuals.flatMap((a: any) => cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))).filter(v => v > 0);
+          const plantingStats = calcStats(pts);
+          cvPlanting = plantingStats.cv;
+          seedsPerMeter = plantingStats.mean;
+        }
+
+        // Seeds per meter from actuals
+        if (filteredActuals.length > 0) {
+          seedsPerMeter = filteredActuals.reduce((s: number, a: any) => s + (Number(a.seeds_per_meter) || 0), 0) / filteredActuals.length;
+        }
+
+        // Population from seeds_per_meter + row_spacing
+        const avgSpacing = filteredActuals.length > 0
+          ? filteredActuals.reduce((s: number, a: any) => s + (Number(a.row_spacing) || 0), 0) / filteredActuals.length
+          : 0;
+        const popFromActuals = avgSpacing > 0 ? Math.round((seedsPerMeter / (avgSpacing / 100)) * 10000) : 0;
 
         const sc = standCounts.filter((s: any) => (s.gleba_id || "none") === gid && s.parent_type === pType);
         const latest = sc[0];
@@ -138,24 +211,24 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
         const planPop = plans.filter((p: any) => (p.gleba_id || "none") === gid && (pType === "female" ? isFemaleType(p.type) : isMaleType(p.type)));
         const avgPlanPop = planPop.length ? planPop.reduce((s: number, p: any) => s + (p.target_population || 0), 0) / planPop.length : null;
 
-        if (area > 0 || latest) {
+        if (area > 0 || latest || cvPlanting > 0) {
           rows.push({
             gleba: glebaName,
             parental: pType === "female" ? "Fêmea" : "Macho",
             area: area.toFixed(2),
-            seedsPerMeter: plantingStats.mean > 0 ? plantingStats.mean.toFixed(2) : "—",
-            cvPlanting: plantingStats.cv > 0 ? plantingStats.cv.toFixed(1) : "—",
+            seedsPerMeter: seedsPerMeter > 0 ? seedsPerMeter.toFixed(2) : "—",
+            cvPlanting: cvPlanting > 0 ? cvPlanting.toFixed(1) : "—",
             popPlan: avgPlanPop ? Math.round(avgPlanPop).toLocaleString("pt-BR") : "—",
-            popReal: latest?.avg_plants_per_ha ? Math.round(latest.avg_plants_per_ha).toLocaleString("pt-BR") : "—",
+            popReal: popFromActuals > 0 ? popFromActuals.toLocaleString("pt-BR") : (latest?.avg_plants_per_ha ? Math.round(latest.avg_plants_per_ha).toLocaleString("pt-BR") : "—"),
             cvStand: latest?.cv_stand_pct != null ? latest.cv_stand_pct.toFixed(1) : "—",
             emergPct: latest?.emergence_pct != null ? latest.emergence_pct.toFixed(1) + "%" : "—",
-            status: getOverallStatus(plantingStats.cv || null, latest?.cv_stand_pct ?? null, latest?.emergence_pct ?? null),
+            status: getOverallStatus(cvPlanting || null, latest?.cv_stand_pct ?? null, latest?.emergence_pct ?? null),
           });
         }
       }
     });
     return rows;
-  }, [actuals, cvPoints, standCounts, plans, glebas]);
+  }, [actuals, cvPoints, cvRecords, standCounts, plans, glebas]);
 
   return (
     <div className="space-y-6">
@@ -191,24 +264,24 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
         </CardContent></Card>
 
-        {/* Pop Fêmea - plantas/metro */}
+        {/* Pop Fêmea - plantas/ha */}
         <Card><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pop. Fêmea</p>
-          {standStats.female.avgPlantsPerMeter > 0 ? (
+          {popStats.female.popPerHa > 0 ? (
             <>
-              <p className="text-xl font-bold">{standStats.female.avgPlantsPerMeter.toFixed(2)} <span className="text-xs font-normal">pl/m</span></p>
-              <p className="text-[10px] text-muted-foreground">Emerg: {standStats.female.emergPct.toFixed(0)}% | CV: {standStats.female.cv.toFixed(1)}%</p>
+              <p className="text-xl font-bold">{popStats.female.popPerHa.toLocaleString("pt-BR")} <span className="text-xs font-normal">pl/ha</span></p>
+              <p className="text-[10px] text-muted-foreground">{popStats.female.seedsPerMeter.toFixed(1)} sem/m | Esp: {popStats.female.spacingCm}cm</p>
             </>
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
         </CardContent></Card>
 
-        {/* Pop Macho - plantas/metro */}
+        {/* Pop Macho - plantas/ha */}
         <Card><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pop. Macho</p>
-          {standStats.male.avgPlantsPerMeter > 0 ? (
+          {popStats.male.popPerHa > 0 ? (
             <>
-              <p className="text-xl font-bold">{standStats.male.avgPlantsPerMeter.toFixed(2)} <span className="text-xs font-normal">pl/m</span></p>
-              <p className="text-[10px] text-muted-foreground">Emerg: {standStats.male.emergPct.toFixed(0)}% | CV: {standStats.male.cv.toFixed(1)}%</p>
+              <p className="text-xl font-bold">{popStats.male.popPerHa.toLocaleString("pt-BR")} <span className="text-xs font-normal">pl/ha</span></p>
+              <p className="text-[10px] text-muted-foreground">{popStats.male.seedsPerMeter.toFixed(1)} sem/m | Esp: {popStats.male.spacingCm}cm</p>
             </>
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
         </CardContent></Card>
