@@ -387,7 +387,18 @@ export default function CycleDetail() {
           <PestDiseaseRecords cycleId={id!} orgId={cycle.org_id} />
         </TabsContent>
 
-        <TabsContent value="estimativa">
+        <TabsContent value="agua">
+          <WaterTab
+            cycleId={id!}
+            orgId={cycle.org_id}
+            contractNumber={cycle.contract_number}
+            pivotName={cycle.field_name}
+            hybridName={cycle.hybrid_name}
+            cooperatorName={(cycle as any).cooperators?.name}
+            totalArea={cycle.pivot_area ?? cycle.total_area}
+          />
+        </TabsContent>
+
           <YieldEstimateTab
             cycleId={id!}
             orgId={cycle.org_id}
