@@ -21,6 +21,8 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Store preference before login
+      localStorage.setItem("remember_me", rememberMe ? "true" : "false");
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       navigate("/");
