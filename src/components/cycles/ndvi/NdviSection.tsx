@@ -408,11 +408,12 @@ export default function NdviSection({
     return timeline.map((point) => {
       const isPrePlanting = showAllWithPlanting && plantingTimestamp && point.dt < plantingTimestamp;
       const dateLabel = format(fromUnixTime(point.dt), "dd/MM");
-      const stage = phenoDateStageMap[dateLabel] || null;
+      const pointDate = fromUnixTime(point.dt);
+      const stage = getStageForDate(pointDate);
       return {
         date: dateLabel,
-        fullDate: format(fromUnixTime(point.dt), "dd/MM/yyyy"),
-        rawDate: fromUnixTime(point.dt),
+        fullDate: format(pointDate, "dd/MM/yyyy"),
+        rawDate: pointDate,
         dt: point.dt,
         mean: point.mean ? Number(Number(point.mean).toFixed(3)) : null,
         min: point.min ? Number(Number(point.min).toFixed(3)) : null,
@@ -421,7 +422,7 @@ export default function NdviSection({
         stage,
       };
     });
-  }, [ndviTimeline, filteredTimeline, dateFilterMode, showAllWithPlanting, plantingTimestamp, phenoDateStageMap]);
+  }, [ndviTimeline, filteredTimeline, dateFilterMode, showAllWithPlanting, plantingTimestamp, getStageForDate]);
 
   // Planting date formatted for chart reference line
   const plantingChartDate = plantingDateObj ? format(plantingDateObj, "dd/MM") : null;
