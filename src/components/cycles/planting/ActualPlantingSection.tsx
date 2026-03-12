@@ -51,7 +51,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, glebas, seedLots, cvPoints, spacingFemaleFemaleCm, spacingMaleMaleCm }: Props) {
+export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, glebas, seedLots, spacingFemaleFemaleCm, spacingMaleMaleCm }: Props) {
   const queryClient = useQueryClient();
   const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
