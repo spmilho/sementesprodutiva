@@ -31,18 +31,18 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
 
   // Stand stats per type (latest count)
   const standStats = useMemo(() => {
-    const result: Record<string, { avgPlantsHa: number; cv: number; emergPct: number; n: number }> = {};
+    const result: Record<string, { avgPlantsHa: number; avgPlantsPerMeter: number; cv: number; emergPct: number; n: number }> = {};
     for (const type of ["female", "male"]) {
       const counts = standCounts.filter((s: any) => s.parent_type === type);
       if (counts.length === 0) {
-        result[type] = { avgPlantsHa: 0, cv: 0, emergPct: 0, n: 0 };
+        result[type] = { avgPlantsHa: 0, avgPlantsPerMeter: 0, cv: 0, emergPct: 0, n: 0 };
         continue;
       }
-      // Use most recent
-      const latest = counts[0]; // already ordered desc
+      const latest = counts[0];
       const pts = standPoints.filter((p: any) => p.stand_count_id === latest.id);
       result[type] = {
         avgPlantsHa: latest.avg_plants_per_ha ?? 0,
+        avgPlantsPerMeter: latest.avg_plants_per_meter ?? 0,
         cv: latest.cv_stand_pct ?? 0,
         emergPct: latest.emergence_pct ?? 0,
         n: pts.length,
