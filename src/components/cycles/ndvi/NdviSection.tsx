@@ -83,6 +83,14 @@ export default function NdviSection({
   const [manualLng, setManualLng] = useState("");
   const [dateFilterMode, setDateFilterMode] = useState<DateFilterMode>("all");
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  // Latest phenology stage
+  const latestStage = useMemo(() => {
+    if (!phenologyRecords.length) return null;
+    const sorted = [...phenologyRecords].sort((a, b) => b.observation_date.localeCompare(a.observation_date));
+    return sorted[0]?.stage || null;
+  }, [phenologyRecords]);
 
   // Fetch planting dates for this cycle
   const { data: plantingDates } = useQuery({
