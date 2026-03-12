@@ -171,15 +171,39 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
     const glebaIds = new Set<string>();
     actuals.forEach((a: any) => glebaIds.add(a.gleba_id || "none"));
     standCounts.forEach((s: any) => glebaIds.add(s.gleba_id || "none"));
+    if (glebaIds.size === 0 && (cvRecords.length > 0 || actuals.length > 0)) glebaIds.add("none");
 
     glebaIds.forEach(gid => {
       const glebaName = gid === "none" ? "Geral" : glebas.find((g: any) => g.id === gid)?.name || "Geral";
       for (const pType of ["female", "male"]) {
         const filteredActuals = actuals.filter((a: any) => (a.gleba_id || "none") === gid && (pType === "female" ? isFemaleType(a.type) : isMaleType(a.type)));
-        // Use cycle-defined areas instead of summing from actuals
         const area = pType === "female" ? (femaleArea ?? 0) : (maleArea ?? 0);
-        const pts = filteredActuals.flatMap((a: any) => cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))).filter(v => v > 0);
-        const plantingStats = calcStats(pts);
+
+        // CV% from manual records or cv_points
+        const manualCvRecords = cvRecords.filter((r: any) =>
+          pType === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
+        );
+        let cvPlanting = 0;
+        let seedsPerMeter = 0;
+        if (manualCvRecords.length > 0) {
+          cvPlanting = manualCvRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / manualCvRecords.length;
+        } else {
+          const pts = filteredActuals.flatMap((a: any) => cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))).filter(v => v > 0);
+          const plantingStats = calcStats(pts);
+          cvPlanting = plantingStats.cv;
+          seedsPerMeter = plantingStats.mean;
+        }
+
+        // Seeds per meter from actuals
+        if (filteredActuals.length > 0) {
+          seedsPerMeter = filteredActuals.reduce((s: number, a: any) => s + (Number(a.seeds_per_meter) || 0), 0) / filteredActuals.length;
+        }
+
+        // Population from seeds_per_meter + row_spacing
+        const avgSpacing = filteredActuals.length > 0
+          ? filteredActuals.reduce((s: number, a: any) => s + (Number(a.row_spacing) || 0), 0) / filteredActuals.length
+          : 0;
+        const popFromActuals = avgSpacing > 0 ? Math.round((seedsPerMeter / (avgSpacing / 100)) * 10000) : 0;
 
         const sc = standCounts.filter((s: any) => (s.gleba_id || "none") === gid && s.parent_type === pType);
         const latest = sc[0];
@@ -187,24 +211,24 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
         const planPop = plans.filter((p: any) => (p.gleba_id || "none") === gid && (pType === "female" ? isFemaleType(p.type) : isMaleType(p.type)));
         const avgPlanPop = planPop.length ? planPop.reduce((s: number, p: any) => s + (p.target_population || 0), 0) / planPop.length : null;
 
-        if (area > 0 || latest) {
+        if (area > 0 || latest || cvPlanting > 0) {
           rows.push({
             gleba: glebaName,
             parental: pType === "female" ? "Fêmea" : "Macho",
             area: area.toFixed(2),
-            seedsPerMeter: plantingStats.mean > 0 ? plantingStats.mean.toFixed(2) : "—",
-            cvPlanting: plantingStats.cv > 0 ? plantingStats.cv.toFixed(1) : "—",
+            seedsPerMeter: seedsPerMeter > 0 ? seedsPerMeter.toFixed(2) : "—",
+            cvPlanting: cvPlanting > 0 ? cvPlanting.toFixed(1) : "—",
             popPlan: avgPlanPop ? Math.round(avgPlanPop).toLocaleString("pt-BR") : "—",
-            popReal: latest?.avg_plants_per_ha ? Math.round(latest.avg_plants_per_ha).toLocaleString("pt-BR") : "—",
+            popReal: popFromActuals > 0 ? popFromActuals.toLocaleString("pt-BR") : (latest?.avg_plants_per_ha ? Math.round(latest.avg_plants_per_ha).toLocaleString("pt-BR") : "—"),
             cvStand: latest?.cv_stand_pct != null ? latest.cv_stand_pct.toFixed(1) : "—",
             emergPct: latest?.emergence_pct != null ? latest.emergence_pct.toFixed(1) + "%" : "—",
-            status: getOverallStatus(plantingStats.cv || null, latest?.cv_stand_pct ?? null, latest?.emergence_pct ?? null),
+            status: getOverallStatus(cvPlanting || null, latest?.cv_stand_pct ?? null, latest?.emergence_pct ?? null),
           });
         }
       }
     });
     return rows;
-  }, [actuals, cvPoints, standCounts, plans, glebas]);
+  }, [actuals, cvPoints, cvRecords, standCounts, plans, glebas]);
 
   return (
     <div className="space-y-6">
