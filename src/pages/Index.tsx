@@ -426,19 +426,26 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">Plantio ♀: Acumulado Plan. × Real (ha)</CardTitle>
+            <CardTitle className="text-sm font-semibold">Plantio Acumulado: Plan. × Real (ha)</CardTitle>
           </CardHeader>
           <CardContent>
             {plantingChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
+              <ResponsiveContainer width="100%" height={300}>
                 <ComposedChart data={plantingChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(110,12%,87%)" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Line type="monotone" dataKey="acumPlan" name="Planejado" stroke={CHART_COLORS.muted} strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                  <Line type="monotone" dataKey="acumReal" name="Realizado" stroke={CHART_COLORS.primary} strokeWidth={2.5} dot={{ r: 3 }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  {/* Fêmea */}
+                  <Line type="monotone" dataKey="planF" name="Plan. Fêmea" stroke={CHART_COLORS.blue} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+                  <Line type="monotone" dataKey="realF" name="Real Fêmea" stroke={CHART_COLORS.blue} strokeWidth={2.5} dot={{ r: 3 }} />
+                  {/* Macho 1 */}
+                  <Line type="monotone" dataKey="planM1" name="Plan. M1" stroke={CHART_COLORS.primary} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+                  <Line type="monotone" dataKey="realM1" name="Real M1" stroke={CHART_COLORS.primary} strokeWidth={2.5} dot={{ r: 3 }} />
+                  {/* Macho 2 */}
+                  <Line type="monotone" dataKey="planM2" name="Plan. M2" stroke={CHART_COLORS.orange} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+                  <Line type="monotone" dataKey="realM2" name="Real M2" stroke={CHART_COLORS.orange} strokeWidth={2.5} dot={{ r: 3 }} />
                 </ComposedChart>
               </ResponsiveContainer>
             ) : (
