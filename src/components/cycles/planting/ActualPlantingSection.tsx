@@ -29,7 +29,6 @@ interface Props {
   plans: any[];
   glebas: any[];
   seedLots: any[];
-  cvPoints: any[];
   spacingFemaleFemaleCm?: number | null;
   spacingMaleMaleCm?: number | null;
 }
