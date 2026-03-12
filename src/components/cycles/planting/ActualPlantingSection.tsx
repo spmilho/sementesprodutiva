@@ -198,7 +198,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                   <TableHead className="text-xs text-right">Área(ha)</TableHead>
                   <TableHead className="text-xs text-right">Espaç.(cm)</TableHead>
                   <TableHead className="text-xs text-right">Sem/metro</TableHead>
-                  <TableHead className="text-xs text-right">CV%</TableHead>
+                  
                   <TableHead className="text-xs text-right hidden md:table-cell">Vel.(km/h)</TableHead>
                   <TableHead className="text-xs text-center w-20">Ações</TableHead>
                 </TableRow>
