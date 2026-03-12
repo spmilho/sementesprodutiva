@@ -62,10 +62,15 @@ function MenuGroup({ label, items }: { label: string; items: typeof mainItems })
 export function AppSidebar() {
   const { signOut, user } = useAuth();
   const { isAdmin } = useRole();
+  const { canView: canViewContratos } = useContratoAccess();
 
   const adminItems = isAdmin
     ? [{ title: "Usuários & Roles", url: "/usuarios", icon: ShieldCheck }]
     : [];
+
+  const dynamicMainItems = canViewContratos
+    ? [...mainItems, { title: "Contratos", url: "/contratos", icon: FileSignature }]
+    : mainItems;
 
   return (
     <Sidebar collapsible="icon">
