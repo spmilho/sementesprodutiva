@@ -67,7 +67,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
 
     glebaIds.forEach(gid => {
       const name = getGlebaName(gid === "none" ? null : gid);
-      const entry = { name, cvPlantingF: 0, cvPlantingM: 0, cvStandF: 0, cvStandM: 0, popF: 0, popM: 0, popPlanF: 0, popPlanM: 0, emergF: 0, emergM: 0 };
+      const entry = { name, cvPlantingF: 0, cvPlantingM: 0, cvStandF: 0, cvStandM: 0, popF: 0, popM: 0, popPlanF: 0, popPlanM: 0, emergF: 0, emergM: 0, ppmF: 0, ppmM: 0, ppmPlanF: 0, ppmPlanM: 0 };
 
       // CV planting
       for (const type of ["female", "male"] as const) {
