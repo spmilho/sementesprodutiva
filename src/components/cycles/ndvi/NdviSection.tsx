@@ -668,32 +668,58 @@ export default function NdviSection({
                   contentStyle={{ fontSize: 12 }}
                   formatter={(val: any, name: string) => [Number(val).toFixed(3), name]}
                   labelFormatter={(label: any, payload: any) => {
-                    if (payload?.[0]?.payload?.fullDate) return payload[0].payload.fullDate;
-                    return label;
+                    const p = payload?.[0]?.payload;
+                    const dateStr = p?.fullDate || label;
+                    return p?.stage ? `${dateStr}  —  ${p.stage}` : dateStr;
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Area type="monotone" dataKey="max" stroke="none" fill="#C8E6C9" name="Máximo" />
                 <Area type="monotone" dataKey="min" stroke="none" fill="#FFCDD2" name="Mínimo" />
-                {showAllWithPlanting ? (
-                  <>
-                    {/* Split line coloring: gray before planting, green after */}
-                    <Line
-                      type="monotone"
-                      dataKey="mean"
-                      stroke="#2E7D32"
-                      strokeWidth={2}
-                      dot={(props: any) => {
-                        const { cx, cy, payload } = props;
-                        const fill = payload?.isPrePlanting ? "#9E9E9E" : "#2E7D32";
-                        return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={3} fill={fill} stroke={fill} />;
-                      }}
-                      name="NDVI Médio"
-                    />
-                  </>
-                ) : (
-                  <Line type="monotone" dataKey="mean" stroke="#2E7D32" strokeWidth={2} dot={{ r: 3 }} name="NDVI Médio" />
-                )}
+                {/* NDVI Mean line with stage labels on dots */}
+                <Line
+                  type="monotone"
+                  dataKey="mean"
+                  stroke="#2E7D32"
+                  strokeWidth={2}
+                  dot={(props: any) => {
+                    const { cx, cy, payload } = props;
+                    if (cx == null || cy == null) return <g key="empty" />;
+                    const isGray = showAllWithPlanting && payload?.isPrePlanting;
+                    const fill = isGray ? "#9E9E9E" : "#2E7D32";
+                    const stage = payload?.stage;
+                    const stageColor = stage ? (STAGE_COLORS[stage.split("/")[0]] || "#666") : null;
+                    return (
+                      <g key={`dot-${cx}-${cy}`}>
+                        <circle cx={cx} cy={cy} r={stage ? 5 : 3} fill={fill} stroke={fill} />
+                        {stage && (
+                          <>
+                            <rect
+                              x={cx - stage.length * 3.2}
+                              y={cy - 22}
+                              width={stage.length * 6.5 + 4}
+                              height={14}
+                              rx={3}
+                              fill={stageColor || "#666"}
+                              opacity={0.9}
+                            />
+                            <text
+                              x={cx}
+                              y={cy - 12}
+                              textAnchor="middle"
+                              fill="white"
+                              fontSize={9}
+                              fontWeight={700}
+                            >
+                              {stage}
+                            </text>
+                          </>
+                        )}
+                      </g>
+                    );
+                  }}
+                  name="NDVI Médio"
+                />
                 {/* Planting date marker */}
                 {plantingChartDate && (dateFilterMode === "planting" || dateFilterMode === "all") && (
                   <ReferenceLine
