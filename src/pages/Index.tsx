@@ -449,7 +449,7 @@ export default function Dashboard() {
                   <Tooltip />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Line type="monotone" dataKey="acumReal" name="Realizado" stroke={CHART_COLORS.accent} strokeWidth={2.5} dot={{ r: 3 }} />
-                  <ReferenceLine y={totalFemaleArea} stroke={CHART_COLORS.muted} strokeDasharray="5 5" label={{ value: `Meta: ${totalFemaleArea} ha`, fontSize: 10 }} />
+                  <ReferenceLine y={totalHarvestArea} stroke={CHART_COLORS.muted} strokeDasharray="5 5" label={{ value: `Meta: ${totalHarvestArea} ha`, fontSize: 10 }} />
                 </ComposedChart>
               </ResponsiveContainer>
             ) : (
