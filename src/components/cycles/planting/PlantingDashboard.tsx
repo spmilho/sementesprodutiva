@@ -13,6 +13,8 @@ interface Props {
   standCounts: any[];
   standPoints: any[];
   glebas: any[];
+  femaleArea?: number;
+  maleArea?: number;
 }
 
 export default function PlantingDashboard({ plans, actuals, cvPoints, standCounts, standPoints, glebas }: Props) {
