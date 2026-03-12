@@ -132,18 +132,18 @@ export default function Dashboard() {
   }, [filtered, detasseling]);
 
   // Área colhida
-  const { harvestedArea, totalFemaleArea } = useMemo(() => {
+  const { harvestedArea, totalHarvestArea } = useMemo(() => {
     let harvested = 0, total = 0;
     for (const c of filtered) {
       if (["cancelled"].includes(c.status)) continue;
-      total += c.female_area;
+      total += c.total_area;
       const records = harvestRecords.filter((h: any) => h.cycle_id === c.id);
       harvested += records.reduce((s: number, h: any) => s + (h.area_harvested_ha || 0), 0);
     }
-    return { harvestedArea: Math.round(harvested * 10) / 10, totalFemaleArea: Math.round(total * 10) / 10 };
+    return { harvestedArea: Math.round(harvested * 10) / 10, totalHarvestArea: Math.round(total * 10) / 10 };
   }, [filtered, harvestRecords]);
 
-  const harvestPct = totalFemaleArea > 0 ? Math.round((harvestedArea / totalFemaleArea) * 100) : 0;
+  const harvestPct = totalHarvestArea > 0 ? Math.round((harvestedArea / totalHarvestArea) * 100) : 0;
 
   // Produção total
   const totalProduction = useMemo(() => {
