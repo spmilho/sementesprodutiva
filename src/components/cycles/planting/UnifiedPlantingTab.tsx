@@ -206,6 +206,13 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
         spacingMaleMaleCm={props.spacingMaleMaleCm}
       />
 
+      {/* Section 3.5 - CV% de Semeadura */}
+      <PlantingCvSection
+        cycleId={cycleId}
+        orgId={orgId}
+        femaleMaleRatio={props.femaleMaleRatio || "4F:2M"}
+      />
+
       {/* Section 4 - Stand Counts */}
       <StandCountSection
         cycleId={cycleId}
