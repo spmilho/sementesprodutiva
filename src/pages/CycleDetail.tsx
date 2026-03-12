@@ -26,6 +26,7 @@ import MoistureTab from "@/components/cycles/moisture/MoistureTab";
 import HarvestTab from "@/components/cycles/harvest/HarvestTab";
 import DocumentsTab from "@/components/cycles/DocumentsTab";
 import CycleMapTab from "@/components/cycles/CycleMapTab";
+import WaterTab from "@/components/cycles/water/WaterTab";
 import ReportTab from "@/components/cycles/report/ReportTab";
 import FieldEvaluationSection from "@/components/field-evaluation/FieldEvaluationSection";
 const statusLabels: Record<string, string> = {
