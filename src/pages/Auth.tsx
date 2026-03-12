@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Leaf } from "lucide-react";
 import { toast } from "sonner";
@@ -14,11 +15,14 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [forgotMode, setForgotMode] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
+      // Store preference before login
+      localStorage.setItem("remember_me", rememberMe ? "true" : "false");
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       navigate("/");
@@ -106,6 +110,16 @@ export default function Auth() {
                   required
                   minLength={6}
                 />
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="remember"
+                  checked={rememberMe}
+                  onCheckedChange={(v) => setRememberMe(v === true)}
+                />
+                <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
+                  Permanecer logado
+                </Label>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Aguarde..." : "Entrar"}

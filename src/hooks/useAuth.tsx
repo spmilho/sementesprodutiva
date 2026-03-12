@@ -35,7 +35,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Clear session on browser close if "Permanecer logado" was not checked
+    const handleBeforeUnload = () => {
+      const remember = localStorage.getItem("remember_me");
+      if (remember === "false") {
+        // Remove supabase auth keys from localStorage so session won't persist
+        for (const key of Object.keys(localStorage)) {
+          if (key.startsWith("sb-") && key.includes("-auth-token")) {
+            localStorage.removeItem(key);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
   }, []);
 
   const signOut = async () => {
