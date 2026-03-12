@@ -21,6 +21,7 @@ import Configuracoes from "./pages/Configuracoes";
 import UserManagement from "./pages/UserManagement";
 import FeedCampo from "./pages/FeedCampo";
 import PlanoAcoes from "./pages/PlanoAcoes";
+import Contratos from "./pages/Contratos";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
