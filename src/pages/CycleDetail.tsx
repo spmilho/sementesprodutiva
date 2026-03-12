@@ -16,10 +16,9 @@ import UnifiedPlantingTab from "@/components/cycles/planting/UnifiedPlantingTab"
 import Phenology from "@/components/cycles/Phenology";
 import NickingSync from "@/components/cycles/NickingSync";
 import SementeBasica from "@/components/cycles/SementeBasica";
-import Nutrition from "@/components/cycles/Nutrition";
+import ManejoTab from "@/components/cycles/manejo/ManejoTab";
 import Detasseling from "@/components/cycles/Detasseling";
 import Roguing from "@/components/cycles/Roguing";
-import ChemicalApplications from "@/components/cycles/ChemicalApplications";
 import PestDiseaseRecords from "@/components/cycles/PestDiseaseRecords";
 import YieldEstimateTab from "@/components/cycles/yield-estimate/YieldEstimateTab";
 import MoistureTab from "@/components/cycles/moisture/MoistureTab";
@@ -37,15 +36,21 @@ const statusLabels: Record<string, string> = {
 const tabItems = [
   { value: "resumo", label: "Resumo" },
   { value: "semente-basica", label: "Semente Básica" },
-  { value: "plantio", label: "Plantio" }, { value: "nutricao", label: "Nutrição" }, { value: "fenologia", label: "Fenologia" },
+  { value: "plantio", label: "Plantio" },
+  { value: "manejo", label: "Manejo" },
+  { value: "fenologia", label: "Fenologia" },
   { value: "nicking", label: "Nicking" },
-  { value: "despendoamento", label: "Despendoamento" }, { value: "roguing", label: "Roguing" },
-  { value: "manejo", label: "Manejo" }, { value: "pragas", label: "Pragas" },
-  { value: "agua", label: "Água" }, { value: "umidade", label: "Umidade" },
+  { value: "despendoamento", label: "Despendoamento" },
+  { value: "roguing", label: "Roguing" },
+  { value: "pragas", label: "Pragas" },
+  { value: "agua", label: "Água" },
+  { value: "umidade", label: "Umidade" },
   { value: "estimativa", label: "Est. Produtividade" },
-  { value: "colheita", label: "Colheita" }, { value: "mapa", label: "Mapa" },
+  { value: "colheita", label: "Colheita" },
+  { value: "mapa", label: "Mapa" },
   { value: "avaliacoes", label: "Avaliações" },
-  { value: "visitas", label: "Visitas" }, { value: "documentos", label: "Documentos" },
+  { value: "visitas", label: "Visitas" },
+  { value: "documentos", label: "Documentos" },
   { value: "relatorio", label: "Relatório" },
 ];
 
@@ -323,15 +328,16 @@ export default function CycleDetail() {
           />
         </TabsContent>
 
-        <TabsContent value="nutricao">
-          <Nutrition
+        <TabsContent value="manejo">
+          <ManejoTab
             cycleId={id!}
             orgId={cycle.org_id}
             contractNumber={cycle.contract_number}
             pivotName={cycle.field_name}
             hybridName={cycle.hybrid_name}
             cooperatorName={(cycle as any).cooperators?.name}
-            totalArea={cycle.total_area}
+            totalArea={cycle.pivot_area ?? cycle.total_area}
+            femaleArea={cycle.female_area}
           />
         </TabsContent>
 
@@ -347,7 +353,6 @@ export default function CycleDetail() {
             pivotId={cycle.pivot_id}
           />
         </TabsContent>
-
 
         <TabsContent value="nicking">
           <NickingSync
@@ -377,10 +382,6 @@ export default function CycleDetail() {
 
         <TabsContent value="roguing">
           <Roguing cycleId={id!} orgId={cycle.org_id} />
-        </TabsContent>
-
-        <TabsContent value="manejo">
-          <ChemicalApplications cycleId={id!} orgId={cycle.org_id} />
         </TabsContent>
 
         <TabsContent value="pragas">
@@ -459,7 +460,7 @@ export default function CycleDetail() {
           <ReportTab cycleId={id!} orgId={cycle.org_id} cycle={cycle} />
         </TabsContent>
 
-        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento", "roguing", "manejo", "pragas", "agua", "estimativa", "umidade", "colheita", "documentos", "mapa", "avaliacoes", "relatorio"].includes(t.value)).map((t) => (
+        {tabItems.filter((t) => !["resumo", "semente-basica", "plantio", "manejo", "fenologia", "nicking", "despendoamento", "roguing", "pragas", "agua", "estimativa", "umidade", "colheita", "documentos", "mapa", "avaliacoes", "relatorio"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>
