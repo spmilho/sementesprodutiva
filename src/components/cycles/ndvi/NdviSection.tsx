@@ -377,31 +377,43 @@ export default function NdviSection({
   // Chart data
   const showAllWithPlanting = dateFilterMode === "all" && plantingTimestamp !== null;
   
-  // Build a map of date (dd/MM) → stage label from phenology records
-  const phenoDateStageMap = useMemo(() => {
-    const map: Record<string, string> = {};
+  // Build sorted list of phenology milestones (date → stage) for lookup
+  const phenoMilestones = useMemo(() => {
+    if (!phenologyRecords.length) return [];
+    const map = new Map<string, { date: Date; stage: string }>();
     for (const r of phenologyRecords) {
-      const d = format(new Date(r.observation_date + "T12:00:00"), "dd/MM");
-      // If multiple stages on same date, concatenate
-      if (map[d]) {
-        if (!map[d].includes(r.stage)) map[d] += `/${r.stage}`;
-      } else {
-        map[d] = r.stage;
+      const d = new Date(r.observation_date + "T12:00:00");
+      const key = r.stage;
+      // Keep earliest date per stage
+      if (!map.has(key) || d < map.get(key)!.date) {
+        map.set(key, { date: d, stage: r.stage });
       }
     }
-    return map;
+    return Array.from(map.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [phenologyRecords]);
+
+  // For a given date, find the active phenology stage (most recent on or before that date)
+  const getStageForDate = useCallback((dt: Date): string | null => {
+    if (!phenoMilestones.length) return null;
+    let active: string | null = null;
+    for (const m of phenoMilestones) {
+      if (m.date <= dt) active = m.stage;
+      else break;
+    }
+    return active;
+  }, [phenoMilestones]);
 
   const chartData = useMemo(() => {
     const timeline = dateFilterMode === "all" ? ndviTimeline : filteredTimeline;
     return timeline.map((point) => {
       const isPrePlanting = showAllWithPlanting && plantingTimestamp && point.dt < plantingTimestamp;
       const dateLabel = format(fromUnixTime(point.dt), "dd/MM");
-      const stage = phenoDateStageMap[dateLabel] || null;
+      const pointDate = fromUnixTime(point.dt);
+      const stage = getStageForDate(pointDate);
       return {
         date: dateLabel,
-        fullDate: format(fromUnixTime(point.dt), "dd/MM/yyyy"),
-        rawDate: fromUnixTime(point.dt),
+        fullDate: format(pointDate, "dd/MM/yyyy"),
+        rawDate: pointDate,
         dt: point.dt,
         mean: point.mean ? Number(Number(point.mean).toFixed(3)) : null,
         min: point.min ? Number(Number(point.min).toFixed(3)) : null,
@@ -410,7 +422,7 @@ export default function NdviSection({
         stage,
       };
     });
-  }, [ndviTimeline, filteredTimeline, dateFilterMode, showAllWithPlanting, plantingTimestamp, phenoDateStageMap]);
+  }, [ndviTimeline, filteredTimeline, dateFilterMode, showAllWithPlanting, plantingTimestamp, getStageForDate]);
 
   // Planting date formatted for chart reference line
   const plantingChartDate = plantingDateObj ? format(plantingDateObj, "dd/MM") : null;
