@@ -331,7 +331,7 @@ export default function StandCountSection({ cycleId, orgId, standCounts, standPo
                         <TableCell className="text-sm">{gleba?.name || "—"}</TableCell>
                         <TableCell className="text-sm text-right">{sc.days_after_planting ?? "—"}</TableCell>
                         <TableCell className="text-sm text-right">{pts.length}</TableCell>
-                        <TableCell className="text-sm text-right font-semibold">{sc.avg_plants_per_ha ? Math.round(sc.avg_plants_per_ha).toLocaleString("pt-BR") : "—"}</TableCell>
+                        <TableCell className="text-sm text-right font-semibold">{sc.avg_plants_per_meter ? Number(sc.avg_plants_per_meter).toFixed(2) : "—"}</TableCell>
                         <TableCell className="text-sm text-right">
                           {cvLabel ? <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cvLabel.bg)}>{sc.cv_stand_pct.toFixed(1)}%</span> : "—"}
                         </TableCell>
