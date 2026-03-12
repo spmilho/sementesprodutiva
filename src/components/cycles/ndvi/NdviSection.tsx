@@ -15,7 +15,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, Satellite, RefreshCw, MapPin, TrendingUp, Eye, Trash2, Calendar as CalendarIcon } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Loader2, Satellite, RefreshCw, MapPin, TrendingUp, Eye, Trash2, Calendar as CalendarIcon, ClipboardCopy, FileText, ChevronDown } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
@@ -47,6 +49,7 @@ interface NdviSectionProps {
   orgId: string;
   pivotId?: string;
   pivotName: string;
+  hybridName?: string;
   phenologyRecords: any[];
 }
 
@@ -70,7 +73,7 @@ interface NdviStats {
 type DateFilterMode = "planting" | "custom" | "all";
 
 export default function NdviSection({
-  cycleId, orgId, pivotId, pivotName, phenologyRecords,
+  cycleId, orgId, pivotId, pivotName, hybridName, phenologyRecords,
 }: NdviSectionProps) {
   const queryClient = useQueryClient();
   const [opacity, setOpacity] = useState(70);
@@ -80,6 +83,14 @@ export default function NdviSection({
   const [manualLng, setManualLng] = useState("");
   const [dateFilterMode, setDateFilterMode] = useState<DateFilterMode>("all");
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  // Latest phenology stage
+  const latestStage = useMemo(() => {
+    if (!phenologyRecords.length) return null;
+    const sorted = [...phenologyRecords].sort((a, b) => b.observation_date.localeCompare(a.observation_date));
+    return sorted[0]?.stage || null;
+  }, [phenologyRecords]);
 
   // Fetch planting dates for this cycle
   const { data: plantingDates } = useQuery({
@@ -259,6 +270,25 @@ export default function NdviSection({
     return ndviTimeline.filter(p => p.dt >= filterStartTimestamp);
   }, [ndviTimeline, filterStartTimestamp]);
 
+  // Fetch previous analyses
+  const { data: previousAnalyses = [], refetch: refetchAnalyses } = useQuery({
+    queryKey: ["ndvi-analyses", cycleId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("ndvi_analyses")
+        .select("*")
+        .eq("cycle_id", cycleId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      return data ?? [];
+    },
+  });
+
+  const latestAnalysis = previousAnalyses[0] || null;
+
+
+
+
   // Delete polygon
   const deletePolygonMut = useMutation({
     mutationFn: async () => {
@@ -296,6 +326,53 @@ export default function NdviSection({
   const maxNdvi = filteredTimeline.length > 0
     ? filteredTimeline.reduce((max, v) => (v.mean || 0) > (max.mean || 0) ? v : max, filteredTimeline[0])
     : null;
+
+  // Generate analysis mutation
+  const generateAnalysisMut = useMutation({
+    mutationFn: async () => {
+      const currentNdviVal = currentNdvi?.mean != null ? Number(currentNdvi.mean) : null;
+      const previousNdviVal = previousNdvi?.mean != null ? Number(previousNdvi.mean) : null;
+      const timelineForStats = filteredTimeline.length > 0 ? filteredTimeline : ndviTimeline;
+      const cleanImgs = filteredImages.filter(img => img.cl < 0.3);
+
+      const { data, error } = await supabase.functions.invoke("ndvi-analysis", {
+        body: {
+          ndviData: {
+            currentMean: currentNdviVal,
+            previousMean: previousNdviVal,
+            totalImages: filteredImages.length,
+            cleanImages: cleanImgs.length,
+            minMean: timelineForStats.length > 0 ? Math.min(...timelineForStats.map(t => Number(t.mean || 999))) : null,
+            maxMean: timelineForStats.length > 0 ? Math.max(...timelineForStats.map(t => Number(t.mean || 0))) : null,
+          },
+          plantingDate: plantingDates?.date || null,
+          phenologyStage: latestStage,
+          pivotName,
+          hybridName: hybridName || null,
+          filterStartDate: filterStartDate ? format(filterStartDate, "yyyy-MM-dd") : null,
+        },
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      // Persist
+      await (supabase as any).from("ndvi_analyses").insert({
+        cycle_id: cycleId,
+        org_id: orgId,
+        analysis_text: data.analysis,
+        ndvi_value: data.ndviValue,
+        growth_stage: data.growthStage || latestStage,
+        dap: data.dap,
+        filter_start_date: filterStartDate ? format(filterStartDate, "yyyy-MM-dd") : null,
+      });
+
+      refetchAnalyses();
+      toast.success("Análise atualizada!");
+      return data;
+    },
+    onError: (e: any) => toast.error(e.message || "Erro ao gerar análise"),
+  });
 
   // Chart data
   const showAllWithPlanting = dateFilterMode === "all" && plantingTimestamp !== null;
@@ -634,6 +711,112 @@ export default function NdviSection({
                 </Badge>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ═══ ANÁLISE DO CAMPO ═══ */}
+      {filteredTimeline.length > 0 && (
+        <Card className="border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              📊 Análise do Campo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {latestAnalysis ? (
+              <>
+                {/* Header badge line */}
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  {latestAnalysis.growth_stage && (
+                    <Badge style={{ backgroundColor: STAGE_COLORS[latestAnalysis.growth_stage] || "#666", color: "white" }}>
+                      {latestAnalysis.growth_stage}
+                    </Badge>
+                  )}
+                  {latestAnalysis.dap != null && <span className="text-muted-foreground">{latestAnalysis.dap} DAP</span>}
+                  {latestAnalysis.ndvi_value != null && (
+                    <span className="font-mono" style={{ color: getNdviColor(Number(latestAnalysis.ndvi_value)) }}>
+                      NDVI: {Number(latestAnalysis.ndvi_value).toFixed(3)}
+                    </span>
+                  )}
+                  <span className="text-muted-foreground">
+                    {format(new Date(latestAnalysis.analysis_date), "dd/MM/yyyy")}
+                  </span>
+                </div>
+
+                {/* Analysis text */}
+                <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
+                  <ReactMarkdown>{latestAnalysis.analysis_text}</ReactMarkdown>
+                </div>
+
+                {/* Timestamp */}
+                <p className="text-[10px] text-muted-foreground">
+                  🕐 Atualizado em {format(new Date(latestAnalysis.created_at), "dd/MM/yyyy HH:mm")}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma análise disponível. Clique em "Atualizar análise" para gerar o primeiro parecer.
+              </p>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-wrap gap-2 pt-1 border-t">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => generateAnalysisMut.mutate()}
+                disabled={generateAnalysisMut.isPending}
+              >
+                {generateAnalysisMut.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+                {generateAnalysisMut.isPending ? "Analisando..." : "🔄 Atualizar análise"}
+              </Button>
+              {latestAnalysis && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={() => {
+                    navigator.clipboard.writeText(latestAnalysis.analysis_text);
+                    toast.success("Análise copiada!");
+                  }}
+                >
+                  <ClipboardCopy className="h-3 w-3" /> 📋 Copiar
+                </Button>
+              )}
+            </div>
+
+            {/* Pareceres Anteriores */}
+            {previousAnalyses.length > 1 && (
+              <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 w-full justify-start">
+                    <ChevronDown className={cn("h-3 w-3 transition-transform", historyOpen && "rotate-180")} />
+                    📊 Pareceres Anteriores ({previousAnalyses.length - 1})
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 mt-2">
+                  {previousAnalyses.slice(1).map((a: any) => (
+                    <div key={a.id} className="border rounded-lg p-3 bg-muted/30">
+                      <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+                        {a.growth_stage && <Badge variant="outline" className="text-[10px]">{a.growth_stage}</Badge>}
+                        {a.dap != null && <span>{a.dap} DAP</span>}
+                        {a.ndvi_value != null && <span className="font-mono">NDVI: {Number(a.ndvi_value).toFixed(3)}</span>}
+                        <span>{format(new Date(a.created_at), "dd/MM/yyyy HH:mm")}</span>
+                      </div>
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed">
+                        <ReactMarkdown>{a.analysis_text}</ReactMarkdown>
+                      </div>
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </CardContent>
         </Card>
       )}

@@ -480,6 +480,7 @@ export default function Phenology({
           orgId={orgId}
           pivotId={pivotId}
           pivotName={pivotName || "Campo"}
+          hybridName={hybridName}
           phenologyRecords={records}
         />
       </div>

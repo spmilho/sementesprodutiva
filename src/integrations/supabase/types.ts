@@ -1946,6 +1946,63 @@ export type Database = {
           },
         ]
       }
+      ndvi_analyses: {
+        Row: {
+          analysis_date: string
+          analysis_text: string
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          dap: number | null
+          filter_start_date: string | null
+          growth_stage: string | null
+          id: string
+          ndvi_value: number | null
+          org_id: string
+        }
+        Insert: {
+          analysis_date?: string
+          analysis_text: string
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          dap?: number | null
+          filter_start_date?: string | null
+          growth_stage?: string | null
+          id?: string
+          ndvi_value?: number | null
+          org_id: string
+        }
+        Update: {
+          analysis_date?: string
+          analysis_text?: string
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          dap?: number | null
+          filter_start_date?: string | null
+          growth_stage?: string | null
+          id?: string
+          ndvi_value?: number | null
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ndvi_analyses_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ndvi_analyses_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ndvi_polygons: {
         Row: {
           agro_polygon_id: string
