@@ -208,8 +208,6 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                   const ti = getPlantingTypeInfo(a.type);
                   const lot = seedLots.find((l: any) => l.id === a.seed_lot_id);
                   const gleba = glebas.find((g: any) => g.id === a.gleba_id);
-                  const cvVal = a.cv_percent;
-                  const cvLabel = cvVal != null ? getCvLabel(cvVal) : null;
 
                   return (
                     <TableRow key={a.id}>
