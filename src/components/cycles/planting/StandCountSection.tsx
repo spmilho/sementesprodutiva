@@ -304,7 +304,7 @@ export default function StandCountSection({ cycleId, orgId, standCounts, standPo
                   <TableHead className="text-xs">Gleba</TableHead>
                   <TableHead className="text-xs text-right">DAP</TableHead>
                   <TableHead className="text-xs text-right">Pontos</TableHead>
-                  <TableHead className="text-xs text-right">Média pl/ha</TableHead>
+                  <TableHead className="text-xs text-right">Média pl/m</TableHead>
                   <TableHead className="text-xs text-right">CV%</TableHead>
                   <TableHead className="text-xs text-right">%Emerg.</TableHead>
                   <TableHead className="text-xs text-center w-20">Ações</TableHead>
