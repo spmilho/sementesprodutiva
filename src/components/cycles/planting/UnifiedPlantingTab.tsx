@@ -198,7 +198,6 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
         plans={plans}
         glebas={glebas}
         seedLots={seedLots}
-        cvPoints={cvPoints}
         spacingFemaleFemaleCm={props.spacingFemaleFemaleCm}
         spacingMaleMaleCm={props.spacingMaleMaleCm}
       />

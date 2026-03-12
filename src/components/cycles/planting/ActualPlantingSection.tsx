@@ -315,7 +315,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
             )}
 
             <p className="text-xs font-semibold text-muted-foreground uppercase pt-2">Dados do Plantio</p>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Área plantada (ha) *</Label>
                 <Input type="number" step="0.01" {...form.register("actual_area")} />
@@ -324,9 +324,20 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                 <Label>Espaçamento (cm) *</Label>
                 <Input type="number" {...form.register("row_spacing")} />
               </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label>Sem/metro (config.)</Label>
                 <Input type="number" step="0.01" {...form.register("seeds_per_meter")} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>CV% (semeadura)</Label>
+                <Input type="number" step="0.1" placeholder="Ex: 12.5" {...form.register("cv_percent")} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Velocidade (km/h)</Label>
+                <Input type="number" step="0.1" {...form.register("planter_speed")} />
               </div>
             </div>
 
