@@ -730,17 +730,6 @@ export default function NdviSection({
                     label={{ value: "🌱 Plantio", position: "top", style: { fontSize: 10, fill: "#4CAF50", fontWeight: 700 } }}
                   />
                 )}
-                {/* Phenology stage markers */}
-                {phenologyMarkers.map((m, i) => (
-                  <ReferenceLine
-                    key={i}
-                    x={m.date}
-                    stroke={m.color}
-                    strokeWidth={2}
-                    strokeDasharray="4 2"
-                    label={{ value: m.stage, position: "top", style: { fontSize: 9, fill: m.color, fontWeight: 600 } }}
-                  />
-                ))}
               </ComposedChart>
             </ResponsiveContainer>
             <div className="flex flex-wrap gap-2 mt-2">
