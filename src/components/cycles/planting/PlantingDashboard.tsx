@@ -17,7 +17,7 @@ interface Props {
   maleArea?: number;
 }
 
-export default function PlantingDashboard({ plans, actuals, cvPoints, standCounts, standPoints, glebas }: Props) {
+export default function PlantingDashboard({ plans, actuals, cvPoints, standCounts, standPoints, glebas, femaleArea, maleArea }: Props) {
   // Calculate CV% planting per type
   const cvPlantingStats = useMemo(() => {
     const result: Record<string, { cv: number; mean: number; n: number }> = {};
