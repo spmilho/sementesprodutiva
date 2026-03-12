@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Users, Layers, FileText, Download, WifiOff } from "lucide-react";
+import { Building2, Users, Layers, FileText, Download, WifiOff, FileSignature } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 import { Navigate } from "react-router-dom";
 import OrganizationTab from "@/components/settings/OrganizationTab";
@@ -10,6 +10,8 @@ import ExportDataTab from "@/components/settings/ExportDataTab";
 import CooperadosTab from "@/components/settings/CooperadosTab";
 import ClientsTab from "@/components/settings/ClientsTab";
 import OfflineQueueTab from "@/components/settings/OfflineQueueTab";
+import { useState } from "react";
+import ContratoAcessoModal from "@/components/contratos/ContratoAcessoModal";
 
 export default function Configuracoes() {
   const { isAdmin, isManager, loading } = useRole();
