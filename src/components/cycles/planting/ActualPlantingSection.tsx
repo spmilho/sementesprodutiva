@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Pencil, Trash2, Loader2, CalendarIcon, ChevronDown, ChevronRight, Zap } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, CalendarIcon } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,11 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useOfflineSyncContext } from "@/components/Layout";
-import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, calcStats, getCvLabel } from "./planting-utils";
-import PlantingCvPoints from "./PlantingCvPoints";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer, ReferenceArea,
-} from "recharts";
+import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, getCvLabel } from "./planting-utils";
 
 interface Props {
   cycleId: string;
@@ -33,7 +29,6 @@ interface Props {
   plans: any[];
   glebas: any[];
   seedLots: any[];
-  cvPoints: any[];
   spacingFemaleFemaleCm?: number | null;
   spacingMaleMaleCm?: number | null;
 }
@@ -47,6 +42,7 @@ const schema = z.object({
   actual_area: z.coerce.number().positive("Área deve ser > 0"),
   row_spacing: z.coerce.number().int().positive().default(70),
   seeds_per_meter: z.coerce.number().positive().optional().or(z.literal("")),
+  cv_percent: z.coerce.number().min(0).optional().or(z.literal("")),
   planter_speed: z.coerce.number().positive().optional().or(z.literal("")),
   sowing_depth_cm: z.coerce.number().positive().optional().or(z.literal("")),
   soil_condition: z.string().optional(),
@@ -55,12 +51,11 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, glebas, seedLots, cvPoints, spacingFemaleFemaleCm, spacingMaleMaleCm }: Props) {
+export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, glebas, seedLots, spacingFemaleFemaleCm, spacingMaleMaleCm }: Props) {
   const queryClient = useQueryClient();
   const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
 
   const form = useForm<FormValues>({
@@ -117,6 +112,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
       actual_area: a.actual_area,
       row_spacing: a.row_spacing || 70,
       seeds_per_meter: a.seeds_per_meter ?? "",
+      cv_percent: a.cv_percent ?? "",
       planter_speed: a.planter_speed ?? "",
       sowing_depth_cm: a.sowing_depth_cm ?? "",
       soil_condition: a.soil_condition || undefined,
@@ -137,6 +133,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
         actual_area: values.actual_area,
         row_spacing: values.row_spacing,
         seeds_per_meter: values.seeds_per_meter || null,
+        cv_percent: values.cv_percent || null,
         planter_speed: values.planter_speed || null,
         sowing_depth_cm: values.sowing_depth_cm || null,
         soil_condition: values.soil_condition || null,
@@ -150,17 +147,9 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
         if (error) throw error;
       }
     },
-    onSuccess: (_data: any, variables: FormValues) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planting_actual", cycleId] });
-      queryClient.invalidateQueries({ queryKey: ["planting_cv_points", cycleId] });
-      if (!editingId) {
-        // Auto-expand the latest record to show CV% points
-        setTimeout(() => {
-          const latest = actuals[actuals.length - 1];
-          if (latest) setExpandedId(latest.id);
-        }, 500);
-      }
-      toast.success(editingId ? "Plantio atualizado!" : "Plantio registrado! Expanda a linha para adicionar pontos de CV%.");
+      toast.success(editingId ? "Plantio atualizado!" : "Plantio registrado!");
       setDialogOpen(false);
     },
     onError: (err: any) => toast.error(err.message),
@@ -202,7 +191,6 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs w-8"></TableHead>
                   <TableHead className="text-xs">Data</TableHead>
                   <TableHead className="text-xs">Tipo</TableHead>
                   <TableHead className="text-xs">Gleba</TableHead>
@@ -220,43 +208,29 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                   const ti = getPlantingTypeInfo(a.type);
                   const lot = seedLots.find((l: any) => l.id === a.seed_lot_id);
                   const gleba = glebas.find((g: any) => g.id === a.gleba_id);
-                  const pts = cvPoints.filter((p: any) => p.planting_actual_id === a.id);
-                  const stats = calcStats(pts.map((p: any) => Number(p.seeds_per_meter)));
-                  const cvLabel = stats.n > 0 ? getCvLabel(stats.cv) : null;
-                  const isExpanded = expandedId === a.id;
+                  const cvVal = a.cv_percent;
+                  const cvLabel = cvVal != null ? getCvLabel(cvVal) : null;
 
                   return (
-                    <>
-                      <TableRow key={a.id} className="cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : a.id)}>
-                        <TableCell className="p-1">
-                          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        </TableCell>
-                        <TableCell className="text-sm">{format(new Date(a.planting_date + "T12:00:00"), "dd/MM/yyyy")}</TableCell>
-                        <TableCell><span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", ti.badgeClass)}>{ti.badge}</span></TableCell>
-                        <TableCell className="text-sm">{gleba?.name || "—"}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{lot?.lot_number || "—"}</TableCell>
-                        <TableCell className="text-sm text-right">{a.actual_area}</TableCell>
-                        <TableCell className="text-sm text-right">{a.row_spacing || "—"}</TableCell>
-                        <TableCell className="text-sm text-right font-mono">{stats.n > 0 ? stats.mean.toFixed(2) : (a.seeds_per_meter || "—")}</TableCell>
-                        <TableCell className="text-sm text-right">
-                          {cvLabel ? <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium cursor-pointer", cvLabel.bg)}>{stats.cv.toFixed(1)}%</span> : <span className="text-xs text-muted-foreground cursor-pointer hover:text-primary">+ CV%</span>}
-                        </TableCell>
-                        <TableCell className="text-sm text-right hidden md:table-cell">{a.planter_speed || "—"}</TableCell>
-                        <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex justify-center gap-1">
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(a)}><Pencil className="h-3.5 w-3.5" /></Button>
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => deleteMutation.mutate(a.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      {isExpanded && (
-                        <TableRow key={a.id + "-cv"}>
-                          <TableCell colSpan={11} className="bg-muted/30 p-4">
-                            <PlantingCvPoints plantingActualId={a.id} cycleId={cycleId} existingPoints={pts} />
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </>
+                    <TableRow key={a.id}>
+                      <TableCell className="text-sm">{format(new Date(a.planting_date + "T12:00:00"), "dd/MM/yyyy")}</TableCell>
+                      <TableCell><span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", ti.badgeClass)}>{ti.badge}</span></TableCell>
+                      <TableCell className="text-sm">{gleba?.name || "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{lot?.lot_number || "—"}</TableCell>
+                      <TableCell className="text-sm text-right">{a.actual_area}</TableCell>
+                      <TableCell className="text-sm text-right">{a.row_spacing || "—"}</TableCell>
+                      <TableCell className="text-sm text-right font-mono">{a.seeds_per_meter || "—"}</TableCell>
+                      <TableCell className="text-sm text-right">
+                        {cvLabel ? <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cvLabel.bg)}>{cvVal.toFixed(1)}%</span> : <span className="text-xs text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="text-sm text-right hidden md:table-cell">{a.planter_speed || "—"}</TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex justify-center gap-1">
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(a)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => deleteMutation.mutate(a.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
               </TableBody>
@@ -340,7 +314,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
             )}
 
             <p className="text-xs font-semibold text-muted-foreground uppercase pt-2">Dados do Plantio</p>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Área plantada (ha) *</Label>
                 <Input type="number" step="0.01" {...form.register("actual_area")} />
@@ -349,9 +323,20 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                 <Label>Espaçamento (cm) *</Label>
                 <Input type="number" {...form.register("row_spacing")} />
               </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label>Sem/metro (config.)</Label>
                 <Input type="number" step="0.01" {...form.register("seeds_per_meter")} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>CV% (semeadura)</Label>
+                <Input type="number" step="0.1" placeholder="Ex: 12.5" {...form.register("cv_percent")} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Velocidade (km/h)</Label>
+                <Input type="number" step="0.1" {...form.register("planter_speed")} />
               </div>
             </div>
 
