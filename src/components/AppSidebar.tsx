@@ -1,6 +1,7 @@
-import { LayoutDashboard, Layers, Map, Settings, LogOut, ShieldCheck, Factory, Camera, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Layers, Map, Settings, LogOut, ShieldCheck, Factory, Camera, ClipboardList, FileSignature } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
+import { useContratoAccess } from "@/hooks/useContratos";
 import { NavLink } from "@/components/NavLink";
 import logoImg from "@/assets/logo-produtiva.jpg";
 import {
