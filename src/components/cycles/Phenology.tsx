@@ -229,8 +229,24 @@ export default function Phenology({
         <span>Pivô: <strong className="text-foreground">{pivotName || "—"}</strong></span>
       </div>
 
-      {/* Timeline */}
-      <StageTimeline records={records} stages={STAGES} />
+      {/* Visual Timeline */}
+      <Card>
+        <CardContent className="p-4">
+          <PhenologyTimeline
+            records={records}
+            plantingDate={plantingDate}
+            onClickFuture={(stage) => {
+              setEditingId(null);
+              setPhotoFile(null);
+              setPhotoPreview(null);
+              setGps(null);
+              form.reset({ observation_date: new Date(), type: "female", stage, description: "" });
+              setDialogOpen(true);
+            }}
+            onClickPast={(record) => openEdit(record)}
+          />
+        </CardContent>
+      </Card>
 
       {/* Add button */}
       <Button className="gap-2" onClick={openNew}>
