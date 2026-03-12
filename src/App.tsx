@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { NotificacaoNavProvider } from "@/contexts/NotificacaoNavContext";
+import { useRole } from "@/hooks/useRole";
 
 import Layout from "@/components/Layout";
 import Index from "./pages/Index";
@@ -42,6 +43,20 @@ function AuthRoute() {
   return <Auth />;
 }
 
+function HomePage() {
+  const { isClient, loading } = useRole();
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
+  if (isClient) return <Navigate to="/ciclos" replace />;
+  return <Index />;
+}
+
+function NonClientRoute({ children }: { children: React.ReactNode }) {
+  const { isClient, loading } = useRole();
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
+  if (isClient) return <Navigate to="/ciclos" replace />;
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -57,21 +72,21 @@ const App = () => (
               <ProtectedRoute>
                 <Layout>
                   <Routes>
-                    <Route path="/" element={<Index />} />
+                    <Route path="/" element={<HomePage />} />
                     <Route path="/ciclos" element={<Cycles />} />
-                    <Route path="/ciclos/novo" element={<CycleForm />} />
+                    <Route path="/ciclos/novo" element={<NonClientRoute><CycleForm /></NonClientRoute>} />
                     <Route path="/ciclos/:id" element={<CycleDetail />} />
                     <Route path="/ciclos/:id/avaliacoes" element={<FieldEvaluationList />} />
                     <Route path="/ciclos/:id/avaliacoes/nova" element={<FieldEvaluationForm />} />
                     <Route path="/ciclos/:id/avaliacoes/:visitId" element={<FieldEvaluationDetail />} />
                     <Route path="/ciclos/:id/avaliacoes/:visitId/editar" element={<FieldEvaluationForm />} />
-                    <Route path="/mapa" element={<MapaIntegrado />} />
-                    <Route path="/ubs" element={<UbsCapacityPlanning />} />
-                    <Route path="/configuracoes" element={<Configuracoes />} />
-                    <Route path="/usuarios" element={<UserManagement />} />
-                    <Route path="/feed" element={<FeedCampo />} />
-                    <Route path="/plano-acao" element={<PlanoAcoes />} />
-                    <Route path="/contratos" element={<Contratos />} />
+                    <Route path="/mapa" element={<NonClientRoute><MapaIntegrado /></NonClientRoute>} />
+                    <Route path="/ubs" element={<NonClientRoute><UbsCapacityPlanning /></NonClientRoute>} />
+                    <Route path="/configuracoes" element={<NonClientRoute><Configuracoes /></NonClientRoute>} />
+                    <Route path="/usuarios" element={<NonClientRoute><UserManagement /></NonClientRoute>} />
+                    <Route path="/feed" element={<NonClientRoute><FeedCampo /></NonClientRoute>} />
+                    <Route path="/plano-acao" element={<NonClientRoute><PlanoAcoes /></NonClientRoute>} />
+                    <Route path="/contratos" element={<NonClientRoute><Contratos /></NonClientRoute>} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Layout>
