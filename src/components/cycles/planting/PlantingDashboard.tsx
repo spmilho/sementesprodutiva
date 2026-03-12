@@ -86,21 +86,26 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
           if (type === "female") {
             entry.cvStandF = latest.cv_stand_pct ?? 0;
             entry.popF = latest.avg_plants_per_ha ?? 0;
+            entry.ppmF = latest.avg_plants_per_meter ?? 0;
             entry.emergF = latest.emergence_pct ?? 0;
           } else {
             entry.cvStandM = latest.cv_stand_pct ?? 0;
             entry.popM = latest.avg_plants_per_ha ?? 0;
+            entry.ppmM = latest.avg_plants_per_meter ?? 0;
             entry.emergM = latest.emergence_pct ?? 0;
           }
         }
       }
 
-      // Planned pop
+      // Planned pop (convert to plants/meter for chart)
       for (const type of ["female", "male"] as const) {
         const filtered = plans.filter((p: any) => (p.gleba_id || "none") === gid && (type === "female" ? isFemaleType(p.type) : isMaleType(p.type)));
-        const avg = filtered.length ? filtered.reduce((s: number, p: any) => s + (p.target_population || 0), 0) / filtered.length : 0;
-        if (type === "female") entry.popPlanF = avg;
-        else entry.popPlanM = avg;
+        if (filtered.length) {
+          const avgPop = filtered.reduce((s: number, p: any) => s + (p.target_population || 0), 0) / filtered.length;
+          const avgSeeds = filtered.reduce((s: number, p: any) => s + (p.seeds_per_meter || 0), 0) / filtered.length;
+          if (type === "female") { entry.popPlanF = avgPop; entry.ppmPlanF = avgSeeds; }
+          else { entry.popPlanM = avgPop; entry.ppmPlanM = avgSeeds; }
+        }
       }
 
       glebaMap.set(gid, entry);
