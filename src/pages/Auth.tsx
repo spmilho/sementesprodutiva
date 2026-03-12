@@ -15,6 +15,7 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [forgotMode, setForgotMode] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
