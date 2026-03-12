@@ -1,1 +1,4 @@
 project_id = "bfutkalpemjvjhqbsxfp"
+
+[functions.parse-contrato]
+verify_jwt = false
