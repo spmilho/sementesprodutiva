@@ -80,12 +80,18 @@ function checkPageBreak(doc: jsPDF, data: ReportData, neededSpace: number): numb
 // COVER PAGE
 // ═══════════════════════════════════════
 
-export function drawCover(doc: jsPDF, data: ReportData) {
+export function drawCover(doc: jsPDF, data: ReportData, coverImageDataUrl?: string) {
   const c = data.cycle;
   const s = data.orgSettings;
   const now = new Date();
 
-  // Gradient background
+  if (coverImageDataUrl) {
+    // Use html2canvas captured cover
+    doc.addImage(coverImageDataUrl, "JPEG", 0, 0, 210, 297);
+    return;
+  }
+
+  // Fallback: gradient background
   doc.setFillColor(27, 94, 32);
   doc.rect(0, 0, 210, 297, "F");
   doc.setFillColor(46, 125, 50);
@@ -105,33 +111,27 @@ export function drawCover(doc: jsPDF, data: ReportData) {
   // Title block at bottom
   const baseY = 190;
 
-  // Green accent line
   doc.setFillColor(76, 175, 80);
   doc.rect(20, baseY, 40, 2, "F");
 
-  // Document type
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(255, 255, 255, 0.8);
   doc.text("RELATÓRIO DE PRODUÇÃO", 20, baseY + 12);
 
-  // Hybrid name
   doc.setFontSize(34);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
   doc.text(c.hybrid_name, 20, baseY + 28);
 
-  // Season
   doc.setFontSize(18);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(255, 255, 255, 0.9);
   doc.text(`Safra ${c.season}`, 20, baseY + 38);
 
-  // Green line
   doc.setFillColor(76, 175, 80);
   doc.rect(20, baseY + 44, 60, 2, "F");
 
-  // Info table
   doc.setFontSize(10);
   doc.setTextColor(255, 255, 255, 0.85);
   const infoLines: [string, string][] = [
