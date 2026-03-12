@@ -10,6 +10,7 @@ interface Props {
   plans: any[];
   actuals: any[];
   cvPoints: any[];
+  cvRecords: any[];
   standCounts: any[];
   standPoints: any[];
   glebas: any[];
