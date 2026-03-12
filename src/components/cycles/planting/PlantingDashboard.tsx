@@ -191,23 +191,23 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
         </CardContent></Card>
 
-        {/* Pop Fêmea */}
+        {/* Pop Fêmea - plantas/metro */}
         <Card><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pop. Fêmea</p>
-          {standStats.female.avgPlantsHa > 0 ? (
+          {standStats.female.avgPlantsPerMeter > 0 ? (
             <>
-              <p className="text-xl font-bold">{Math.round(standStats.female.avgPlantsHa).toLocaleString("pt-BR")} <span className="text-xs font-normal">pl/ha</span></p>
+              <p className="text-xl font-bold">{standStats.female.avgPlantsPerMeter.toFixed(2)} <span className="text-xs font-normal">pl/m</span></p>
               <p className="text-[10px] text-muted-foreground">Emerg: {standStats.female.emergPct.toFixed(0)}% | CV: {standStats.female.cv.toFixed(1)}%</p>
             </>
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
         </CardContent></Card>
 
-        {/* Pop Macho */}
+        {/* Pop Macho - plantas/metro */}
         <Card><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pop. Macho</p>
-          {standStats.male.avgPlantsHa > 0 ? (
+          {standStats.male.avgPlantsPerMeter > 0 ? (
             <>
-              <p className="text-xl font-bold">{Math.round(standStats.male.avgPlantsHa).toLocaleString("pt-BR")} <span className="text-xs font-normal">pl/ha</span></p>
+              <p className="text-xl font-bold">{standStats.male.avgPlantsPerMeter.toFixed(2)} <span className="text-xs font-normal">pl/m</span></p>
               <p className="text-[10px] text-muted-foreground">Emerg: {standStats.male.emergPct.toFixed(0)}% | CV: {standStats.male.cv.toFixed(1)}%</p>
             </>
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
