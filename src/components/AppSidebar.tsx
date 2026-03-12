@@ -61,8 +61,37 @@ function MenuGroup({ label, items }: { label: string; items: typeof mainItems })
 
 export function AppSidebar() {
   const { signOut, user } = useAuth();
-  const { isAdmin } = useRole();
+  const { isAdmin, isClient } = useRole();
   const { canView: canViewContratos } = useContratoAccess();
+
+  // Client users only see Ciclos de Produção
+  if (isClient) {
+    const clientItems = [{ title: "Ciclos de Produção", url: "/ciclos", icon: Layers }];
+    return (
+      <Sidebar collapsible="icon">
+        <SidebarHeader className="p-4 border-b border-sidebar-border">
+          <div className="flex items-center gap-3">
+            <img src={logoImg} alt="Produtiva Sementes" className="w-9 h-9 rounded-lg object-contain" />
+            <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+              <span className="text-sm font-bold text-sidebar-foreground tracking-tight">Produtiva Sementes</span>
+              <span className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">Caderno de Campo</span>
+            </div>
+          </div>
+        </SidebarHeader>
+        <SidebarContent className="px-2 py-3">
+          <MenuGroup label="Principal" items={clientItems} />
+        </SidebarContent>
+        <SidebarFooter className="p-3 border-t border-sidebar-border group-data-[collapsible=icon]:hidden">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-sidebar-foreground/40 truncate">{user?.email}</p>
+            <button onClick={signOut} className="text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors">
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+    );
+  }
 
   const adminItems = isAdmin
     ? [{ title: "Usuários & Roles", url: "/usuarios", icon: ShieldCheck }]
