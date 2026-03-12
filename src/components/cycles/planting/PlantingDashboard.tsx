@@ -1,10 +1,12 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calcStats, getCvLabel, getOverallStatus, isFemaleType, isMaleType, getPlantingTypeInfo, calcMaleAreaForGleba } from "./planting-utils";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ReferenceLine, ResponsiveContainer,
 } from "recharts";
+import { Info } from "lucide-react";
 
 interface Props {
   plans: any[];
@@ -18,48 +20,108 @@ interface Props {
   maleArea?: number;
 }
 
+const DEFAULT_GERMINATION = 90;
+
+function getGermination(plans: any[], actuals: any[], type: string): number {
+  // 1st: germination_considered_pct from planting_plan
+  const planFiltered = plans.filter((p: any) => type === "female" ? isFemaleType(p.type) : isMaleType(p.type));
+  for (const p of planFiltered) {
+    if (p.germination_considered_pct != null && p.germination_considered_pct > 0) return p.germination_considered_pct;
+  }
+  // 2nd: germination_pct from seed_lot (if linked via actuals — fallback)
+  // For now, we use default
+  return DEFAULT_GERMINATION;
+}
+
+function getSeedsPerMeterActual(actuals: any[], type: string): number {
+  const filtered = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
+  if (filtered.length === 0) return 0;
+  const vals = filtered.map((a: any) => Number(a.seeds_per_meter_actual) || 0).filter(v => v > 0);
+  if (vals.length > 0) return vals.reduce((s, v) => s + v, 0) / vals.length;
+  // Fallback to seeds_per_meter (configured, from planting_actual)
+  const fallback = filtered.map((a: any) => Number(a.seeds_per_meter) || 0).filter(v => v > 0);
+  return fallback.length > 0 ? fallback.reduce((s, v) => s + v, 0) / fallback.length : 0;
+}
+
+function getAvgSpacing(actuals: any[], type: string): number {
+  const filtered = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
+  if (filtered.length === 0) return 0;
+  const vals = filtered.map((a: any) => Number(a.row_spacing) || 0).filter(v => v > 0);
+  return vals.length > 0 ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
+}
+
 export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords, standCounts, standPoints, glebas, femaleArea, maleArea }: Props) {
-  // Calculate CV% planting per type — prefer manual cvRecords, fallback to cvPoints
+  // CV% planting per type — prefer manual cvRecords, fallback to cvPoints
   const cvPlantingStats = useMemo(() => {
     const result: Record<string, { cv: number; mean: number; n: number }> = {};
     for (const type of ["female", "male"]) {
-      // Check manual CV records first
       const manualRecords = cvRecords.filter((r: any) =>
         type === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
       );
       if (manualRecords.length > 0) {
         const avgCv = manualRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / manualRecords.length;
-        result[type] = { cv: avgCv, mean: 0, n: manualRecords.length };
+        // Get seeds_per_meter_actual from planting_actual (NOT seeds_per_meter_set)
+        const meanSpm = getSeedsPerMeterActual(actuals, type);
+        result[type] = { cv: avgCv, mean: meanSpm, n: manualRecords.length };
       } else {
-        // Fallback to cv_points
         const filteredActuals = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
         const allPoints = filteredActuals.flatMap((a: any) =>
           cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))
         ).filter(v => v > 0);
-        result[type] = calcStats(allPoints);
+        const stats = calcStats(allPoints);
+        result[type] = stats;
       }
     }
     return result;
   }, [actuals, cvPoints, cvRecords]);
 
-  // Calculate population per hectare from actuals' seeds_per_meter and row_spacing
+  // Population per type with priority: 1) stand count, 2) estimated, 3) none
   const popStats = useMemo(() => {
-    const result: Record<string, { popPerHa: number; seedsPerMeter: number; spacingCm: number }> = {};
+    const result: Record<string, {
+      popPerHa: number;
+      source: "stand" | "estimated" | "none";
+      seedsPerMeter: number;
+      spacingCm: number;
+      germPct: number;
+      standDate?: string;
+      standN?: number;
+      standCv?: number;
+    }> = {};
     for (const type of ["female", "male"]) {
-      const filtered = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
-      if (filtered.length === 0) {
-        result[type] = { popPerHa: 0, seedsPerMeter: 0, spacingCm: 0 };
+      // PRIORITY 1: Stand counts
+      const sc = standCounts.filter((s: any) => s.parent_type === type);
+      if (sc.length > 0) {
+        const latest = sc[0]; // ordered desc
+        const pts = standPoints.filter((p: any) => p.stand_count_id === latest.id);
+        result[type] = {
+          popPerHa: latest.avg_plants_per_ha ?? 0,
+          source: "stand",
+          seedsPerMeter: 0,
+          spacingCm: 0,
+          germPct: 0,
+          standDate: latest.count_date,
+          standN: pts.length,
+          standCv: latest.cv_stand_pct ?? 0,
+        };
         continue;
       }
-      const avgSeeds = filtered.reduce((s: number, a: any) => s + (Number(a.seeds_per_meter) || 0), 0) / filtered.length;
-      const avgSpacing = filtered.reduce((s: number, a: any) => s + (Number(a.row_spacing) || 0), 0) / filtered.length;
-      const popPerHa = avgSpacing > 0 ? Math.round((avgSeeds / (avgSpacing / 100)) * 10000) : 0;
-      result[type] = { popPerHa, seedsPerMeter: avgSeeds, spacingCm: avgSpacing };
+
+      // PRIORITY 2: Estimated from seeds_per_meter_actual + spacing + germination
+      const spm = getSeedsPerMeterActual(actuals, type);
+      const spacingCm = getAvgSpacing(actuals, type);
+      const germPct = getGermination(plans, actuals, type);
+
+      if (spm > 0 && spacingCm > 0) {
+        const popPerHa = Math.round((spm / (spacingCm / 100)) * 10000 * (germPct / 100));
+        result[type] = { popPerHa, source: "estimated", seedsPerMeter: spm, spacingCm, germPct };
+      } else {
+        result[type] = { popPerHa: 0, source: "none", seedsPerMeter: 0, spacingCm: 0, germPct: 0 };
+      }
     }
     return result;
-  }, [actuals]);
+  }, [actuals, plans, standCounts, standPoints]);
 
-  // Stand stats per type (latest count)
+  // Stand stats per type
   const standStats = useMemo(() => {
     const result: Record<string, { avgPlantsHa: number; avgPlantsPerMeter: number; cv: number; emergPct: number; n: number }> = {};
     for (const type of ["female", "male"]) {
@@ -83,25 +145,20 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
 
   // Chart data by gleba
   const glebaChartData = useMemo(() => {
-    const glebaMap = new Map<string, { name: string; cvPlantingF: number; cvPlantingM: number; cvStandF: number; cvStandM: number; popF: number; popM: number; popPlanF: number; popPlanM: number; emergF: number; emergM: number; ppmF: number; ppmM: number; ppmPlanF: number; ppmPlanM: number; popHaF: number; popHaM: number }>();
-
+    const glebaMap = new Map<string, any>();
     const getGlebaName = (glebaId: string | null) => {
       if (!glebaId) return "Geral";
       return glebas.find((g: any) => g.id === glebaId)?.name || "Geral";
     };
-
-    // Process actuals for CV planting
     const glebaIds = new Set<string>();
     actuals.forEach((a: any) => glebaIds.add(a.gleba_id || "none"));
     standCounts.forEach((s: any) => glebaIds.add(s.gleba_id || "none"));
-    // If no glebas at all, add "none" so we still show "Geral"
     if (glebaIds.size === 0 && cvRecords.length > 0) glebaIds.add("none");
 
     glebaIds.forEach(gid => {
       const name = getGlebaName(gid === "none" ? null : gid);
-      const entry = { name, cvPlantingF: 0, cvPlantingM: 0, cvStandF: 0, cvStandM: 0, popF: 0, popM: 0, popPlanF: 0, popPlanM: 0, emergF: 0, emergM: 0, ppmF: 0, ppmM: 0, ppmPlanF: 0, ppmPlanM: 0, popHaF: 0, popHaM: 0 };
+      const entry: any = { name, cvPlantingF: 0, cvPlantingM: 0, cvStandF: 0, cvStandM: 0, popF: 0, popM: 0, popPlanF: 0, popPlanM: 0, emergF: 0, emergM: 0, ppmF: 0, ppmM: 0, ppmPlanF: 0, ppmPlanM: 0, popHaF: 0, popHaM: 0 };
 
-      // CV planting - prefer manual cvRecords
       for (const type of ["female", "male"] as const) {
         const manualRecords = cvRecords.filter((r: any) =>
           type === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
@@ -119,19 +176,15 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
         }
       }
 
-      // Population from actuals (seeds_per_meter / (row_spacing/100) * 10000)
       for (const type of ["female", "male"] as const) {
         const filtered = actuals.filter((a: any) => (a.gleba_id || "none") === gid && (type === "female" ? isFemaleType(a.type) : isMaleType(a.type)));
         if (filtered.length > 0) {
-          const avgSeeds = filtered.reduce((s: number, a: any) => s + (Number(a.seeds_per_meter) || 0), 0) / filtered.length;
-          const avgSpacing = filtered.reduce((s: number, a: any) => s + (Number(a.row_spacing) || 0), 0) / filtered.length;
-          const popHa = avgSpacing > 0 ? Math.round((avgSeeds / (avgSpacing / 100)) * 10000) : 0;
-          if (type === "female") { entry.popHaF = popHa; entry.ppmF = avgSeeds; }
-          else { entry.popHaM = popHa; entry.ppmM = avgSeeds; }
+          const avgSeeds = filtered.reduce((s: number, a: any) => s + (Number(a.seeds_per_meter_actual) || Number(a.seeds_per_meter) || 0), 0) / filtered.length;
+          if (type === "female") entry.ppmF = avgSeeds;
+          else entry.ppmM = avgSeeds;
         }
       }
 
-      // Stand
       for (const type of ["female", "male"] as const) {
         const counts = standCounts.filter((s: any) => (s.gleba_id || "none") === gid && s.parent_type === type);
         if (counts.length > 0) {
@@ -148,7 +201,6 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
         }
       }
 
-      // Planned pop
       for (const type of ["female", "male"] as const) {
         const filtered = plans.filter((p: any) => (p.gleba_id || "none") === gid && (type === "female" ? isFemaleType(p.type) : isMaleType(p.type)));
         if (filtered.length) {
@@ -161,11 +213,10 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
 
       glebaMap.set(gid, entry);
     });
-
     return Array.from(glebaMap.values());
   }, [actuals, cvPoints, cvRecords, standCounts, plans, glebas]);
 
-  // Summary table data
+  // Summary table
   const summaryRows = useMemo(() => {
     const rows: any[] = [];
     const glebaIds = new Set<string>();
@@ -179,37 +230,33 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
         const filteredActuals = actuals.filter((a: any) => (a.gleba_id || "none") === gid && (pType === "female" ? isFemaleType(a.type) : isMaleType(a.type)));
         const area = pType === "female" ? (femaleArea ?? 0) : (maleArea ?? 0);
 
-        // CV% from manual records or cv_points
         const manualCvRecords = cvRecords.filter((r: any) =>
           pType === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
         );
         let cvPlanting = 0;
-        let seedsPerMeter = 0;
+        let seedsPerMeter = getSeedsPerMeterActual(actuals, pType);
         if (manualCvRecords.length > 0) {
           cvPlanting = manualCvRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / manualCvRecords.length;
         } else {
           const pts = filteredActuals.flatMap((a: any) => cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))).filter(v => v > 0);
           const plantingStats = calcStats(pts);
           cvPlanting = plantingStats.cv;
-          seedsPerMeter = plantingStats.mean;
+          if (plantingStats.mean > 0) seedsPerMeter = plantingStats.mean;
         }
 
-        // Seeds per meter from actuals
-        if (filteredActuals.length > 0) {
-          seedsPerMeter = filteredActuals.reduce((s: number, a: any) => s + (Number(a.seeds_per_meter) || 0), 0) / filteredActuals.length;
-        }
-
-        // Population from seeds_per_meter + row_spacing
-        const avgSpacing = filteredActuals.length > 0
-          ? filteredActuals.reduce((s: number, a: any) => s + (Number(a.row_spacing) || 0), 0) / filteredActuals.length
-          : 0;
-        const popFromActuals = avgSpacing > 0 ? Math.round((seedsPerMeter / (avgSpacing / 100)) * 10000) : 0;
+        const avgSpacing = getAvgSpacing(actuals, pType);
+        const germPct = getGermination(plans, actuals, pType);
+        const popEstimated = (seedsPerMeter > 0 && avgSpacing > 0) ? Math.round((seedsPerMeter / (avgSpacing / 100)) * 10000 * (germPct / 100)) : 0;
 
         const sc = standCounts.filter((s: any) => (s.gleba_id || "none") === gid && s.parent_type === pType);
         const latest = sc[0];
 
         const planPop = plans.filter((p: any) => (p.gleba_id || "none") === gid && (pType === "female" ? isFemaleType(p.type) : isMaleType(p.type)));
         const avgPlanPop = planPop.length ? planPop.reduce((s: number, p: any) => s + (p.target_population || 0), 0) / planPop.length : null;
+
+        const popReal = latest?.avg_plants_per_ha
+          ? Math.round(latest.avg_plants_per_ha).toLocaleString("pt-BR")
+          : (popEstimated > 0 ? popEstimated.toLocaleString("pt-BR") + "*" : "—");
 
         if (area > 0 || latest || cvPlanting > 0) {
           rows.push({
@@ -219,7 +266,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
             seedsPerMeter: seedsPerMeter > 0 ? seedsPerMeter.toFixed(2) : "—",
             cvPlanting: cvPlanting > 0 ? cvPlanting.toFixed(1) : "—",
             popPlan: avgPlanPop ? Math.round(avgPlanPop).toLocaleString("pt-BR") : "—",
-            popReal: popFromActuals > 0 ? popFromActuals.toLocaleString("pt-BR") : (latest?.avg_plants_per_ha ? Math.round(latest.avg_plants_per_ha).toLocaleString("pt-BR") : "—"),
+            popReal,
             cvStand: latest?.cv_stand_pct != null ? latest.cv_stand_pct.toFixed(1) : "—",
             emergPct: latest?.emergence_pct != null ? latest.emergence_pct.toFixed(1) + "%" : "—",
             status: getOverallStatus(cvPlanting || null, latest?.cv_stand_pct ?? null, latest?.emergence_pct ?? null),
@@ -228,7 +275,55 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
       }
     });
     return rows;
-  }, [actuals, cvPoints, cvRecords, standCounts, plans, glebas]);
+  }, [actuals, cvPoints, cvRecords, standCounts, plans, glebas, femaleArea, maleArea]);
+
+  const PopTooltipContent = () => (
+    <div className="max-w-xs space-y-1.5 text-xs">
+      <p className="font-semibold">Como é calculado:</p>
+      <p><strong>Sem contagem de stand:</strong><br/>(sem/metro ÷ espaçamento) × 10.000 × germinação%</p>
+      <p><strong>Com contagem:</strong><br/>Média real de plantas/ha dos pontos amostrados</p>
+      <p className="text-muted-foreground italic">A contagem de stand é mais precisa que a estimativa.</p>
+    </div>
+  );
+
+  const renderPopCard = (type: string, label: string) => {
+    const pop = popStats[type];
+    if (!pop || pop.source === "none") {
+      return (
+        <Card><CardContent className="p-3 space-y-1">
+          <div className="flex items-center gap-1">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pop. {label}</p>
+            <TooltipProvider><Tooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent><PopTooltipContent /></TooltipContent></Tooltip></TooltipProvider>
+          </div>
+          <p className="text-sm text-muted-foreground">—</p>
+          <p className="text-[10px] text-muted-foreground">Registre plantio ou contagem</p>
+        </CardContent></Card>
+      );
+    }
+
+    const isStand = pop.source === "stand";
+    return (
+      <Card><CardContent className="p-3 space-y-1">
+        <div className="flex items-center gap-1">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pop. {label} {isStand ? "(Stand)" : "(Estimada)"}</p>
+          <TooltipProvider><Tooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent><PopTooltipContent /></TooltipContent></Tooltip></TooltipProvider>
+        </div>
+        <div className="flex items-center gap-2">
+          <p className="text-xl font-bold">{pop.popPerHa.toLocaleString("pt-BR")} <span className="text-xs font-normal">pl/ha</span></p>
+          {isStand ? (
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">🟢 Contagem real</span>
+          ) : (
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">⏳ Estimativa</span>
+          )}
+        </div>
+        {isStand ? (
+          <p className="text-[10px] text-muted-foreground">Contagem: {pop.standDate} | {pop.standN} pontos | CV: {pop.standCv?.toFixed(1)}%</p>
+        ) : (
+          <p className="text-[10px] text-muted-foreground">{pop.seedsPerMeter.toFixed(1)} sem/m | Esp: {pop.spacingCm}cm | Germ: {pop.germPct}%</p>
+        )}
+      </CardContent></Card>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -245,7 +340,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
                 <span className="text-xl font-bold">{cvPlantingStats.female.cv.toFixed(1)}%</span>
                 <span className={`text-xs px-1.5 py-0.5 rounded ${getCvLabel(cvPlantingStats.female.cv).bg}`}>{getCvLabel(cvPlantingStats.female.cv).emoji}</span>
               </div>
-              <p className="text-[10px] text-muted-foreground">Média: {cvPlantingStats.female.mean.toFixed(2)} sem/m | {cvPlantingStats.female.n} pts</p>
+              <p className="text-[10px] text-muted-foreground">Média: {cvPlantingStats.female.mean.toFixed(2)} sem/m | {cvPlantingStats.female.n} {cvRecords.length > 0 ? "reg" : "pts"}</p>
             </>
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
         </CardContent></Card>
@@ -259,32 +354,16 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
                 <span className="text-xl font-bold">{cvPlantingStats.male.cv.toFixed(1)}%</span>
                 <span className={`text-xs px-1.5 py-0.5 rounded ${getCvLabel(cvPlantingStats.male.cv).bg}`}>{getCvLabel(cvPlantingStats.male.cv).emoji}</span>
               </div>
-              <p className="text-[10px] text-muted-foreground">Média: {cvPlantingStats.male.mean.toFixed(2)} sem/m | {cvPlantingStats.male.n} pts</p>
+              <p className="text-[10px] text-muted-foreground">Média: {cvPlantingStats.male.mean.toFixed(2)} sem/m | {cvPlantingStats.male.n} {cvRecords.length > 0 ? "reg" : "pts"}</p>
             </>
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
         </CardContent></Card>
 
-        {/* Pop Fêmea - plantas/ha */}
-        <Card><CardContent className="p-3 space-y-1">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pop. Fêmea</p>
-          {popStats.female.popPerHa > 0 ? (
-            <>
-              <p className="text-xl font-bold">{popStats.female.popPerHa.toLocaleString("pt-BR")} <span className="text-xs font-normal">pl/ha</span></p>
-              <p className="text-[10px] text-muted-foreground">{popStats.female.seedsPerMeter.toFixed(1)} sem/m | Esp: {popStats.female.spacingCm}cm</p>
-            </>
-          ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
-        </CardContent></Card>
+        {/* Pop Fêmea */}
+        {renderPopCard("female", "Fêmea")}
 
-        {/* Pop Macho - plantas/ha */}
-        <Card><CardContent className="p-3 space-y-1">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pop. Macho</p>
-          {popStats.male.popPerHa > 0 ? (
-            <>
-              <p className="text-xl font-bold">{popStats.male.popPerHa.toLocaleString("pt-BR")} <span className="text-xs font-normal">pl/ha</span></p>
-              <p className="text-[10px] text-muted-foreground">{popStats.male.seedsPerMeter.toFixed(1)} sem/m | Esp: {popStats.male.spacingCm}cm</p>
-            </>
-          ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
-        </CardContent></Card>
+        {/* Pop Macho */}
+        {renderPopCard("male", "Macho")}
 
         {/* CV% Stand Fêmea */}
         <Card><CardContent className="p-3 space-y-1">
@@ -297,7 +376,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
               </div>
               <p className="text-[10px] text-muted-foreground">{standStats.female.n} pontos</p>
             </>
-          ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
+          ) : <p className="text-sm text-muted-foreground">Registre contagem de stand</p>}
         </CardContent></Card>
 
         {/* CV% Stand Macho */}
@@ -311,7 +390,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
               </div>
               <p className="text-[10px] text-muted-foreground">{standStats.male.n} pontos</p>
             </>
-          ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
+          ) : <p className="text-sm text-muted-foreground">Registre contagem de stand</p>}
         </CardContent></Card>
       </div>
 
@@ -325,7 +404,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="name" className="text-xs" />
                 <YAxis className="text-xs" />
-                <Tooltip />
+                <RechartsTooltip />
                 <Legend />
                 <ReferenceLine y={15} stroke="#22c55e" strokeDasharray="5 5" label="15%" />
                 <ReferenceLine y={20} stroke="#eab308" strokeDasharray="5 5" label="20%" />
@@ -343,7 +422,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="name" className="text-xs" />
                 <YAxis className="text-xs" />
-                <Tooltip />
+                <RechartsTooltip />
                 <Legend />
                 <ReferenceLine y={15} stroke="#22c55e" strokeDasharray="5 5" label="15%" />
                 <ReferenceLine y={20} stroke="#eab308" strokeDasharray="5 5" label="20%" />
@@ -366,7 +445,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="name" className="text-xs" />
                 <YAxis className="text-xs" />
-                <Tooltip />
+                <RechartsTooltip />
                 <Legend />
                 <Bar dataKey="ppmF" name="Pl/m Fêmea Real" fill="#1E88E5" barSize={16} />
                 <Bar dataKey="ppmPlanF" name="Pl/m Fêmea Plan." fill="#90CAF9" barSize={16} />
@@ -383,7 +462,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="name" className="text-xs" />
                 <YAxis className="text-xs" domain={[0, 110]} />
-                <Tooltip />
+                <RechartsTooltip />
                 <Legend />
                 <ReferenceLine y={90} stroke="#22c55e" strokeDasharray="5 5" label="90%" />
                 <Bar dataKey="emergF" name="% Emerg. Fêmea" fill="#1E88E5" barSize={20} />
