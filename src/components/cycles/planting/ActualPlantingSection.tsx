@@ -326,8 +326,8 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                 <Input type="number" step="0.01" {...form.register("seeds_per_meter")} />
               </div>
               <div className="space-y-1.5">
-                <Label>CV% (semeadura)</Label>
-                <Input type="number" step="0.1" placeholder="Ex: 12.5" {...form.register("cv_percent")} />
+                <Label>Velocidade (km/h)</Label>
+                <Input type="number" step="0.1" {...form.register("planter_speed")} />
               </div>
               <div className="space-y-1.5">
                 <Label>Velocidade (km/h)</Label>
