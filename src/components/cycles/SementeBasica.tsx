@@ -105,7 +105,7 @@ const CATEGORIES = [
 const DOSE_UNITS = [
   { value: "mL/60k_seeds", label: "mL/60.000 sem" },
   { value: "g/60k_seeds", label: "g/60.000 sem" },
-  { value: "mL/kg", label: "mL/kg" },
+  { value: "mL/100kg", label: "mL/100 kg de sementes" },
   { value: "mL/sack_20kg", label: "mL/saco 20kg" },
   { value: "L/ton", label: "L/ton" },
 ];

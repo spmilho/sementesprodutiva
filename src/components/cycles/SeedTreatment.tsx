@@ -386,7 +386,7 @@ function ParentalBlock({
                 <Input type="number" value={data.vigorBefore} onChange={e => update("vigorBefore", e.target.value)} className="h-9 text-sm" />
               </div>
               <div>
-                <Label className="text-xs">Volume de calda (mL/kg)</Label>
+                <Label className="text-xs">Volume de calda (mL/100 kg)</Label>
                 <Input value={data.totalSlurryVolume} onChange={e => update("totalSlurryVolume", e.target.value)} className="h-9 text-sm" />
               </div>
             </div>

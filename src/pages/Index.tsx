@@ -173,7 +173,7 @@ export default function Dashboard() {
       if (!a.planting_date) continue;
       const d = a.planting_date;
       const entry = dateMap.get(d) || { planned: 0, actual: 0 };
-      entry.actual += a.area_planted_ha || 0;
+      entry.actual += a.actual_area || 0;
       dateMap.set(d, entry);
     }
     const sorted = [...dateMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
