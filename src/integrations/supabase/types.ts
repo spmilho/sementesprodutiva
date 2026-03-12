@@ -3283,6 +3283,9 @@ export type Database = {
           id: string
           irrigation_system: string
           isolation_distance: number | null
+          male_1_planting_finished: boolean | null
+          male_2_planting_finished: boolean | null
+          male_3_planting_finished: boolean | null
           male_area: number
           male_line: string
           male_planting_finished: boolean
@@ -3320,6 +3323,9 @@ export type Database = {
           id?: string
           irrigation_system?: string
           isolation_distance?: number | null
+          male_1_planting_finished?: boolean | null
+          male_2_planting_finished?: boolean | null
+          male_3_planting_finished?: boolean | null
           male_area: number
           male_line: string
           male_planting_finished?: boolean
@@ -3357,6 +3363,9 @@ export type Database = {
           id?: string
           irrigation_system?: string
           isolation_distance?: number | null
+          male_1_planting_finished?: boolean | null
+          male_2_planting_finished?: boolean | null
+          male_3_planting_finished?: boolean | null
           male_area?: number
           male_line?: string
           male_planting_finished?: boolean
@@ -4038,6 +4047,56 @@ export type Database = {
           },
           {
             foreignKeyName: "stand_counts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ts_product_catalog: {
+        Row: {
+          active_ingredient: string | null
+          category: string | null
+          created_at: string | null
+          default_dose: number | null
+          default_dose_unit: string | null
+          deleted_at: string | null
+          id: string
+          org_id: string
+          product_name: string
+          product_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_ingredient?: string | null
+          category?: string | null
+          created_at?: string | null
+          default_dose?: number | null
+          default_dose_unit?: string | null
+          deleted_at?: string | null
+          id?: string
+          org_id: string
+          product_name: string
+          product_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_ingredient?: string | null
+          category?: string | null
+          created_at?: string | null
+          default_dose?: number | null
+          default_dose_unit?: string | null
+          deleted_at?: string | null
+          id?: string
+          org_id?: string
+          product_name?: string
+          product_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ts_product_catalog_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"

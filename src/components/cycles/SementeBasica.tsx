@@ -105,7 +105,7 @@ const CATEGORIES = [
 const DOSE_UNITS = [
   { value: "mL/60k_seeds", label: "mL/60.000 sem" },
   { value: "g/60k_seeds", label: "g/60.000 sem" },
-  { value: "mL/kg", label: "mL/kg" },
+  { value: "mL/100kg", label: "mL/100 kg de sementes" },
   { value: "mL/sack_20kg", label: "mL/saco 20kg" },
   { value: "L/ton", label: "L/ton" },
 ];
@@ -687,23 +687,6 @@ export default function SementeBasica({
         </div>
       )}
 
-      {/* TS Progress */}
-      {lots.length > 0 && (
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Lotes com TS completo</span>
-              <span className="font-medium">{lotsWithTs.length} de {lots.length}</span>
-            </div>
-            <Progress value={tsProgress} className="h-2" />
-            {lotsPendingTs.length > 0 && (
-              <div className="text-xs text-muted-foreground mt-1">
-                Pendentes: {lotsPendingTs.map((l: any) => l.lot_number).join(", ")}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* ═══════ DIALOG: CADASTRAR LOTE ═══════ */}
       <Dialog open={lotDialogOpen} onOpenChange={setLotDialogOpen}>

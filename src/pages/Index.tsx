@@ -100,8 +100,8 @@ export default function Dashboard() {
     for (const c of filtered) {
       if (["completed", "cancelled"].includes(c.status)) continue;
       totalArea += c.female_area;
-      const actuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && a.type === "female");
-      plantedArea += actuals.reduce((s: number, a: any) => s + (a.area_planted_ha || 0), 0);
+      const actuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && (a.type === "female"));
+      plantedArea += actuals.reduce((s: number, a: any) => s + (a.actual_area || 0), 0);
     }
     return totalArea > 0 ? Math.min(100, Math.round((plantedArea / totalArea) * 100)) : 0;
   }, [filtered, plantingActuals]);
@@ -112,8 +112,8 @@ export default function Dashboard() {
     for (const c of filtered) {
       if (["completed", "cancelled"].includes(c.status)) continue;
       totalArea += c.male_area;
-      const actuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && a.type === "male");
-      plantedArea += actuals.reduce((s: number, a: any) => s + (a.area_planted_ha || 0), 0);
+      const actuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && (a.type === "male" || a.type === "male_1" || a.type === "male_2" || a.type === "male_3"));
+      plantedArea += actuals.reduce((s: number, a: any) => s + (a.actual_area || 0), 0);
     }
     return totalArea > 0 ? Math.min(100, Math.round((plantedArea / totalArea) * 100)) : 0;
   }, [filtered, plantingActuals]);
@@ -173,7 +173,7 @@ export default function Dashboard() {
       if (!a.planting_date) continue;
       const d = a.planting_date;
       const entry = dateMap.get(d) || { planned: 0, actual: 0 };
-      entry.actual += a.area_planted_ha || 0;
+      entry.actual += a.actual_area || 0;
       dateMap.set(d, entry);
     }
     const sorted = [...dateMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));

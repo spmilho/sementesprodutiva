@@ -81,7 +81,7 @@ const CATEGORIES = [
 const DOSE_UNITS = [
   { value: "mL/60k_seeds", label: "mL/60.000 sem" },
   { value: "g/60k_seeds", label: "g/60.000 sem" },
-  { value: "mL/kg", label: "mL/kg de semente" },
+  { value: "mL/100kg", label: "mL/100 kg de sementes" },
   { value: "mL/sack_20kg", label: "mL/saco 20kg" },
   { value: "L/ton", label: "L/ton" },
 ];
@@ -386,7 +386,7 @@ function ParentalBlock({
                 <Input type="number" value={data.vigorBefore} onChange={e => update("vigorBefore", e.target.value)} className="h-9 text-sm" />
               </div>
               <div>
-                <Label className="text-xs">Volume de calda (mL/kg)</Label>
+                <Label className="text-xs">Volume de calda (mL/100 kg)</Label>
                 <Input value={data.totalSlurryVolume} onChange={e => update("totalSlurryVolume", e.target.value)} className="h-9 text-sm" />
               </div>
             </div>

@@ -80,7 +80,7 @@ export function useDashboardData(filters: {
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("planting_actual")
-        .select("cycle_id, type, area_planted_ha, planting_date")
+        .select("cycle_id, type, actual_area, planting_date")
         .is("deleted_at", null);
       return data || [];
     },

@@ -31,18 +31,18 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
 
   // Stand stats per type (latest count)
   const standStats = useMemo(() => {
-    const result: Record<string, { avgPlantsHa: number; cv: number; emergPct: number; n: number }> = {};
+    const result: Record<string, { avgPlantsHa: number; avgPlantsPerMeter: number; cv: number; emergPct: number; n: number }> = {};
     for (const type of ["female", "male"]) {
       const counts = standCounts.filter((s: any) => s.parent_type === type);
       if (counts.length === 0) {
-        result[type] = { avgPlantsHa: 0, cv: 0, emergPct: 0, n: 0 };
+        result[type] = { avgPlantsHa: 0, avgPlantsPerMeter: 0, cv: 0, emergPct: 0, n: 0 };
         continue;
       }
-      // Use most recent
-      const latest = counts[0]; // already ordered desc
+      const latest = counts[0];
       const pts = standPoints.filter((p: any) => p.stand_count_id === latest.id);
       result[type] = {
         avgPlantsHa: latest.avg_plants_per_ha ?? 0,
+        avgPlantsPerMeter: latest.avg_plants_per_meter ?? 0,
         cv: latest.cv_stand_pct ?? 0,
         emergPct: latest.emergence_pct ?? 0,
         n: pts.length,
@@ -53,7 +53,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
 
   // Chart data by gleba
   const glebaChartData = useMemo(() => {
-    const glebaMap = new Map<string, { name: string; cvPlantingF: number; cvPlantingM: number; cvStandF: number; cvStandM: number; popF: number; popM: number; popPlanF: number; popPlanM: number; emergF: number; emergM: number }>();
+    const glebaMap = new Map<string, { name: string; cvPlantingF: number; cvPlantingM: number; cvStandF: number; cvStandM: number; popF: number; popM: number; popPlanF: number; popPlanM: number; emergF: number; emergM: number; ppmF: number; ppmM: number; ppmPlanF: number; ppmPlanM: number }>();
 
     const getGlebaName = (glebaId: string | null) => {
       if (!glebaId) return "Geral";
@@ -67,7 +67,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
 
     glebaIds.forEach(gid => {
       const name = getGlebaName(gid === "none" ? null : gid);
-      const entry = { name, cvPlantingF: 0, cvPlantingM: 0, cvStandF: 0, cvStandM: 0, popF: 0, popM: 0, popPlanF: 0, popPlanM: 0, emergF: 0, emergM: 0 };
+      const entry = { name, cvPlantingF: 0, cvPlantingM: 0, cvStandF: 0, cvStandM: 0, popF: 0, popM: 0, popPlanF: 0, popPlanM: 0, emergF: 0, emergM: 0, ppmF: 0, ppmM: 0, ppmPlanF: 0, ppmPlanM: 0 };
 
       // CV planting
       for (const type of ["female", "male"] as const) {
@@ -86,21 +86,26 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
           if (type === "female") {
             entry.cvStandF = latest.cv_stand_pct ?? 0;
             entry.popF = latest.avg_plants_per_ha ?? 0;
+            entry.ppmF = latest.avg_plants_per_meter ?? 0;
             entry.emergF = latest.emergence_pct ?? 0;
           } else {
             entry.cvStandM = latest.cv_stand_pct ?? 0;
             entry.popM = latest.avg_plants_per_ha ?? 0;
+            entry.ppmM = latest.avg_plants_per_meter ?? 0;
             entry.emergM = latest.emergence_pct ?? 0;
           }
         }
       }
 
-      // Planned pop
+      // Planned pop (convert to plants/meter for chart)
       for (const type of ["female", "male"] as const) {
         const filtered = plans.filter((p: any) => (p.gleba_id || "none") === gid && (type === "female" ? isFemaleType(p.type) : isMaleType(p.type)));
-        const avg = filtered.length ? filtered.reduce((s: number, p: any) => s + (p.target_population || 0), 0) / filtered.length : 0;
-        if (type === "female") entry.popPlanF = avg;
-        else entry.popPlanM = avg;
+        if (filtered.length) {
+          const avgPop = filtered.reduce((s: number, p: any) => s + (p.target_population || 0), 0) / filtered.length;
+          const avgSeeds = filtered.reduce((s: number, p: any) => s + (p.seeds_per_meter || 0), 0) / filtered.length;
+          if (type === "female") { entry.popPlanF = avgPop; entry.ppmPlanF = avgSeeds; }
+          else { entry.popPlanM = avgPop; entry.ppmPlanM = avgSeeds; }
+        }
       }
 
       glebaMap.set(gid, entry);
@@ -186,23 +191,23 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
         </CardContent></Card>
 
-        {/* Pop Fêmea */}
+        {/* Pop Fêmea - plantas/metro */}
         <Card><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pop. Fêmea</p>
-          {standStats.female.avgPlantsHa > 0 ? (
+          {standStats.female.avgPlantsPerMeter > 0 ? (
             <>
-              <p className="text-xl font-bold">{Math.round(standStats.female.avgPlantsHa).toLocaleString("pt-BR")} <span className="text-xs font-normal">pl/ha</span></p>
+              <p className="text-xl font-bold">{standStats.female.avgPlantsPerMeter.toFixed(2)} <span className="text-xs font-normal">pl/m</span></p>
               <p className="text-[10px] text-muted-foreground">Emerg: {standStats.female.emergPct.toFixed(0)}% | CV: {standStats.female.cv.toFixed(1)}%</p>
             </>
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
         </CardContent></Card>
 
-        {/* Pop Macho */}
+        {/* Pop Macho - plantas/metro */}
         <Card><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pop. Macho</p>
-          {standStats.male.avgPlantsHa > 0 ? (
+          {standStats.male.avgPlantsPerMeter > 0 ? (
             <>
-              <p className="text-xl font-bold">{Math.round(standStats.male.avgPlantsHa).toLocaleString("pt-BR")} <span className="text-xs font-normal">pl/ha</span></p>
+              <p className="text-xl font-bold">{standStats.male.avgPlantsPerMeter.toFixed(2)} <span className="text-xs font-normal">pl/m</span></p>
               <p className="text-[10px] text-muted-foreground">Emerg: {standStats.male.emergPct.toFixed(0)}% | CV: {standStats.male.cv.toFixed(1)}%</p>
             </>
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
@@ -282,7 +287,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
       {glebaChartData.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card><CardContent className="p-4">
-            <p className="text-sm font-medium mb-3">População Final — plantas/ha</p>
+            <p className="text-sm font-medium mb-3">População Final — Plantas/Metro Linear</p>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={glebaChartData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -290,10 +295,10 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
                 <YAxis className="text-xs" />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="popF" name="Pop. Fêmea Real" fill="#1E88E5" barSize={16} />
-                <Bar dataKey="popPlanF" name="Pop. Fêmea Plan." fill="#90CAF9" barSize={16} />
-                <Bar dataKey="popM" name="Pop. Macho Real" fill="#4CAF50" barSize={16} />
-                <Bar dataKey="popPlanM" name="Pop. Macho Plan." fill="#A5D6A7" barSize={16} />
+                <Bar dataKey="ppmF" name="Pl/m Fêmea Real" fill="#1E88E5" barSize={16} />
+                <Bar dataKey="ppmPlanF" name="Pl/m Fêmea Plan." fill="#90CAF9" barSize={16} />
+                <Bar dataKey="ppmM" name="Pl/m Macho Real" fill="#4CAF50" barSize={16} />
+                <Bar dataKey="ppmPlanM" name="Pl/m Macho Plan." fill="#A5D6A7" barSize={16} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent></Card>

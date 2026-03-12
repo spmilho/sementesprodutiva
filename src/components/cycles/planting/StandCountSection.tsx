@@ -237,7 +237,7 @@ export default function StandCountSection({ cycleId, orgId, standCounts, standPo
         {/* Female Pop */}
         <Card className="border-l-4 border-l-blue-500"><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground">Pop. Fêmea</p>
-          <p className="text-xl font-bold">{femaleLatest?.avg_plants_per_ha ? Math.round(femaleLatest.avg_plants_per_ha).toLocaleString("pt-BR") : "—"} <span className="text-xs font-normal">pl/ha</span></p>
+          <p className="text-xl font-bold">{femaleLatest?.avg_plants_per_meter ? Number(femaleLatest.avg_plants_per_meter).toFixed(2) : "—"} <span className="text-xs font-normal">pl/m</span></p>
           {femaleLatest?.cv_stand_pct != null && (
             <span className={`text-xs px-1 py-0.5 rounded ${getCvLabel(femaleLatest.cv_stand_pct).bg}`}>CV: {femaleLatest.cv_stand_pct.toFixed(1)}%</span>
           )}
@@ -257,7 +257,7 @@ export default function StandCountSection({ cycleId, orgId, standCounts, standPo
         {/* Male Pop */}
         <Card className="border-l-4 border-l-green-500"><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground">Pop. Macho</p>
-          <p className="text-xl font-bold">{maleLatest?.avg_plants_per_ha ? Math.round(maleLatest.avg_plants_per_ha).toLocaleString("pt-BR") : "—"} <span className="text-xs font-normal">pl/ha</span></p>
+          <p className="text-xl font-bold">{maleLatest?.avg_plants_per_meter ? Number(maleLatest.avg_plants_per_meter).toFixed(2) : "—"} <span className="text-xs font-normal">pl/m</span></p>
           {maleLatest?.cv_stand_pct != null && (
             <span className={`text-xs px-1 py-0.5 rounded ${getCvLabel(maleLatest.cv_stand_pct).bg}`}>CV: {maleLatest.cv_stand_pct.toFixed(1)}%</span>
           )}
@@ -304,7 +304,7 @@ export default function StandCountSection({ cycleId, orgId, standCounts, standPo
                   <TableHead className="text-xs">Gleba</TableHead>
                   <TableHead className="text-xs text-right">DAP</TableHead>
                   <TableHead className="text-xs text-right">Pontos</TableHead>
-                  <TableHead className="text-xs text-right">Média pl/ha</TableHead>
+                  <TableHead className="text-xs text-right">Média pl/m</TableHead>
                   <TableHead className="text-xs text-right">CV%</TableHead>
                   <TableHead className="text-xs text-right">%Emerg.</TableHead>
                   <TableHead className="text-xs text-center w-20">Ações</TableHead>
@@ -331,7 +331,7 @@ export default function StandCountSection({ cycleId, orgId, standCounts, standPo
                         <TableCell className="text-sm">{gleba?.name || "—"}</TableCell>
                         <TableCell className="text-sm text-right">{sc.days_after_planting ?? "—"}</TableCell>
                         <TableCell className="text-sm text-right">{pts.length}</TableCell>
-                        <TableCell className="text-sm text-right font-semibold">{sc.avg_plants_per_ha ? Math.round(sc.avg_plants_per_ha).toLocaleString("pt-BR") : "—"}</TableCell>
+                        <TableCell className="text-sm text-right font-semibold">{sc.avg_plants_per_meter ? Number(sc.avg_plants_per_meter).toFixed(2) : "—"}</TableCell>
                         <TableCell className="text-sm text-right">
                           {cvLabel ? <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cvLabel.bg)}>{sc.cv_stand_pct.toFixed(1)}%</span> : "—"}
                         </TableCell>
