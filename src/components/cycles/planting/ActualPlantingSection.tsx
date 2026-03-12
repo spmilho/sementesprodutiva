@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Pencil, Trash2, Loader2, CalendarIcon, ChevronDown, ChevronRight, Zap } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, CalendarIcon } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,11 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useOfflineSyncContext } from "@/components/Layout";
-import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, calcStats, getCvLabel } from "./planting-utils";
-import PlantingCvPoints from "./PlantingCvPoints";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer, ReferenceArea,
-} from "recharts";
+import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, getCvLabel } from "./planting-utils";
 
 interface Props {
   cycleId: string;
