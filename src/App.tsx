@@ -71,6 +71,7 @@ const App = () => (
                     <Route path="/usuarios" element={<UserManagement />} />
                     <Route path="/feed" element={<FeedCampo />} />
                     <Route path="/plano-acao" element={<PlanoAcoes />} />
+                    <Route path="/contratos" element={<Contratos />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Layout>

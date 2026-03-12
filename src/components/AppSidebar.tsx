@@ -85,7 +85,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-2 py-3">
-        <MenuGroup label="Principal" items={mainItems} />
+        <MenuGroup label="Principal" items={dynamicMainItems} />
         <MenuGroup label="Gestão" items={managementItems} />
         {adminItems.length > 0 && <MenuGroup label="Administração" items={adminItems} />}
       </SidebarContent>

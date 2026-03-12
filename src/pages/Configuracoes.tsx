@@ -89,6 +89,20 @@ export default function Configuracoes() {
         <TabsContent value="offline">
           <OfflineQueueTab />
         </TabsContent>
+        {isAdmin && (
+          <TabsContent value="contrato-acesso">
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Gerencie quem pode visualizar, inserir e deletar contratos.</p>
+              <ContratoAcessoModal open={showContratoAccess} onClose={() => setShowContratoAccess(false)} />
+              <button
+                onClick={() => setShowContratoAccess(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90"
+              >
+                <FileSignature className="h-4 w-4" /> Gerenciar Acessos
+              </button>
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
