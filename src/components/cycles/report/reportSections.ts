@@ -1121,7 +1121,7 @@ export function drawConclusion(doc: jsPDF, data: ReportData) {
   // Watermark footer
   doc.setFontSize(7);
   doc.setTextColor(160, 160, 160);
-  doc.text("Este relatório foi gerado automaticamente pelo sistema Caderno de Campo.", 105, 285, { align: "center" });
+  doc.text("Caderno de Campo — Sementes Produtiva.", 105, 285, { align: "center" });
 }
 
 // ═══════════════════════════════════════
