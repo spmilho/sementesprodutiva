@@ -53,7 +53,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
 
   // Chart data by gleba
   const glebaChartData = useMemo(() => {
-    const glebaMap = new Map<string, { name: string; cvPlantingF: number; cvPlantingM: number; cvStandF: number; cvStandM: number; popF: number; popM: number; popPlanF: number; popPlanM: number; emergF: number; emergM: number }>();
+    const glebaMap = new Map<string, { name: string; cvPlantingF: number; cvPlantingM: number; cvStandF: number; cvStandM: number; popF: number; popM: number; popPlanF: number; popPlanM: number; emergF: number; emergM: number; ppmF: number; ppmM: number; ppmPlanF: number; ppmPlanM: number }>();
 
     const getGlebaName = (glebaId: string | null) => {
       if (!glebaId) return "Geral";
