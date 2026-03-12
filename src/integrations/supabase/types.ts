@@ -271,6 +271,193 @@ export type Database = {
           },
         ]
       }
+      contrato_acesso: {
+        Row: {
+          habilitado_em: string | null
+          habilitado_por: string | null
+          id: string
+          pode_deletar: boolean
+          pode_inserir: boolean
+          pode_visualizar: boolean
+          user_id: string
+        }
+        Insert: {
+          habilitado_em?: string | null
+          habilitado_por?: string | null
+          id?: string
+          pode_deletar?: boolean
+          pode_inserir?: boolean
+          pode_visualizar?: boolean
+          user_id: string
+        }
+        Update: {
+          habilitado_em?: string | null
+          habilitado_por?: string | null
+          id?: string
+          pode_deletar?: boolean
+          pode_inserir?: boolean
+          pode_visualizar?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contrato_aditivos: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_url: string | null
+          contrato_id: string
+          created_at: string
+          created_by: string | null
+          dados_ia: Json | null
+          data_aditivo: string | null
+          descricao: string | null
+          id: string
+          nova_area_ha: number | null
+          nova_data_fim: string | null
+          novo_preco_por_ha: number | null
+          novo_preco_por_saco: number | null
+          novo_valor_total: number | null
+          novo_volume_sacos: number | null
+          numero_aditivo: number
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          contrato_id: string
+          created_at?: string
+          created_by?: string | null
+          dados_ia?: Json | null
+          data_aditivo?: string | null
+          descricao?: string | null
+          id?: string
+          nova_area_ha?: number | null
+          nova_data_fim?: string | null
+          novo_preco_por_ha?: number | null
+          novo_preco_por_saco?: number | null
+          novo_valor_total?: number | null
+          novo_volume_sacos?: number | null
+          numero_aditivo?: number
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          contrato_id?: string
+          created_at?: string
+          created_by?: string | null
+          dados_ia?: Json | null
+          data_aditivo?: string | null
+          descricao?: string | null
+          id?: string
+          nova_area_ha?: number | null
+          nova_data_fim?: string | null
+          novo_preco_por_ha?: number | null
+          novo_preco_por_saco?: number | null
+          novo_valor_total?: number | null
+          novo_volume_sacos?: number | null
+          numero_aditivo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contrato_aditivos_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contratos: {
+        Row: {
+          area_ha: number | null
+          arquivo_nome: string | null
+          arquivo_url: string | null
+          contratado: string | null
+          contratante: string | null
+          created_at: string
+          created_by: string | null
+          dados_ia: Json | null
+          data_fim: string | null
+          data_inicio: string | null
+          deleted_at: string | null
+          hibrido: string | null
+          id: string
+          numero_contrato: string | null
+          observacoes: string | null
+          org_id: string
+          preco_por_ha: number | null
+          preco_por_saco: number | null
+          safra: string | null
+          status: string
+          tipo: string
+          titulo: string
+          updated_at: string
+          valor_total: number | null
+          volume_sacos: number | null
+        }
+        Insert: {
+          area_ha?: number | null
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          contratado?: string | null
+          contratante?: string | null
+          created_at?: string
+          created_by?: string | null
+          dados_ia?: Json | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          deleted_at?: string | null
+          hibrido?: string | null
+          id?: string
+          numero_contrato?: string | null
+          observacoes?: string | null
+          org_id: string
+          preco_por_ha?: number | null
+          preco_por_saco?: number | null
+          safra?: string | null
+          status?: string
+          tipo?: string
+          titulo: string
+          updated_at?: string
+          valor_total?: number | null
+          volume_sacos?: number | null
+        }
+        Update: {
+          area_ha?: number | null
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          contratado?: string | null
+          contratante?: string | null
+          created_at?: string
+          created_by?: string | null
+          dados_ia?: Json | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          deleted_at?: string | null
+          hibrido?: string | null
+          id?: string
+          numero_contrato?: string | null
+          observacoes?: string | null
+          org_id?: string
+          preco_por_ha?: number | null
+          preco_por_saco?: number | null
+          safra?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+          valor_total?: number | null
+          volume_sacos?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cooperators: {
         Row: {
           active: boolean
@@ -4195,6 +4382,9 @@ export type Database = {
           id: string
         }[]
       }
+      has_contrato_access: { Args: { _user_id: string }; Returns: boolean }
+      has_contrato_delete: { Args: { _user_id: string }; Returns: boolean }
+      has_contrato_insert: { Args: { _user_id: string }; Returns: boolean }
       has_plano_acoes_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {

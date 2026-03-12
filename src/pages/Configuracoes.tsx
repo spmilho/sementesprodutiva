@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Users, Layers, FileText, Download, WifiOff } from "lucide-react";
+import { Building2, Users, Layers, FileText, Download, WifiOff, FileSignature } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 import { Navigate } from "react-router-dom";
 import OrganizationTab from "@/components/settings/OrganizationTab";
@@ -10,9 +10,12 @@ import ExportDataTab from "@/components/settings/ExportDataTab";
 import CooperadosTab from "@/components/settings/CooperadosTab";
 import ClientsTab from "@/components/settings/ClientsTab";
 import OfflineQueueTab from "@/components/settings/OfflineQueueTab";
+import { useState } from "react";
+import ContratoAcessoModal from "@/components/contratos/ContratoAcessoModal";
 
 export default function Configuracoes() {
   const { isAdmin, isManager, loading } = useRole();
+  const [showContratoAccess, setShowContratoAccess] = useState(false);
 
   if (loading) return <div className="p-8 text-muted-foreground">Carregando...</div>;
   if (!isAdmin && !isManager) return <Navigate to="/" replace />;
@@ -52,6 +55,11 @@ export default function Configuracoes() {
           <TabsTrigger value="offline" className="gap-1.5 text-xs">
             <WifiOff className="h-3.5 w-3.5" /> Fila Offline
           </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="contrato-acesso" className="gap-1.5 text-xs">
+              <FileSignature className="h-3.5 w-3.5" /> Acesso Contratos
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="organization">
@@ -80,6 +88,20 @@ export default function Configuracoes() {
         <TabsContent value="offline">
           <OfflineQueueTab />
         </TabsContent>
+        {isAdmin && (
+          <TabsContent value="contrato-acesso">
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Gerencie quem pode visualizar, inserir e deletar contratos.</p>
+              <ContratoAcessoModal open={showContratoAccess} onClose={() => setShowContratoAccess(false)} />
+              <button
+                onClick={() => setShowContratoAccess(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90"
+              >
+                <FileSignature className="h-4 w-4" /> Gerenciar Acessos
+              </button>
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
