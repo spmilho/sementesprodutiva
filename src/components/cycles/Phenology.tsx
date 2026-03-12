@@ -85,6 +85,30 @@ export default function Phenology({
     },
   });
 
+  // Fetch planting date for DAP calculation
+  const { data: plantingDate } = useQuery({
+    queryKey: ["planting-date-phenology", cycleId],
+    queryFn: async () => {
+      const { data: actuals } = await (supabase as any)
+        .from("planting_actual")
+        .select("planting_date")
+        .eq("cycle_id", cycleId)
+        .is("deleted_at", null)
+        .order("planting_date", { ascending: true })
+        .limit(1);
+      if (actuals?.length) return actuals[0].planting_date as string;
+      const { data: plans } = await (supabase as any)
+        .from("planting_plan")
+        .select("planned_date")
+        .eq("cycle_id", cycleId)
+        .is("deleted_at", null)
+        .order("planned_date", { ascending: true })
+        .limit(1);
+      if (plans?.length) return plans[0].planned_date as string;
+      return null;
+    },
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { description: "" },
