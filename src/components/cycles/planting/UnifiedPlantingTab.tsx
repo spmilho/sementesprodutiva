@@ -169,6 +169,8 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
           standCounts={standCounts}
           standPoints={standPoints}
           glebas={glebas}
+          femaleArea={props.femaleArea}
+          maleArea={props.maleArea}
         />
       ) : (
         <div className="text-center py-8 text-sm text-muted-foreground border border-dashed rounded-lg">
