@@ -267,24 +267,19 @@ export function drawSeedLots(doc: jsPDF, data: ReportData) {
   const parentLabel = (t: string) => t === "female" ? "Fêmea" : "Macho";
 
   const body = data.seedLots.map((l: any) => {
-    const treat = data.seedLotTreatments.find((t: any) => t.seed_lot_id === l.id);
-    let tsLabel = "⚪ Sem TS";
-    if (treat) {
-      tsLabel = treat.treatment_origin === "in_house" ? "🟢 In-house" : "🔵 Cliente";
-    }
     return [
       parentLabel(l.parent_type), l.lot_number, l.origin_season, fmtDate(l.received_date),
-      `${fmtNum(l.quantity_kg || l.quantity)} ${l.quantity_unit || "kg"}`,
+      `${fmtNum(l.quantity_kg || l.quantity)} kg`,
       fmtNum(l.thousand_seed_weight_g), l.sieve_classification || "—",
       fmtNum(l.germination_pct), fmtNum(l.tetrazolium_vigor_pct),
       fmtNum(l.tetrazolium_viability_pct), fmtNum(l.physical_purity_pct),
-      fmtNum(l.seed_moisture_pct), tsLabel,
+      fmtNum(l.seed_moisture_pct),
     ];
   });
 
   autoTable(doc, {
     startY: y,
-    head: [["Parental", "Lote", "Safra", "Recebido", "Qtd", "PMS(g)", "Peneira", "Germ%", "Vigor%", "Tétraz%", "Purez%", "Umid%", "TS"]],
+    head: [["Parental", "Lote", "Safra", "Recebido", "Qtd (kg)", "PMS(g)", "Peneira", "Germ%", "Vigor%", "Tétraz%", "Purez%", "Umid%"]],
     body,
     headStyles: { fillColor: PRIMARY, fontSize: 7, cellPadding: 1.5 },
     bodyStyles: { fontSize: 7, cellPadding: 1.5 },
@@ -292,13 +287,12 @@ export function drawSeedLots(doc: jsPDF, data: ReportData) {
     margin: { left: MARGIN.left, right: MARGIN.right },
   });
 
-  // Treatment details
-  data.seedLotTreatments.forEach((treat: any) => {
-    const lot = data.seedLots.find((l: any) => l.id === treat.seed_lot_id);
-    if (!lot) return;
+  // Unified treatment section (same treatment for male and female)
+  if (data.seedLotTreatments.length > 0) {
+    const treat = data.seedLotTreatments[0]; // Use first treatment as representative
     y = checkPageBreak(doc, data, 50);
     y = getLastY(doc) + 10;
-    y = subTitle(doc, `Tratamento do Lote ${lot.lot_number} — ${parentLabel(lot.parent_type)}`, y);
+    y = subTitle(doc, "Tratamento da Semente Básica", y);
 
     const infoRows = [
       ["Data TS", fmtDate(treat.treatment_date)],
@@ -320,13 +314,22 @@ export function drawSeedLots(doc: jsPDF, data: ReportData) {
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 40 } },
     });
 
-    const products = data.seedLotTreatmentProducts.filter((p: any) => p.seed_lot_treatment_id === treat.id);
-    if (products.length > 0) {
+    // Collect all unique products across all treatments
+    const allProducts = data.seedLotTreatmentProducts;
+    if (allProducts.length > 0) {
+      // Deduplicate by product_name
+      const seen = new Set<string>();
+      const uniqueProducts = allProducts.filter((p: any) => {
+        if (seen.has(p.product_name)) return false;
+        seen.add(p.product_name);
+        return true;
+      });
+
       const prodY = getLastY(doc) + 5;
       autoTable(doc, {
         startY: prodY,
         head: [["Ordem", "Produto Comercial", "Ingrediente Ativo", "Tipo", "Categoria", "Dose", "Unidade"]],
-        body: products.map((p: any) => [
+        body: uniqueProducts.map((p: any) => [
           p.application_order || "—", p.product_name, p.active_ingredient || "—",
           p.product_type || "—", p.category || "—", fmtNum(p.dose), p.dose_unit,
         ]),
@@ -336,7 +339,7 @@ export function drawSeedLots(doc: jsPDF, data: ReportData) {
         margin: { left: MARGIN.left, right: MARGIN.right },
       });
     }
-  });
+  }
 }
 
 // ═══════════════════════════════════════
