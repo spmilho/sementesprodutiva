@@ -42,7 +42,7 @@ const schema = z.object({
   actual_area: z.coerce.number().positive("Área deve ser > 0"),
   row_spacing: z.coerce.number().int().positive().default(70),
   seeds_per_meter: z.coerce.number().positive().optional().or(z.literal("")),
-  cv_percent: z.coerce.number().min(0).optional().or(z.literal("")),
+  
   planter_speed: z.coerce.number().positive().optional().or(z.literal("")),
   sowing_depth_cm: z.coerce.number().positive().optional().or(z.literal("")),
   soil_condition: z.string().optional(),
@@ -112,7 +112,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
       actual_area: a.actual_area,
       row_spacing: a.row_spacing || 70,
       seeds_per_meter: a.seeds_per_meter ?? "",
-      cv_percent: a.cv_percent ?? "",
+      
       planter_speed: a.planter_speed ?? "",
       sowing_depth_cm: a.sowing_depth_cm ?? "",
       soil_condition: a.soil_condition || undefined,
@@ -133,7 +133,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
         actual_area: values.actual_area,
         row_spacing: values.row_spacing,
         seeds_per_meter: values.seeds_per_meter || null,
-        cv_percent: values.cv_percent || null,
+        
         planter_speed: values.planter_speed || null,
         sowing_depth_cm: values.sowing_depth_cm || null,
         soil_condition: values.soil_condition || null,
@@ -198,7 +198,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                   <TableHead className="text-xs text-right">Área(ha)</TableHead>
                   <TableHead className="text-xs text-right">Espaç.(cm)</TableHead>
                   <TableHead className="text-xs text-right">Sem/metro</TableHead>
-                  <TableHead className="text-xs text-right">CV%</TableHead>
+                  
                   <TableHead className="text-xs text-right hidden md:table-cell">Vel.(km/h)</TableHead>
                   <TableHead className="text-xs text-center w-20">Ações</TableHead>
                 </TableRow>
@@ -208,8 +208,6 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                   const ti = getPlantingTypeInfo(a.type);
                   const lot = seedLots.find((l: any) => l.id === a.seed_lot_id);
                   const gleba = glebas.find((g: any) => g.id === a.gleba_id);
-                  const cvVal = a.cv_percent;
-                  const cvLabel = cvVal != null ? getCvLabel(cvVal) : null;
 
                   return (
                     <TableRow key={a.id}>
@@ -220,9 +218,6 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                       <TableCell className="text-sm text-right">{a.actual_area}</TableCell>
                       <TableCell className="text-sm text-right">{a.row_spacing || "—"}</TableCell>
                       <TableCell className="text-sm text-right font-mono">{a.seeds_per_meter || "—"}</TableCell>
-                      <TableCell className="text-sm text-right">
-                        {cvLabel ? <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cvLabel.bg)}>{cvVal.toFixed(1)}%</span> : <span className="text-xs text-muted-foreground">—</span>}
-                      </TableCell>
                       <TableCell className="text-sm text-right hidden md:table-cell">{a.planter_speed || "—"}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-1">
@@ -331,8 +326,8 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                 <Input type="number" step="0.01" {...form.register("seeds_per_meter")} />
               </div>
               <div className="space-y-1.5">
-                <Label>CV% (semeadura)</Label>
-                <Input type="number" step="0.1" placeholder="Ex: 12.5" {...form.register("cv_percent")} />
+                <Label>Velocidade (km/h)</Label>
+                <Input type="number" step="0.1" {...form.register("planter_speed")} />
               </div>
               <div className="space-y-1.5">
                 <Label>Velocidade (km/h)</Label>

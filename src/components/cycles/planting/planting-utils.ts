@@ -1,10 +1,10 @@
 // CV% thresholds and color helpers for the unified Planting tab
 
 export function getCvLabel(cv: number): { label: string; emoji: string; color: string; bg: string } {
-  if (cv < 15) return { label: "EXCELENTE — Stand uniforme", emoji: "🟢", color: "text-green-600 dark:text-green-400", bg: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" };
-  if (cv < 20) return { label: "BOM — Variação aceitável", emoji: "🟡", color: "text-yellow-600 dark:text-yellow-400", bg: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" };
-  if (cv < 25) return { label: "REGULAR — Verificar falhas", emoji: "🟠", color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" };
-  return { label: "RUIM — Perdas significativas de stand", emoji: "🔴", color: "text-red-600 dark:text-red-400", bg: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" };
+  if (cv < 20) return { label: "EXCELENTE", emoji: "🟢", color: "text-green-600 dark:text-green-400", bg: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" };
+  if (cv < 25) return { label: "BOM", emoji: "🟡", color: "text-yellow-600 dark:text-yellow-400", bg: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" };
+  if (cv < 30) return { label: "ACEITÁVEL", emoji: "🟠", color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" };
+  return { label: "INSATISFATÓRIO", emoji: "🔴", color: "text-red-600 dark:text-red-400", bg: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" };
 }
 
 export function getEmergenceColor(pct: number): string {
