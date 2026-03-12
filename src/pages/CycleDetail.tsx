@@ -144,8 +144,9 @@ export default function CycleDetail() {
   });
 
   const expectedProduction = useMemo(() => {
-    if (!cycle?.expected_productivity || !cycle?.female_area) return "—";
-    return `${((cycle.female_area * cycle.expected_productivity) / 1000).toFixed(2)} ton`;
+    const area = cycle?.pivot_area ?? cycle?.total_area;
+    if (!cycle?.expected_productivity || !area) return "—";
+    return `${((area * cycle.expected_productivity) / 1000).toFixed(2)} ton`;
   }, [cycle]);
 
   if (isLoading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
