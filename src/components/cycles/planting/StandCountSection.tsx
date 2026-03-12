@@ -237,7 +237,7 @@ export default function StandCountSection({ cycleId, orgId, standCounts, standPo
         {/* Female Pop */}
         <Card className="border-l-4 border-l-blue-500"><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground">Pop. Fêmea</p>
-          <p className="text-xl font-bold">{femaleLatest?.avg_plants_per_ha ? Math.round(femaleLatest.avg_plants_per_ha).toLocaleString("pt-BR") : "—"} <span className="text-xs font-normal">pl/ha</span></p>
+          <p className="text-xl font-bold">{femaleLatest?.avg_plants_per_meter ? Number(femaleLatest.avg_plants_per_meter).toFixed(2) : "—"} <span className="text-xs font-normal">pl/m</span></p>
           {femaleLatest?.cv_stand_pct != null && (
             <span className={`text-xs px-1 py-0.5 rounded ${getCvLabel(femaleLatest.cv_stand_pct).bg}`}>CV: {femaleLatest.cv_stand_pct.toFixed(1)}%</span>
           )}
@@ -257,7 +257,7 @@ export default function StandCountSection({ cycleId, orgId, standCounts, standPo
         {/* Male Pop */}
         <Card className="border-l-4 border-l-green-500"><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground">Pop. Macho</p>
-          <p className="text-xl font-bold">{maleLatest?.avg_plants_per_ha ? Math.round(maleLatest.avg_plants_per_ha).toLocaleString("pt-BR") : "—"} <span className="text-xs font-normal">pl/ha</span></p>
+          <p className="text-xl font-bold">{maleLatest?.avg_plants_per_meter ? Number(maleLatest.avg_plants_per_meter).toFixed(2) : "—"} <span className="text-xs font-normal">pl/m</span></p>
           {maleLatest?.cv_stand_pct != null && (
             <span className={`text-xs px-1 py-0.5 rounded ${getCvLabel(maleLatest.cv_stand_pct).bg}`}>CV: {maleLatest.cv_stand_pct.toFixed(1)}%</span>
           )}
