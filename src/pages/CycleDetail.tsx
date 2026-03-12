@@ -26,6 +26,7 @@ import MoistureTab from "@/components/cycles/moisture/MoistureTab";
 import HarvestTab from "@/components/cycles/harvest/HarvestTab";
 import DocumentsTab from "@/components/cycles/DocumentsTab";
 import CycleMapTab from "@/components/cycles/CycleMapTab";
+import WaterTab from "@/components/cycles/water/WaterTab";
 import ReportTab from "@/components/cycles/report/ReportTab";
 import FieldEvaluationSection from "@/components/field-evaluation/FieldEvaluationSection";
 const statusLabels: Record<string, string> = {
@@ -386,6 +387,18 @@ export default function CycleDetail() {
           <PestDiseaseRecords cycleId={id!} orgId={cycle.org_id} />
         </TabsContent>
 
+        <TabsContent value="agua">
+          <WaterTab
+            cycleId={id!}
+            orgId={cycle.org_id}
+            contractNumber={cycle.contract_number}
+            pivotName={cycle.field_name}
+            hybridName={cycle.hybrid_name}
+            cooperatorName={(cycle as any).cooperators?.name}
+            totalArea={cycle.pivot_area ?? cycle.total_area}
+          />
+        </TabsContent>
+
         <TabsContent value="estimativa">
           <YieldEstimateTab
             cycleId={id!}
@@ -446,7 +459,7 @@ export default function CycleDetail() {
           <ReportTab cycleId={id!} orgId={cycle.org_id} cycle={cycle} />
         </TabsContent>
 
-        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento", "roguing", "manejo", "pragas", "estimativa", "umidade", "colheita", "documentos", "mapa", "avaliacoes", "relatorio"].includes(t.value)).map((t) => (
+        {tabItems.filter((t) => !["resumo", "semente-basica", "planejamento", "plantio", "nutricao", "fenologia", "emergencia", "nicking", "despendoamento", "roguing", "manejo", "pragas", "agua", "estimativa", "umidade", "colheita", "documentos", "mapa", "avaliacoes", "relatorio"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>
