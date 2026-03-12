@@ -317,6 +317,7 @@ export default function CycleDetail() {
             spacingFemaleFemaleCm={cycle.spacing_female_female_cm}
             spacingFemaleMaleCm={cycle.spacing_female_male_cm}
             spacingMaleMaleCm={cycle.spacing_male_male_cm}
+            femaleMaleRatio={cycle.female_male_ratio || "4F:2M"}
           />
         </TabsContent>
 

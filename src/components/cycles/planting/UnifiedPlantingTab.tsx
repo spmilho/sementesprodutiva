@@ -30,6 +30,7 @@ export interface UnifiedPlantingTabProps {
   spacingFemaleFemaleCm?: number | null;
   spacingFemaleMaleCm?: number | null;
   spacingMaleMaleCm?: number | null;
+  femaleMaleRatio?: string;
 }
 
 export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
