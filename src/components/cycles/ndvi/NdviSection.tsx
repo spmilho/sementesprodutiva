@@ -712,6 +712,112 @@ export default function NdviSection({
         </Card>
       )}
 
+      {/* ═══ ANÁLISE DO CAMPO ═══ */}
+      {filteredTimeline.length > 0 && (
+        <Card className="border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              📊 Análise do Campo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {latestAnalysis ? (
+              <>
+                {/* Header badge line */}
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  {latestAnalysis.growth_stage && (
+                    <Badge style={{ backgroundColor: STAGE_COLORS[latestAnalysis.growth_stage] || "#666", color: "white" }}>
+                      {latestAnalysis.growth_stage}
+                    </Badge>
+                  )}
+                  {latestAnalysis.dap != null && <span className="text-muted-foreground">{latestAnalysis.dap} DAP</span>}
+                  {latestAnalysis.ndvi_value != null && (
+                    <span className="font-mono" style={{ color: getNdviColor(Number(latestAnalysis.ndvi_value)) }}>
+                      NDVI: {Number(latestAnalysis.ndvi_value).toFixed(3)}
+                    </span>
+                  )}
+                  <span className="text-muted-foreground">
+                    {format(new Date(latestAnalysis.analysis_date), "dd/MM/yyyy")}
+                  </span>
+                </div>
+
+                {/* Analysis text */}
+                <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
+                  <ReactMarkdown>{latestAnalysis.analysis_text}</ReactMarkdown>
+                </div>
+
+                {/* Timestamp */}
+                <p className="text-[10px] text-muted-foreground">
+                  🕐 Atualizado em {format(new Date(latestAnalysis.created_at), "dd/MM/yyyy HH:mm")}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma análise disponível. Clique em "Atualizar análise" para gerar o primeiro parecer.
+              </p>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-wrap gap-2 pt-1 border-t">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => generateAnalysisMut.mutate()}
+                disabled={generateAnalysisMut.isPending}
+              >
+                {generateAnalysisMut.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+                {generateAnalysisMut.isPending ? "Analisando..." : "🔄 Atualizar análise"}
+              </Button>
+              {latestAnalysis && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={() => {
+                    navigator.clipboard.writeText(latestAnalysis.analysis_text);
+                    toast.success("Análise copiada!");
+                  }}
+                >
+                  <ClipboardCopy className="h-3 w-3" /> 📋 Copiar
+                </Button>
+              )}
+            </div>
+
+            {/* Pareceres Anteriores */}
+            {previousAnalyses.length > 1 && (
+              <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 w-full justify-start">
+                    <ChevronDown className={cn("h-3 w-3 transition-transform", historyOpen && "rotate-180")} />
+                    📊 Pareceres Anteriores ({previousAnalyses.length - 1})
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 mt-2">
+                  {previousAnalyses.slice(1).map((a: any) => (
+                    <div key={a.id} className="border rounded-lg p-3 bg-muted/30">
+                      <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+                        {a.growth_stage && <Badge variant="outline" className="text-[10px]">{a.growth_stage}</Badge>}
+                        {a.dap != null && <span>{a.dap} DAP</span>}
+                        {a.ndvi_value != null && <span className="font-mono">NDVI: {Number(a.ndvi_value).toFixed(3)}</span>}
+                        <span>{format(new Date(a.created_at), "dd/MM/yyyy HH:mm")}</span>
+                      </div>
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed">
+                        <ReactMarkdown>{a.analysis_text}</ReactMarkdown>
+                      </div>
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Image history table */}
       {filteredImages.length > 0 && (
         <Card>
