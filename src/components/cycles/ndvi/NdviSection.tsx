@@ -377,20 +377,31 @@ export default function NdviSection({
   // Chart data
   const showAllWithPlanting = dateFilterMode === "all" && plantingTimestamp !== null;
   
-  // Build a map of date (dd/MM) → stage label from phenology records
-  const phenoDateStageMap = useMemo(() => {
-    const map: Record<string, string> = {};
+  // Build sorted list of phenology milestones (date → stage) for lookup
+  const phenoMilestones = useMemo(() => {
+    if (!phenologyRecords.length) return [];
+    const map = new Map<string, { date: Date; stage: string }>();
     for (const r of phenologyRecords) {
-      const d = format(new Date(r.observation_date + "T12:00:00"), "dd/MM");
-      // If multiple stages on same date, concatenate
-      if (map[d]) {
-        if (!map[d].includes(r.stage)) map[d] += `/${r.stage}`;
-      } else {
-        map[d] = r.stage;
+      const d = new Date(r.observation_date + "T12:00:00");
+      const key = r.stage;
+      // Keep earliest date per stage
+      if (!map.has(key) || d < map.get(key)!.date) {
+        map.set(key, { date: d, stage: r.stage });
       }
     }
-    return map;
+    return Array.from(map.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [phenologyRecords]);
+
+  // For a given date, find the active phenology stage (most recent on or before that date)
+  const getStageForDate = useCallback((dt: Date): string | null => {
+    if (!phenoMilestones.length) return null;
+    let active: string | null = null;
+    for (const m of phenoMilestones) {
+      if (m.date <= dt) active = m.stage;
+      else break;
+    }
+    return active;
+  }, [phenoMilestones]);
 
   const chartData = useMemo(() => {
     const timeline = dateFilterMode === "all" ? ndviTimeline : filteredTimeline;
