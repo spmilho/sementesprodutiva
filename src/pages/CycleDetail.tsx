@@ -308,6 +308,9 @@ export default function CycleDetail() {
             hybridName={cycle.hybrid_name}
             malePlantingFinished={cycle.male_planting_finished ?? false}
             femalePlantingFinished={cycle.female_planting_finished ?? false}
+            male1PlantingFinished={cycle.male_1_planting_finished ?? false}
+            male2PlantingFinished={cycle.male_2_planting_finished ?? false}
+            male3PlantingFinished={cycle.male_3_planting_finished ?? false}
             onFinishToggle={(type, finished) => finishMutation.mutate({ type, finished })}
             spacingFemaleFemaleCm={cycle.spacing_female_female_cm}
             spacingFemaleMaleCm={cycle.spacing_female_male_cm}
