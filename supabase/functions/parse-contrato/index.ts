@@ -62,7 +62,7 @@ Retorne APENAS o JSON com os seguintes campos (use null se não encontrar):
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes para IA." }), {
+        return new Response(JSON.stringify({ error: "Créditos insuficientes. Tente novamente mais tarde." }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }

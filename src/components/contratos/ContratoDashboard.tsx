@@ -108,12 +108,12 @@ export default function ContratoDashboard({ contrato, aditivos }: Props) {
           </CardContent>
         </Card>
 
-        {/* IA extracted data */}
+        {/* Extracted data */}
         {contrato.dados_ia && Object.keys(contrato.dados_ia).length > 0 && (
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Dados Extraídos pela IA
+                <FileText className="h-4 w-4" /> Dados Extraídos do Contrato
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">

@@ -102,7 +102,7 @@ export default function AditivoFormDialog({ open, onClose, contrato, nextNumber 
             {file && (
               <Button variant="outline" size="sm" onClick={handleParseAi} disabled={parsing}>
                 {parsing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                {parsing ? "Analisando..." : "Analisar com IA"}
+                {parsing ? "Analisando..." : "Extrair dados"}
               </Button>
             )}
           </div>

@@ -324,7 +324,7 @@ function drawConclusion(doc: jsPDF, _cycle: CycleData) {
   doc.setFontSize(8);
   doc.setTextColor(160, 160, 160);
   doc.text(
-    "Este relatório foi gerado automaticamente pelo sistema Caderno de Campo — Sementes Produtiva.",
+    "Caderno de Campo — Sementes Produtiva.",
     105,
     285,
     { align: "center" }
