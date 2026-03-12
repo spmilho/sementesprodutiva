@@ -128,7 +128,7 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
     return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
 
-  const hasData = actuals.length > 0 || standCounts.length > 0;
+  const hasData = actuals.length > 0 || standCounts.length > 0 || cvRecords.length > 0;
 
   const finishStatus: Record<string, boolean> = {
     female: props.femalePlantingFinished ?? false,
