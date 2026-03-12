@@ -240,24 +240,24 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
         </CardContent></Card>
 
-        {/* Pop Fêmea - plantas/metro */}
+        {/* Pop Fêmea - plantas/ha */}
         <Card><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pop. Fêmea</p>
-          {standStats.female.avgPlantsPerMeter > 0 ? (
+          {popStats.female.popPerHa > 0 ? (
             <>
-              <p className="text-xl font-bold">{standStats.female.avgPlantsPerMeter.toFixed(2)} <span className="text-xs font-normal">pl/m</span></p>
-              <p className="text-[10px] text-muted-foreground">Emerg: {standStats.female.emergPct.toFixed(0)}% | CV: {standStats.female.cv.toFixed(1)}%</p>
+              <p className="text-xl font-bold">{popStats.female.popPerHa.toLocaleString("pt-BR")} <span className="text-xs font-normal">pl/ha</span></p>
+              <p className="text-[10px] text-muted-foreground">{popStats.female.seedsPerMeter.toFixed(1)} sem/m | Esp: {popStats.female.spacingCm}cm</p>
             </>
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
         </CardContent></Card>
 
-        {/* Pop Macho - plantas/metro */}
+        {/* Pop Macho - plantas/ha */}
         <Card><CardContent className="p-3 space-y-1">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pop. Macho</p>
-          {standStats.male.avgPlantsPerMeter > 0 ? (
+          {popStats.male.popPerHa > 0 ? (
             <>
-              <p className="text-xl font-bold">{standStats.male.avgPlantsPerMeter.toFixed(2)} <span className="text-xs font-normal">pl/m</span></p>
-              <p className="text-[10px] text-muted-foreground">Emerg: {standStats.male.emergPct.toFixed(0)}% | CV: {standStats.male.cv.toFixed(1)}%</p>
+              <p className="text-xl font-bold">{popStats.male.popPerHa.toLocaleString("pt-BR")} <span className="text-xs font-normal">pl/ha</span></p>
+              <p className="text-[10px] text-muted-foreground">{popStats.male.seedsPerMeter.toFixed(1)} sem/m | Esp: {popStats.male.spacingCm}cm</p>
             </>
           ) : <p className="text-sm text-muted-foreground">Sem dados</p>}
         </CardContent></Card>
