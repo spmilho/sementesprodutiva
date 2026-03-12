@@ -270,6 +270,69 @@ export default function NdviSection({
     return ndviTimeline.filter(p => p.dt >= filterStartTimestamp);
   }, [ndviTimeline, filterStartTimestamp]);
 
+  // Fetch previous analyses
+  const { data: previousAnalyses = [], refetch: refetchAnalyses } = useQuery({
+    queryKey: ["ndvi-analyses", cycleId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("ndvi_analyses")
+        .select("*")
+        .eq("cycle_id", cycleId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      return data ?? [];
+    },
+  });
+
+  const latestAnalysis = previousAnalyses[0] || null;
+
+  // Generate analysis mutation
+  const generateAnalysisMut = useMutation({
+    mutationFn: async () => {
+      const currentNdviVal = currentNdvi?.mean != null ? Number(currentNdvi.mean) : null;
+      const previousNdviVal = previousNdvi?.mean != null ? Number(previousNdvi.mean) : null;
+      const timelineForStats = filteredTimeline.length > 0 ? filteredTimeline : ndviTimeline;
+      const cleanImgs = filteredImages.filter(img => img.cl < 0.3);
+
+      const { data, error } = await supabase.functions.invoke("ndvi-analysis", {
+        body: {
+          ndviData: {
+            currentMean: currentNdviVal,
+            previousMean: previousNdviVal,
+            totalImages: filteredImages.length,
+            cleanImages: cleanImgs.length,
+            minMean: timelineForStats.length > 0 ? Math.min(...timelineForStats.map(t => Number(t.mean || 999))) : null,
+            maxMean: timelineForStats.length > 0 ? Math.max(...timelineForStats.map(t => Number(t.mean || 0))) : null,
+          },
+          plantingDate: plantingDates?.date || null,
+          phenologyStage: latestStage,
+          pivotName,
+          hybridName: hybridName || null,
+          filterStartDate: filterStartDate ? format(filterStartDate, "yyyy-MM-dd") : null,
+        },
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      // Persist
+      await (supabase as any).from("ndvi_analyses").insert({
+        cycle_id: cycleId,
+        org_id: orgId,
+        analysis_text: data.analysis,
+        ndvi_value: data.ndviValue,
+        growth_stage: data.growthStage || latestStage,
+        dap: data.dap,
+        filter_start_date: filterStartDate ? format(filterStartDate, "yyyy-MM-dd") : null,
+      });
+
+      refetchAnalyses();
+      toast.success("Análise atualizada!");
+      return data;
+    },
+    onError: (e: any) => toast.error(e.message || "Erro ao gerar análise"),
+  });
+
   // Delete polygon
   const deletePolygonMut = useMutation({
     mutationFn: async () => {
