@@ -111,9 +111,16 @@ export default function CycleDetail() {
   });
 
   const finishMutation = useMutation({
-    mutationFn: async ({ type, finished }: { type: "male" | "female"; finished: boolean }) => {
-      const update = type === "male" ? { male_planting_finished: finished } : { female_planting_finished: finished };
-      const { error } = await (supabase as any).from("production_cycles").update(update).eq("id", id!);
+    mutationFn: async ({ type, finished }: { type: string; finished: boolean }) => {
+      const fieldMap: Record<string, string> = {
+        female: "female_planting_finished",
+        male: "male_planting_finished",
+        male_1: "male_1_planting_finished",
+        male_2: "male_2_planting_finished",
+        male_3: "male_3_planting_finished",
+      };
+      const field = fieldMap[type] || "male_planting_finished";
+      const { error } = await (supabase as any).from("production_cycles").update({ [field]: finished }).eq("id", id!);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["cycle-detail", id] }); toast.success("Atualizado!"); },
