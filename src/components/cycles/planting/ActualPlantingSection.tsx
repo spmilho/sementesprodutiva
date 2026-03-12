@@ -56,7 +56,6 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
   const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
 
   const form = useForm<FormValues>({
