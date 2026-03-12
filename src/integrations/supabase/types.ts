@@ -517,6 +517,159 @@ export type Database = {
           },
         ]
       }
+      crop_input_imports: {
+        Row: {
+          cycle_id: string
+          file_name: string
+          file_url: string | null
+          id: string
+          imported_at: string
+          imported_by: string | null
+          org_id: string
+          records_new: number
+          records_total: number
+          records_updated: number
+        }
+        Insert: {
+          cycle_id: string
+          file_name: string
+          file_url?: string | null
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          org_id: string
+          records_new?: number
+          records_total?: number
+          records_updated?: number
+        }
+        Update: {
+          cycle_id?: string
+          file_name?: string
+          file_url?: string | null
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          org_id?: string
+          records_new?: number
+          records_total?: number
+          records_updated?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crop_input_imports_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crop_input_imports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crop_inputs: {
+        Row: {
+          active_ingredient: string | null
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          dap_at_application: number | null
+          deleted_at: string | null
+          dose_per_ha: number | null
+          event_code: string | null
+          event_type: string | null
+          execution_date: string | null
+          group_category: string | null
+          growth_stage_at_application: string | null
+          id: string
+          import_file_id: string | null
+          input_type: string
+          notes: string | null
+          org_id: string
+          photos: string[] | null
+          product_name: string
+          qty_applied: number | null
+          qty_recommended: number | null
+          recommendation_date: string | null
+          source: string
+          status: string
+          unit: string | null
+        }
+        Insert: {
+          active_ingredient?: string | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          dap_at_application?: number | null
+          deleted_at?: string | null
+          dose_per_ha?: number | null
+          event_code?: string | null
+          event_type?: string | null
+          execution_date?: string | null
+          group_category?: string | null
+          growth_stage_at_application?: string | null
+          id?: string
+          import_file_id?: string | null
+          input_type?: string
+          notes?: string | null
+          org_id: string
+          photos?: string[] | null
+          product_name: string
+          qty_applied?: number | null
+          qty_recommended?: number | null
+          recommendation_date?: string | null
+          source?: string
+          status?: string
+          unit?: string | null
+        }
+        Update: {
+          active_ingredient?: string | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          dap_at_application?: number | null
+          deleted_at?: string | null
+          dose_per_ha?: number | null
+          event_code?: string | null
+          event_type?: string | null
+          execution_date?: string | null
+          group_category?: string | null
+          growth_stage_at_application?: string | null
+          id?: string
+          import_file_id?: string | null
+          input_type?: string
+          notes?: string | null
+          org_id?: string
+          photos?: string[] | null
+          product_name?: string
+          qty_applied?: number | null
+          qty_recommended?: number | null
+          recommendation_date?: string | null
+          source?: string
+          status?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crop_inputs_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crop_inputs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cycle_team: {
         Row: {
           created_at: string
