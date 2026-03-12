@@ -60,7 +60,7 @@ export default function CycleDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAdmin } = useRole();
+  const { isAdmin, isClient } = useRole();
   const [editingContract, setEditingContract] = useState(false);
   const contractInputRef = useRef<HTMLInputElement>(null);
 
