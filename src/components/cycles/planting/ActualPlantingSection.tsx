@@ -191,7 +191,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs w-8"></TableHead>
+                  <TableHead className="text-xs">Data</TableHead>
                   <TableHead className="text-xs">Data</TableHead>
                   <TableHead className="text-xs">Tipo</TableHead>
                   <TableHead className="text-xs">Gleba</TableHead>
