@@ -15,7 +15,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, Satellite, RefreshCw, MapPin, TrendingUp, Eye, Trash2, Calendar as CalendarIcon } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Loader2, Satellite, RefreshCw, MapPin, TrendingUp, Eye, Trash2, Calendar as CalendarIcon, ClipboardCopy, FileText, ChevronDown } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
