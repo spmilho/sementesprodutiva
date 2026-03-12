@@ -111,7 +111,7 @@ export default function Dashboard() {
     let totalArea = 0, plantedArea = 0;
     for (const c of filtered) {
       if (["completed", "cancelled"].includes(c.status)) continue;
-      totalArea += c.male_area;
+      totalArea += c.total_area;
       const actuals = plantingActuals.filter((a: any) => a.cycle_id === c.id && (a.type === "male" || a.type === "male_1" || a.type === "male_2" || a.type === "male_3"));
       plantedArea += actuals.reduce((s: number, a: any) => s + (a.actual_area || 0), 0);
     }
