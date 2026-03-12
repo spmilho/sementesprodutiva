@@ -287,7 +287,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
       {glebaChartData.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card><CardContent className="p-4">
-            <p className="text-sm font-medium mb-3">População Final — plantas/ha</p>
+            <p className="text-sm font-medium mb-3">População Final — Plantas/Metro Linear</p>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={glebaChartData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -295,10 +295,10 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, standCount
                 <YAxis className="text-xs" />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="popF" name="Pop. Fêmea Real" fill="#1E88E5" barSize={16} />
-                <Bar dataKey="popPlanF" name="Pop. Fêmea Plan." fill="#90CAF9" barSize={16} />
-                <Bar dataKey="popM" name="Pop. Macho Real" fill="#4CAF50" barSize={16} />
-                <Bar dataKey="popPlanM" name="Pop. Macho Plan." fill="#A5D6A7" barSize={16} />
+                <Bar dataKey="ppmF" name="Pl/m Fêmea Real" fill="#1E88E5" barSize={16} />
+                <Bar dataKey="ppmPlanF" name="Pl/m Fêmea Plan." fill="#90CAF9" barSize={16} />
+                <Bar dataKey="ppmM" name="Pl/m Macho Real" fill="#4CAF50" barSize={16} />
+                <Bar dataKey="ppmPlanM" name="Pl/m Macho Plan." fill="#A5D6A7" barSize={16} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent></Card>
