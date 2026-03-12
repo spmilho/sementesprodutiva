@@ -118,6 +118,13 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
 
   const hasData = actuals.length > 0 || standCounts.length > 0;
 
+  const finishStatus: Record<string, boolean> = {
+    female: props.femalePlantingFinished ?? false,
+    male_1: props.male1PlantingFinished ?? props.malePlantingFinished ?? false,
+    male_2: props.male2PlantingFinished ?? false,
+    male_3: props.male3PlantingFinished ?? false,
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -133,6 +140,25 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
         <span>Área fêmea: <strong className="text-foreground">{props.femaleArea} ha</strong></span>
         <span>•</span>
         <span>Área macho: <strong className="text-foreground">{props.maleArea} ha</strong></span>
+      </div>
+
+      {/* Planting completion toggles */}
+      <div className="flex flex-wrap gap-2">
+        {PLANTING_TYPES.map(t => {
+          const finished = finishStatus[t.value] ?? false;
+          return (
+            <Button
+              key={t.value}
+              variant={finished ? "default" : "outline"}
+              size="sm"
+              className={`gap-1.5 text-xs ${finished ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
+              onClick={() => props.onFinishToggle?.(t.value, !finished)}
+            >
+              {finished && <CheckCircle2 className="h-3.5 w-3.5" />}
+              {t.label} {finished ? "✓ Finalizado" : "— Em andamento"}
+            </Button>
+          );
+        })}
       </div>
 
       {/* Section 1 - Dashboard */}
