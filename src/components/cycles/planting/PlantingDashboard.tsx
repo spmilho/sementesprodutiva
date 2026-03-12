@@ -18,19 +18,46 @@ interface Props {
   maleArea?: number;
 }
 
-export default function PlantingDashboard({ plans, actuals, cvPoints, standCounts, standPoints, glebas, femaleArea, maleArea }: Props) {
-  // Calculate CV% planting per type
+export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords, standCounts, standPoints, glebas, femaleArea, maleArea }: Props) {
+  // Calculate CV% planting per type — prefer manual cvRecords, fallback to cvPoints
   const cvPlantingStats = useMemo(() => {
     const result: Record<string, { cv: number; mean: number; n: number }> = {};
     for (const type of ["female", "male"]) {
-      const filteredActuals = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
-      const allPoints = filteredActuals.flatMap((a: any) =>
-        cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))
-      ).filter(v => v > 0);
-      result[type] = calcStats(allPoints);
+      // Check manual CV records first
+      const manualRecords = cvRecords.filter((r: any) =>
+        type === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
+      );
+      if (manualRecords.length > 0) {
+        const avgCv = manualRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / manualRecords.length;
+        result[type] = { cv: avgCv, mean: 0, n: manualRecords.length };
+      } else {
+        // Fallback to cv_points
+        const filteredActuals = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
+        const allPoints = filteredActuals.flatMap((a: any) =>
+          cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))
+        ).filter(v => v > 0);
+        result[type] = calcStats(allPoints);
+      }
     }
     return result;
-  }, [actuals, cvPoints]);
+  }, [actuals, cvPoints, cvRecords]);
+
+  // Calculate population per hectare from actuals' seeds_per_meter and row_spacing
+  const popStats = useMemo(() => {
+    const result: Record<string, { popPerHa: number; seedsPerMeter: number; spacingCm: number }> = {};
+    for (const type of ["female", "male"]) {
+      const filtered = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
+      if (filtered.length === 0) {
+        result[type] = { popPerHa: 0, seedsPerMeter: 0, spacingCm: 0 };
+        continue;
+      }
+      const avgSeeds = filtered.reduce((s: number, a: any) => s + (Number(a.seeds_per_meter) || 0), 0) / filtered.length;
+      const avgSpacing = filtered.reduce((s: number, a: any) => s + (Number(a.row_spacing) || 0), 0) / filtered.length;
+      const popPerHa = avgSpacing > 0 ? Math.round((avgSeeds / (avgSpacing / 100)) * 10000) : 0;
+      result[type] = { popPerHa, seedsPerMeter: avgSeeds, spacingCm: avgSpacing };
+    }
+    return result;
+  }, [actuals]);
 
   // Stand stats per type (latest count)
   const standStats = useMemo(() => {
