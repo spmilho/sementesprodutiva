@@ -266,20 +266,34 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
               <Tooltip content={<ForecastTooltip windows={windows} margin={margin} />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
 
-              {/* Window shading areas */}
+              {/* Window shading areas - mais visíveis */}
               {windows.map((w) => {
                 const startLabel = chartData.find(d => d.date === w.startDate)?.dateLabel;
+                const centerLabel = chartData.find(d => d.date === w.centerDate)?.dateLabel;
                 const endLabel = chartData.find(d => d.date === w.endDate)?.dateLabel;
                 if (!startLabel || !endLabel) return null;
                 return (
-                  <ReferenceArea
-                    key={`area-${w.index}`}
-                    yAxisId="left"
-                    x1={startLabel}
-                    x2={endLabel}
-                    fill="rgba(255, 152, 0, 0.15)"
-                    strokeOpacity={0}
-                  />
+                  <g key={`window-${w.index}`}>
+                    {/* Faixa da janela com borda */}
+                    <ReferenceArea
+                      yAxisId="left"
+                      x1={startLabel}
+                      x2={endLabel}
+                      fill={w.color}
+                      fillOpacity={0.12}
+                      stroke={w.color}
+                      strokeOpacity={0.4}
+                      strokeWidth={1}
+                    />
+                    {/* Destaque para centro */}
+                    <ReferenceLine
+                      yAxisId="left"
+                      x={centerLabel}
+                      stroke={w.color}
+                      strokeWidth={3}
+                      strokeDasharray="0"
+                    />
+                  </g>
                 );
               })}
 
@@ -291,8 +305,9 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
                   dataKey={`p${w.index}`}
                   name={`Plantio ${format(parseISO(w.planting_date), "dd/MM")} (${w.area_ha.toFixed(0)}ha)`}
                   fill={w.color}
+                  fillOpacity={0.85}
                   stackId="ha"
-                  radius={w.index === windows.length - 1 ? [2, 2, 0, 0] : [0, 0, 0, 0]}
+                  radius={[2, 2, 0, 0]}
                 />
               ))}
 
@@ -302,51 +317,52 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
                 type="monotone"
                 dataKey="accHa"
                 name="ha acumulados"
-                stroke="hsl(0 0% 30%)"
+                stroke="hsl(var(--foreground))"
                 strokeWidth={2}
+                strokeOpacity={0.6}
                 dot={false}
               />
 
-              {/* Center date reference lines */}
-              {windows.map((w) => {
-                const lbl = chartData.find(d => d.date === w.centerDate)?.dateLabel;
-                if (!lbl) return null;
-                return (
-                  <ReferenceLine
-                    key={`center-${w.index}`}
-                    yAxisId="left"
-                    x={lbl}
-                    stroke="#dc2626"
-                    strokeDasharray="4 4"
-                    strokeWidth={1.5}
-                    label={{
-                      value: `${w.label}: ${format(parseISO(w.centerDate), "dd/MM")}`,
-                      position: "top",
-                      fontSize: 9,
-                      fontWeight: "bold",
-                      fill: "#dc2626",
-                    }}
-                  />
-                );
-              })}
-
-              {/* TODAY reference line */}
+              {/* TODAY reference line - mais destacado */}
               {todayLabel && (
                 <ReferenceLine
                   yAxisId="left"
                   x={todayLabel}
-                  stroke="hsl(0 0% 10%)"
+                  stroke="hsl(var(--destructive))"
                   strokeDasharray="6 3"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   label={{
                     value: "HOJE",
                     position: "top",
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: "bold",
-                    fill: "hsl(0 0% 10%)",
+                    fill: "hsl(var(--destructive))",
+                    dy: -5,
                   }}
                 />
               )}
+
+              {/* Center date labels - posicionados acima do gráfico */}
+              {windows.map((w) => {
+                const centerLabel = chartData.find(d => d.date === w.centerDate)?.dateLabel;
+                if (!centerLabel) return null;
+                return (
+                  <ReferenceLine
+                    key={`center-label-${w.index}`}
+                    yAxisId="left"
+                    x={centerLabel}
+                    stroke="transparent"
+                    label={{
+                      value: `${w.label}\n${format(parseISO(w.centerDate), "dd/MM")}`,
+                      position: "insideTop",
+                      fontSize: 10,
+                      fontWeight: "bold",
+                      fill: w.color,
+                      dy: -25,
+                    }}
+                  />
+                );
+              })}
             </ComposedChart>
           </ResponsiveContainer>
         </CardContent>
@@ -404,7 +420,7 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
   );
 }
 
-// Custom tooltip
+// Custom tooltip - destaca a data central e dias ±
 function ForecastTooltip({ active, payload, label, windows, margin }: any) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
@@ -413,31 +429,57 @@ function ForecastTooltip({ active, payload, label, windows, margin }: any) {
   const today = new Date();
   const recordDate = parseISO(data.date);
   const daysDiff = differenceInDays(recordDate, today);
+  const totalWindowDays = margin * 2 + 1;
 
   return (
-    <div className="bg-popover border rounded-md p-3 shadow-md text-xs space-y-1 max-w-[280px]">
-      <p className="font-bold text-sm">{format(recordDate, "dd/MM/yyyy")}</p>
-      <p className="text-muted-foreground">
-        {daysDiff > 0 ? `Em ${daysDiff} dias` : daysDiff === 0 ? "HOJE" : `Há ${Math.abs(daysDiff)} dias`}
-      </p>
+    <div className="bg-popover border rounded-lg p-4 shadow-lg text-xs space-y-2 max-w-[320px]">
+      <div className="flex items-center justify-between pb-2 border-b">
+        <p className="font-bold text-base">{format(recordDate, "dd/MM/yyyy")}</p>
+        <span className={daysDiff === 0 ? "text-destructive font-bold" : "text-muted-foreground"}>
+          {daysDiff > 0 ? `Em ${daysDiff} dias` : daysDiff === 0 ? "HOJE" : `Há ${Math.abs(daysDiff)} dias`}
+        </span>
+      </div>
+
       {data.totalHa > 0 && (
-        <p className="font-medium">Hectares na janela: {data.totalHa.toFixed(1)} ha</p>
+        <p className="font-semibold text-sm">
+          Hectares na janela: <span className="text-primary">{data.totalHa.toFixed(1)} ha</span>
+        </p>
       )}
-      <div className="border-t pt-1 mt-1 space-y-0.5">
+
+      <div className="space-y-1.5 pt-1">
+        <p className="text-xs font-medium text-muted-foreground">Detalhamento por plantio:</p>
         {windows.map((w: any) => {
           const inWindow = data.date >= w.startDate && data.date <= w.endDate;
-          if (!inWindow && data[`p${w.index}`] === 0) return null;
           const windowDay = differenceInDays(parseISO(data.date), parseISO(w.startDate)) + 1;
-          const totalWindowDays = margin * 2 + 1;
+          const isCenter = data.date === w.centerDate;
+          const daysFromCenter = differenceInDays(parseISO(data.date), parseISO(w.centerDate));
+
           return (
-            <p key={w.index} style={{ color: w.color }}>
-              Plantio {format(parseISO(w.planting_date), "dd/MM")} ({w.area_ha.toFixed(0)}ha):{" "}
-              {inWindow ? `dia ${windowDay}/${totalWindowDays}` : "fora da janela"}
-            </p>
+            <div key={w.index} className={`flex items-center gap-2 p-1.5 rounded ${isCenter ? "bg-primary/10 border border-primary/20" : ""}`}>
+              <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: w.color }} />
+              <span className="flex-1">
+                <span className="font-medium">{w.label}</span> ({w.area_ha.toFixed(0)}ha)
+              </span>
+              <span className={isCenter ? "font-bold text-primary" : "text-muted-foreground"}>
+                {isCenter ? (
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    CENTRO
+                  </span>
+                ) : inWindow ? (
+                  `${daysFromCenter > 0 ? "+" : ""}${daysFromCenter}d (${windowDay}/${totalWindowDays})`
+                ) : (
+                  "fora da janela"
+                )}
+              </span>
+            </div>
           );
         })}
       </div>
-      <p className="text-muted-foreground border-t pt-1">Acumulado: {data.accHa} ha</p>
+
+      <p className="text-muted-foreground border-t pt-2 text-xs">
+        Acumulado: <span className="font-medium">{data.accHa} ha</span>
+      </p>
     </div>
   );
 }
