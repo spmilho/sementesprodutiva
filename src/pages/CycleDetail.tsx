@@ -49,7 +49,7 @@ const tabItems = [
   { value: "colheita", label: "Colheita" },
   { value: "mapa", label: "Mapa" },
   { value: "avaliacoes", label: "Avaliações" },
-  { value: "visitas", label: "Visitas" },
+  
   { value: "documentos", label: "Documentos" },
   { value: "relatorio", label: "Relatório" },
 ];
