@@ -4653,6 +4653,93 @@ export type Database = {
           },
         ]
       }
+      weather_records: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          eto_mm: number | null
+          humidity_avg_pct: number | null
+          humidity_max_pct: number | null
+          humidity_min_pct: number | null
+          id: string
+          notes: string | null
+          org_id: string
+          precipitation_mm: number | null
+          radiation_mj: number | null
+          record_date: string
+          source: string
+          source_file_id: string | null
+          temp_avg_c: number | null
+          temp_max_c: number | null
+          temp_min_c: number | null
+          wind_avg_kmh: number | null
+          wind_max_kmh: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          eto_mm?: number | null
+          humidity_avg_pct?: number | null
+          humidity_max_pct?: number | null
+          humidity_min_pct?: number | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          precipitation_mm?: number | null
+          radiation_mj?: number | null
+          record_date: string
+          source?: string
+          source_file_id?: string | null
+          temp_avg_c?: number | null
+          temp_max_c?: number | null
+          temp_min_c?: number | null
+          wind_avg_kmh?: number | null
+          wind_max_kmh?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          eto_mm?: number | null
+          humidity_avg_pct?: number | null
+          humidity_max_pct?: number | null
+          humidity_min_pct?: number | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          precipitation_mm?: number | null
+          radiation_mj?: number | null
+          record_date?: string
+          source?: string
+          source_file_id?: string | null
+          temp_avg_c?: number | null
+          temp_max_c?: number | null
+          temp_min_c?: number | null
+          wind_avg_kmh?: number | null
+          wind_max_kmh?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weather_records_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weather_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       yield_ear_samples: {
         Row: {
           created_at: string

@@ -43,7 +43,7 @@ const tabItems = [
   { value: "despendoamento", label: "Despendoamento" },
   { value: "roguing", label: "Roguing" },
   { value: "pragas", label: "Pragas" },
-  { value: "agua", label: "Água" },
+  { value: "agua", label: "Clima e Irrigação" },
   { value: "umidade", label: "Umidade" },
   { value: "estimativa", label: "Est. Produtividade" },
   { value: "colheita", label: "Colheita" },
