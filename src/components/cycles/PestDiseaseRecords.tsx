@@ -226,7 +226,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
     );
   };
 
-  const suggestions = COMMON_PESTS.filter(p => p.toLowerCase().includes(pestName.toLowerCase()) && pestName.length > 0);
+  const nameOptions = PESTS_BY_TYPE[pestType] || [];
 
   // KPIs
   const total = records.length;
