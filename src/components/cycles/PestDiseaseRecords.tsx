@@ -255,12 +255,12 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
   const SEV_NUM: Record<string, number> = { Baixa: 1, Moderada: 2, Alta: 3, Crítica: 4 };
 
   const chartsByPest = useMemo(() => {
-    if (records.length < 2) return null;
+    if (records.length < 1) return null;
     const grouped: Record<string, any[]> = {};
     const sorted = [...records]
       .filter((r: any) => r.incidence_pct != null)
       .sort((a: any, b: any) => a.observation_date.localeCompare(b.observation_date));
-    if (sorted.length < 2) return null;
+    if (sorted.length < 1) return null;
     sorted.forEach((r: any) => {
       const name = r.pest_name;
       if (!grouped[name]) grouped[name] = [];
@@ -268,12 +268,11 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
         date: format(new Date(r.observation_date + "T12:00:00"), "dd/MM"),
         incidência: Number(r.incidence_pct),
         severidade: SEV_NUM[r.severity] || 0,
-        estádio: r.growth_stage || "",
+        estádio: r.growth_stage || "—",
         severidadeLabel: r.severity,
       });
     });
-    // Only return pests with 2+ data points
-    return Object.entries(grouped).filter(([, v]) => v.length >= 2);
+    return Object.entries(grouped).filter(([, v]) => v.length >= 1);
   }, [records]);
 
   const canSave = pestName && date;
