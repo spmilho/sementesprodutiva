@@ -124,7 +124,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
   const [pestType, setPestType] = useState<string>("Praga");
   const [incidence, setIncidence] = useState("");
   const [severity, setSeverity] = useState<string>("Baixa");
-  const [score, setScore] = useState("1");
+  // score removed - using severity only
   const [stage, setStage] = useState("");
   const [parent, setParent] = useState<string>("Ambos");
   const [area, setArea] = useState("");
@@ -149,7 +149,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
 
   const resetForm = () => {
     setDate(format(new Date(), "yyyy-MM-dd")); setPestName(""); setPestType("Praga");
-    setIncidence(""); setSeverity("Baixa"); setScore("1"); setStage(""); setParent("Ambos");
+    setIncidence(""); setSeverity("Baixa"); setStage(""); setParent("Ambos");
     setArea(""); setAction(""); setNde(false); setNotes(""); setLat(""); setLng("");
     setEditingId(null);
   };
@@ -161,7 +161,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
     setPestType(r.pest_type || "Praga");
     setIncidence(r.incidence_pct != null ? String(r.incidence_pct) : "");
     setSeverity(r.severity || "Baixa");
-    setScore(r.severity_score != null ? String(r.severity_score) : "1");
+    // score removed
     setStage(r.growth_stage || "");
     setParent(r.affected_parent || "Ambos");
     setArea(r.affected_area_ha != null ? String(r.affected_area_ha) : "");
@@ -177,7 +177,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
     observation_date: date,
     pest_name: pestName, pest_type: pestType,
     incidence_pct: incidence ? parseFloat(incidence) : null,
-    severity, severity_score: parseInt(score),
+    severity, severity_score: null,
     growth_stage: stage || null, affected_parent: parent,
     affected_area_ha: area ? parseFloat(area) : null,
     action_taken: action || null, economic_damage_reached: nde,
@@ -252,20 +252,31 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
   }, [records]);
 
   // Chart
-  const chartData = useMemo(() => {
-    if (records.length < 3) return null;
-    const sorted = [...records].filter((r: any) => r.incidence_pct != null)
+  const SEV_NUM: Record<string, number> = { Baixa: 1, Moderada: 2, Alta: 3, Crítica: 4 };
+
+  const chartsByPest = useMemo(() => {
+    if (records.length < 2) return null;
+    const grouped: Record<string, any[]> = {};
+    const sorted = [...records]
+      .filter((r: any) => r.incidence_pct != null)
       .sort((a: any, b: any) => a.observation_date.localeCompare(b.observation_date));
     if (sorted.length < 2) return null;
-    return sorted.map((r: any) => ({
-      date: format(new Date(r.observation_date + "T12:00:00"), "dd/MM"),
-      incidência: Number(r.incidence_pct),
-      nota: Number(r.severity_score),
-      nome: r.pest_name,
-    }));
+    sorted.forEach((r: any) => {
+      const name = r.pest_name;
+      if (!grouped[name]) grouped[name] = [];
+      grouped[name].push({
+        date: format(new Date(r.observation_date + "T12:00:00"), "dd/MM"),
+        incidência: Number(r.incidence_pct),
+        severidade: SEV_NUM[r.severity] || 0,
+        estádio: r.growth_stage || "",
+        severidadeLabel: r.severity,
+      });
+    });
+    // Only return pests with 2+ data points
+    return Object.entries(grouped).filter(([, v]) => v.length >= 2);
   }, [records]);
 
-  const canSave = pestName && date && score;
+  const canSave = pestName && date;
   const isSaving = insertMut.isPending || updateMut.isPending;
 
   const handleSave = () => {
@@ -327,7 +338,6 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
                   <Select value={severity} onValueChange={setSeverity}><SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{SEVERITIES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
                 </div>
-                <div><Label>Nota (1-9) *</Label><Input type="number" min="1" max="9" value={score} onChange={e => setScore(e.target.value)} /></div>
                 <div><Label>Estádio</Label>
                   <Select value={stage} onValueChange={setStage}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>{STAGES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
@@ -362,24 +372,41 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
         </Dialog>
       </div>
 
-      {/* Chart */}
-      {chartData && (
-        <Card><CardContent className="p-4">
-          <p className="text-sm font-medium mb-3">Incidência ao Longo do Tempo</p>
+      {/* Charts per pest/disease */}
+      {chartsByPest && chartsByPest.map(([name, data]) => (
+        <Card key={name}><CardContent className="p-4">
+          <p className="text-sm font-medium mb-3 italic">{name}</p>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={chartData}>
+            <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis yAxisId="left" tick={{ fontSize: 11 }} domain={[0, 100]} unit="%" />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} domain={[1, 9]} />
-              <Tooltip />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} domain={[0, 5]}
+                tickFormatter={(v: number) => ["", "Baixa", "Moderada", "Alta", "Crítica"][v] || ""} />
+              <Tooltip content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const d = payload[0]?.payload;
+                return (
+                  <div className="bg-popover border border-border rounded-md p-2 text-xs shadow-md">
+                    <p className="font-medium">{d.date} {d.estádio && `— ${d.estádio}`}</p>
+                    <p className="text-primary">Incidência: {d.incidência}%</p>
+                    <p className="text-destructive">Severidade: {d.severidadeLabel}</p>
+                  </div>
+                );
+              }} />
               <Legend />
-              <Line yAxisId="left" type="monotone" dataKey="incidência" name="Incidência %" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
-              <Line yAxisId="right" type="monotone" dataKey="nota" name="Nota" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 3 }} />
+              <Line yAxisId="left" type="monotone" dataKey="incidência" name="Incidência %" stroke="hsl(var(--primary))" strokeWidth={2}
+                dot={({ cx, cy, payload }: any) => (
+                  <g key={`dot-${cx}-${cy}`}>
+                    <circle cx={cx} cy={cy} r={4} fill="hsl(var(--primary))" />
+                    {payload.estádio && <text x={cx} y={cy - 10} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">{payload.estádio}</text>}
+                  </g>
+                )} />
+              <Line yAxisId="right" type="monotone" dataKey="severidade" name="Severidade" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent></Card>
-      )}
+      ))}
 
       {/* Table */}
       {records.length === 0 ? (
@@ -389,7 +416,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Data</TableHead><TableHead>Nome</TableHead><TableHead>Tipo</TableHead>
-              <TableHead>Sev.</TableHead><TableHead>Nota</TableHead><TableHead>Inc. %</TableHead>
+              <TableHead>Sev.</TableHead><TableHead>Inc. %</TableHead>
               <TableHead>Parental</TableHead><TableHead>Estádio</TableHead><TableHead>NDE</TableHead>
               <TableHead>Ação</TableHead><TableHead>Fotos</TableHead><TableHead className="w-20"></TableHead>
             </TableRow></TableHeader>
@@ -400,7 +427,6 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
                   <TableCell className="text-xs font-medium italic">{r.pest_name}</TableCell>
                   <TableCell><Badge variant="outline" className={TYPE_COLORS[r.pest_type] || ""}>{r.pest_type}</Badge></TableCell>
                   <TableCell><Badge variant="outline" className={SEV_COLORS[r.severity] || ""}>{r.severity}</Badge></TableCell>
-                  <TableCell className="text-xs font-mono">{r.severity_score}</TableCell>
                   <TableCell className="text-xs">{r.incidence_pct != null ? `${r.incidence_pct}%` : "—"}</TableCell>
                   <TableCell className="text-xs">{r.affected_parent}</TableCell>
                   <TableCell className="text-xs">{r.growth_stage || "—"}</TableCell>
