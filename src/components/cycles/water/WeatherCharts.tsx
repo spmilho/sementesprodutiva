@@ -115,10 +115,13 @@ export default function WeatherCharts({ records, cycleId }: Props) {
   const sortedData = useMemo(() => {
     return [...records]
       .sort((a, b) => a.record_date.localeCompare(b.record_date))
-      .map(r => ({
-        ...r,
-        dateLabel: new Date(r.record_date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-      }));
+      .map(r => {
+        const [y, m, d] = r.record_date.split("-");
+        return {
+          ...r,
+          dateLabel: `${d}/${m}`,
+        };
+      });
   }, [records]);
 
   // Build stage map for date labels
