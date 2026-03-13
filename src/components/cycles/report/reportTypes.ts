@@ -70,8 +70,11 @@ export interface ReportData {
   waterFiles: any[];
   roguingRecords: any[];
   ndviAnalyses: any[];
+  ndviImages: any[];
   fieldVisits: any[];
   emergenceCounts: any[];
+  weatherRecords: any[];
+  photoSignedUrls: Record<string, string>;
 }
 
 export type ProgressCallback = (message: string, current: number, total: number) => void;
