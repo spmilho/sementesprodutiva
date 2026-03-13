@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { generateHtmlReport } from "./generateHtmlReport";
+import { generateHtmlReport, openHtmlInNewTab } from "./generateHtmlReport";
 
 interface ReportTabProps {
   cycleId: string;
