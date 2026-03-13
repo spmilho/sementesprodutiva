@@ -94,7 +94,7 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
   });
 
   const hasDate = Object.values(mappings).includes("date");
-  const hasSomeData = Object.values(mappings).some(v => v && v !== "date");
+  const hasSomeData = Object.values(mappings).some(v => v && v !== "date" && v !== "ignore");
 
   const previewRows = useMemo(() => rawData.slice(0, 5), [rawData]);
 
