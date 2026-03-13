@@ -22,14 +22,77 @@ const SEVERITIES = ["Baixa", "Moderada", "Alta", "Crítica"] as const;
 const PARENTS = ["Fêmea", "Macho", "Ambos"] as const;
 const STAGES = ["VE","V1","V2","V3","V4","V5","V6","V7","V8","V9","V10","V11","V12","VT","R1","R2","R3","R4","R5","R6"] as const;
 
-const COMMON_PESTS = [
-  "Spodoptera frugiperda", "Helicoverpa zea", "Dalbulus maidis", "Diabrotica speciosa",
-  "Rhopalosiphum maidis", "Elasmopalpus lignosellus", "Cercospora zeae-maydis",
-  "Exserohilum turcicum", "Puccinia polysora", "Phaeosphaeria maydis",
-  "Fusarium verticillioides", "Colletotrichum graminicola", "Pratylenchus brachyurus",
-  "Meloidogyne incognita", "Cyperus rotundus", "Digitaria horizontalis",
-  "Brachiaria plantaginea", "Ipomoea grandifolia",
-];
+const PESTS_BY_TYPE: Record<string, string[]> = {
+  Praga: [
+    "Spodoptera frugiperda (Lagarta-do-cartucho)",
+    "Helicoverpa zea (Lagarta-da-espiga)",
+    "Helicoverpa armigera",
+    "Dalbulus maidis (Cigarrinha-do-milho)",
+    "Diabrotica speciosa (Vaquinha-verde-amarela)",
+    "Rhopalosiphum maidis (Pulgão-do-milho)",
+    "Elasmopalpus lignosellus (Lagarta-elasmo)",
+    "Dichelops melacanthus (Percevejo-barriga-verde)",
+    "Agrotis ipsilon (Lagarta-rosca)",
+    "Sitophilus zeamais (Gorgulho-do-milho)",
+    "Deois flavopicta (Cigarrinha-das-pastagens)",
+    "Frankliniella williamsi (Tripes-do-milho)",
+    "Mahanarva fimbriolata (Cigarrinha-da-raiz)",
+    "Conoderus scalaris (Larva-arame)",
+    "Mocis latipes (Curuquerê-dos-capinzais)",
+    "Spodoptera cosmioides",
+    "Spodoptera eridania",
+  ],
+  Doença: [
+    "Cercospora zeae-maydis (Cercosporiose)",
+    "Exserohilum turcicum (Helmintosporiose)",
+    "Puccinia polysora (Ferrugem-polissora)",
+    "Puccinia sorghi (Ferrugem-comum)",
+    "Physopella zeae (Ferrugem-tropical)",
+    "Phaeosphaeria maydis (Mancha-de-phaeosphaeria)",
+    "Fusarium verticillioides (Podridão-de-fusarium)",
+    "Fusarium graminearum (Giberela)",
+    "Colletotrichum graminicola (Antracnose)",
+    "Stenocarpella maydis (Diplodia / Podridão-branca)",
+    "Stenocarpella macrospora (Mancha-de-diplodia)",
+    "Pantoea ananatis (Mancha-branca)",
+    "Kabatiella zeae (Mancha-ocular)",
+    "Bipolaris maydis (Mancha-de-bipolaris)",
+    "Peronosclerospora sorghi (Míldio-do-milho)",
+    "Ustilago maydis (Carvão-do-milho)",
+    "Molicutes (Enfezamento-pálido)",
+    "Fitoplasma (Enfezamento-vermelho)",
+    "Maize Rayado Fino Virus (MRFV)",
+    "Sugarcane Mosaic Virus (SCMV)",
+  ],
+  Daninha: [
+    "Cyperus rotundus (Tiririca)",
+    "Digitaria horizontalis (Capim-colchão)",
+    "Brachiaria plantaginea (Capim-marmelada)",
+    "Brachiaria decumbens (Braquiária)",
+    "Ipomoea grandifolia (Corda-de-viola)",
+    "Ipomoea triloba (Corda-de-viola)",
+    "Amaranthus hybridus (Caruru)",
+    "Amaranthus palmeri (Caruru-palmeri)",
+    "Bidens pilosa (Picão-preto)",
+    "Commelina benghalensis (Trapoeraba)",
+    "Euphorbia heterophylla (Leiteiro)",
+    "Eleusine indica (Capim-pé-de-galinha)",
+    "Raphanus raphanistrum (Nabiça)",
+    "Richardia brasiliensis (Poaia-branca)",
+    "Sida rhombifolia (Guanxuma)",
+    "Sorghum halepense (Capim-massambará)",
+    "Cenchrus echinatus (Capim-carrapicho)",
+  ],
+  Nematóide: [
+    "Pratylenchus brachyurus (Nematóide-das-lesões)",
+    "Pratylenchus zeae",
+    "Meloidogyne incognita (Nematóide-das-galhas)",
+    "Meloidogyne javanica (Nematóide-das-galhas)",
+    "Heterodera zeae (Nematóide-do-cisto-do-milho)",
+    "Rotylenchulus reniformis (Nematóide-reniforme)",
+  ],
+  Outro: [],
+};
 
 const TYPE_COLORS: { [k: string]: string } = {
   Praga: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
@@ -53,7 +116,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
   const { addRecord } = useOfflineSyncContext();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showCustomName, setShowCustomName] = useState(false);
 
   // Form
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -163,7 +226,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
     );
   };
 
-  const suggestions = COMMON_PESTS.filter(p => p.toLowerCase().includes(pestName.toLowerCase()) && pestName.length > 0);
+  const nameOptions = PESTS_BY_TYPE[pestType] || [];
 
   // KPIs
   const total = records.length;
@@ -233,22 +296,31 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
             <DialogHeader><DialogTitle>{editingId ? "Editar Ocorrência" : "Nova Ocorrência Fitossanitária"}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
+                <div><Label>Tipo *</Label>
+                  <Select value={pestType} onValueChange={(v) => { setPestType(v); setPestName(""); setShowCustomName(false); }}><SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{PEST_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>
+                </div>
                 <div><Label>Data *</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
-                <div className="relative">
+                <div className="col-span-2">
                   <Label>Nome *</Label>
-                  <Input value={pestName} onChange={e => { setPestName(e.target.value); setShowSuggestions(true); }} placeholder="Ex: Spodoptera frugiperda"
-                    onFocus={() => setShowSuggestions(true)} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} />
-                  {showSuggestions && suggestions.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md max-h-40 overflow-y-auto">
-                      {suggestions.map(s => (
-                        <button key={s} className="w-full px-3 py-1.5 text-left text-sm hover:bg-accent" onMouseDown={() => { setPestName(s); setShowSuggestions(false); }}>{s}</button>
-                      ))}
+                  {!showCustomName && nameOptions.length > 0 ? (
+                    <div className="space-y-1.5">
+                      <Select value={pestName} onValueChange={(v) => { if (v === "__custom__") { setShowCustomName(true); setPestName(""); } else { setPestName(v); } }}>
+                        <SelectTrigger><SelectValue placeholder="Selecione a ocorrência" /></SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {nameOptions.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                          <SelectItem value="__custom__">✏️ Digitar outro nome...</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input value={pestName} onChange={e => setPestName(e.target.value)} placeholder="Digite o nome da praga/doença" className="flex-1" />
+                      {nameOptions.length > 0 && (
+                        <Button type="button" variant="outline" size="sm" onClick={() => { setShowCustomName(false); setPestName(""); }}>Lista</Button>
+                      )}
                     </div>
                   )}
-                </div>
-                <div><Label>Tipo</Label>
-                  <Select value={pestType} onValueChange={setPestType}><SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{PEST_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>
                 </div>
                 <div><Label>Incidência (%)</Label><Input type="number" step="0.1" min="0" max="100" value={incidence} onChange={e => setIncidence(e.target.value)} /></div>
                 <div><Label>Severidade</Label>
