@@ -70,10 +70,10 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
 
   const deleteMutation = useMutation({
     mutationFn: async (attachId: string) => {
-      const { error } = await (supabase as any)
-        .from("attachments")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", attachId);
+      const { error } = await supabase.rpc("soft_delete_record", {
+        _table_name: "attachments",
+        _record_id: attachId,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
