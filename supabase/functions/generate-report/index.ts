@@ -5,154 +5,167 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Você é um engenheiro agrônomo especialista em produção de sementes de milho híbrido gerando um relatório técnico profissional.
+const SYSTEM_PROMPT = `Você é um engenheiro agrônomo especialista em produção de sementes de milho híbrido.
 
-Gere um HTML COMPLETO e autocontido (com CSS inline e gráficos em SVG inline).
-O HTML deve ser um documento de página única, estilo scroll contínuo, pronto para impressão via Ctrl+P do navegador.
+Sua tarefa é gerar um relatório técnico em HTML COMPLETO, já final, com dados reais recebidos em JSON.
 
-ESTILO DO RELATÓRIO:
-- Estilo McKinsey/BCG: limpo, profissional, dados visuais
-- Fundo branco, fonte Segoe UI ou system-ui
-- Largura máxima 210mm (A4), centralizado, margin auto
-- Cor primária: #1B5E20 (verde escuro)
-- Cor secundária: #1E88E5 (azul)
-- Cor acento: #FF9800 (laranja)
+REGRAS ABSOLUTAS:
+- Retorne APENAS HTML puro (sem markdown, sem blocos de código).
+- O HTML DEVE começar com <style> e depois conteúdo HTML.
+- NÃO use JavaScript no resultado.
+- NÃO use template literals (${"${...}"}) nem placeholders de nenhum tipo.
+- NÃO use funções como formatDate(), formatNumber(), getParentTypeLabel() no HTML.
+- Todos os valores devem sair no HTML como texto final já resolvido.
+- Se um campo estiver vazio/null, não exiba.
+- Gere seções apenas para módulos com dados.
+- Datas em DD/MM/AAAA.
+- Decimais com vírgula.
+- Português brasileiro, tom técnico profissional.
 
-CSS PARA IMPRESSÃO:
-Incluir @media print com:
-- Sem margin body
-- page-break-before em cada seção principal
-- Ocultar elementos interativos
-- @page { size: A4; margin: 15mm 12mm; }
+ESTILO:
+- Visual executivo McKinsey/BCG
+- Fundo branco, tipografia Segoe UI/system-ui
+- A4 print-friendly, seção por página quando necessário
+- Cor primária #1B5E20, secundária #1E88E5, acento #FF9800
+- Tabelas com cabeçalho colorido, KPIs, badges e gráficos SVG inline quando relevante
+- Incluir @media print e @page { size: A4; margin: 15mm 12mm; }
+`;
 
-ESTRUTURA DO HTML:
+function cleanHtml(rawHtml: string): string {
+  let html = rawHtml
+    .replace(/```html\n?/gi, "")
+    .replace(/```\n?/g, "")
+    .trim();
 
-1. CAPA (primeira "página"):
-   - Fundo gradiente verde escuro (#1B5E20 → #2E7D32)
-   - "RELATÓRIO DE PRODUÇÃO" centralizado, branco, uppercase
-   - Nome do híbrido grande (36px)
-   - Safra, contrato, cliente, cooperado, fazenda, pivô, áreas
-   - Logo da empresa se a URL for fornecida (usar <img src="URL">)
-   - Data de geração
+  const doctypeIdx = html.toLowerCase().indexOf("<!doctype");
+  if (doctypeIdx >= 0) {
+    html = html.slice(doctypeIdx);
+  }
 
-2. RESUMO EXECUTIVO:
-   - Tabela de dados do ciclo (split, espaçamentos, ciclo, etc.)
-   - KPI boxes em grid 3×2 com borda colorida (só os que têm dados)
-   - Cada KPI: valor grande + subtexto + badge cor
+  if (html.toLowerCase().startsWith("<!doctype") || html.toLowerCase().startsWith("<html")) {
+    const styleBlocks = html.match(/<style[\s\S]*?<\/style>/gi) || [];
+    const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if (bodyMatch?.[1]) {
+      html = `${styleBlocks.join("\n")}\n${bodyMatch[1]}`.trim();
+    }
+  }
 
-3-N. UMA SEÇÃO POR MÓDULO QUE TENHA DADOS:
-   Para cada módulo com array não vazio, gerar seção com:
-   - Título com ícone emoji
-   - Tabela HTML estilizada (header verde escuro, linhas alternadas)
-   - Badges de cor para status/classificação
-   - Gráficos em SVG inline quando relevante:
-     * Barras para comparativos
-     * Linhas para evolução temporal
-     * Donut para distribuição
-   - Subtotais e resumos em boxes destaque
-   - FOTOS: se houver URLs de fotos, incluir <img src="URL" style="max-width:300px;border-radius:8px;margin:4px"> em grid de 2 colunas
+  return html;
+}
 
-SEÇÕES POSSÍVEIS (gerar SÓ se dados existirem no JSON):
-- 🌱 Semente Básica e Tratamento (lotes + produtos TS com doses)
-- 🚜 Plantio (planejado vs realizado + CV% + gráfico SVG acumulado)
-- 🌾 Stand de Plantas (população + CV% + % emergência)
-- 🧪 Manejo de Insumos (timeline por estádio + tabelas adubo e defensivo separadas)
-- 🌿 Fenologia (estádios observados)
-- 📡 NDVI (último parecer técnico + dados de NDVI)
-- 🔄 Nicking (milestones + inspeções + observações em destaque)
-- ✂️ Despendoamento (passadas + remanescente + NCs em box vermelho)
-- 🌿 Roguing (registros de roguing)
-- 🐛 Pragas e Doenças (severidade + incidência)
-- 💧 Água (irrigação + chuva)
-- 💦 Umidade de Grãos (por gleba + status)
-- 📊 Estimativa de Produtividade (pontos + parâmetros + resultado destaque)
-- 🚛 Colheita (por gleba + totais)
-- 📋 Visitas de Campo (scores + observações completas)
-- 📸 Galeria Fotográfica (todas as fotos restantes agrupadas por módulo)
+function hasInvalidTemplateTokens(html: string): boolean {
+  return (
+    /\$\{[^}]+\}/.test(html) ||
+    /\b(formatDate|formatNumber|getParentTypeLabel)\s*\(/.test(html) ||
+    /\<script\b/i.test(html)
+  );
+}
 
-ÚLTIMA SEÇÃO — CONCLUSÃO TÉCNICA:
-- Texto corrido profissional em parágrafos
-- Um parágrafo por módulo que tem dados
-- Tom: agrônomo experiente, técnico, objetivo
-- Espaço para assinatura no final
+async function callAiGateway(payload: string, repairMode = false): Promise<Response> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("Chave de API não configurada");
 
-REGRAS IMPORTANTES:
-- NÃO incluir tags <html>, <head>, <body>. Começar direto com <style>...</style> seguido do conteúdo
-- NÃO inventar dados. Se um campo está vazio ou null, não mostrar
-- NÃO mostrar seções de módulos que não têm dados
-- Datas devem estar em formato DD/MM/AAAA
-- Números com vírgula como decimal (padrão brasileiro)
-- Todas as tabelas devem ter cabeçalho com fundo colorido
-- Usar classes CSS consistentes (não inline em cada elemento)
-- O HTML deve ser bonito tanto na tela quanto impresso
-- Usar font-family: 'Segoe UI', system-ui, -apple-system, sans-serif
-- Incluir @import de Google Fonts Inter como fallback`;
+  const messages = [
+    {
+      role: "system",
+      content: SYSTEM_PROMPT,
+    },
+    {
+      role: "user",
+      content: `Gere o relatório HTML completo com base nestes dados JSON resolvidos:\n\n${payload}`,
+    },
+  ];
+
+  if (repairMode) {
+    messages.push({
+      role: "user",
+      content:
+        "A resposta anterior veio inválida com placeholders/template literals. Reescreva do zero e retorne SOMENTE HTML puro, sem ${...}, sem JavaScript e sem funções.",
+    });
+  }
+
+  return await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-3-flash-preview",
+      messages,
+    }),
+  });
+}
+
+async function parseGatewayResponse(response: Response): Promise<string> {
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || "";
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { allData } = await req.json();
+    const { allData, reportData } = await req.json();
+    const payload = reportData ?? allData;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("Chave de API não configurada");
-
-    // Truncate data if too large (keep essential info)
-    const dataStr = JSON.stringify(allData, null, 0);
-    const truncatedData = dataStr.length > 120000 ? dataStr.substring(0, 120000) + '...(dados truncados)' : dataStr;
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: `Gere o relatório HTML completo com estes dados do ciclo de produção de sementes de milho híbrido:\n\n${truncatedData}`,
-          },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns minutos." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes. Contate o administrador." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("Gateway error:", response.status, t);
-      throw new Error(`Erro na API de geração: ${response.status}`);
+    if (!payload) {
+      return new Response(JSON.stringify({ error: "Payload de relatório não informado." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const data = await response.json();
-    const rawHtml = data.choices?.[0]?.message?.content || "";
+    const dataStr = JSON.stringify(payload, null, 0);
+    const truncatedData =
+      dataStr.length > 120000 ? `${dataStr.substring(0, 120000)}...(dados truncados)` : dataStr;
 
-    // Clean up any markdown fences
-    const cleanHtml = rawHtml
-      .replace(/```html\n?/g, "")
-      .replace(/```\n?/g, "")
-      .trim();
+    const firstResponse = await callAiGateway(truncatedData, false);
 
-    return new Response(JSON.stringify({ html: cleanHtml }), {
+    if (!firstResponse.ok) {
+      if (firstResponse.status === 429) {
+        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns minutos." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (firstResponse.status === 402) {
+        return new Response(JSON.stringify({ error: "Créditos insuficientes. Contate o administrador." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const t = await firstResponse.text();
+      console.error("Gateway error:", firstResponse.status, t);
+      throw new Error(`Erro na API de geração: ${firstResponse.status}`);
+    }
+
+    let clean = cleanHtml(await parseGatewayResponse(firstResponse));
+
+    if (!clean || hasInvalidTemplateTokens(clean)) {
+      const retryResponse = await callAiGateway(truncatedData, true);
+
+      if (!retryResponse.ok) {
+        const t = await retryResponse.text();
+        console.error("Gateway retry error:", retryResponse.status, t);
+        throw new Error(`Erro na API de geração (retry): ${retryResponse.status}`);
+      }
+
+      clean = cleanHtml(await parseGatewayResponse(retryResponse));
+    }
+
+    if (!clean || hasInvalidTemplateTokens(clean)) {
+      throw new Error("A IA retornou HTML inválido com placeholders não resolvidos.");
+    }
+
+    return new Response(JSON.stringify({ html: clean }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("generate-report error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
-
