@@ -67,6 +67,13 @@ export default function WaterFileCard({ file, onDelete }: Props) {
           </div>
         </div>
 
+        {/* Word images shown directly (no expand needed) */}
+        {file.file_type === "docx" && (file.extracted_images?.length ?? 0) > 0 && (
+          <div className="mt-3 pt-3 border-t">
+            <WordPreview images={file.extracted_images || []} />
+          </div>
+        )}
+
         {expanded && (
           <div className="mt-3 pt-3 border-t">
             {file.description && <p className="text-xs text-muted-foreground mb-2">{file.description}</p>}
@@ -74,11 +81,6 @@ export default function WaterFileCard({ file, onDelete }: Props) {
             {/* Excel preview */}
             {(file.file_type === "xlsx" || file.file_type === "xls" || file.file_type === "csv") && file.parsed_data && (
               <ExcelPreview data={file.parsed_data} onMappingConfirm={() => {}} showMappingStep={false} />
-            )}
-
-            {/* Word preview */}
-            {file.file_type === "docx" && file.extracted_html && (
-              <WordPreview html={file.extracted_html} images={file.extracted_images || []} />
             )}
 
             {/* PDF preview */}
