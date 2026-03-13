@@ -1,48 +1,36 @@
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Image as ImageIcon } from "lucide-react";
 
 interface Props {
-  html: string;
   images: string[];
 }
 
-export default function WordPreview({ html, images }: Props) {
+export default function WordPreview({ images }: Props) {
   const [lightbox, setLightbox] = useState<string | null>(null);
 
-  return (
-    <div className="space-y-4">
-      {/* Rendered HTML content */}
-      <div
-        className="prose prose-sm max-w-none dark:prose-invert bg-background p-6 rounded-lg border leading-relaxed
-          [&_table]:w-full [&_table]:border-collapse [&_table]:text-xs
-          [&_th]:bg-muted [&_th]:p-2 [&_th]:border [&_th]:border-border [&_th]:text-left [&_th]:font-semibold
-          [&_td]:p-2 [&_td]:border [&_td]:border-border
-          [&_tr:nth-child(even)]:bg-muted/30
-          [&_img]:rounded-lg [&_img]:shadow-sm [&_img]:max-h-96 [&_img]:object-contain [&_img]:cursor-pointer"
-        dangerouslySetInnerHTML={{ __html: html }}
-        onClick={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.tagName === "IMG") setLightbox((target as HTMLImageElement).src);
-        }}
-      />
+  if (images.length === 0) {
+    return (
+      <div className="text-xs text-muted-foreground flex items-center gap-1 py-2">
+        <ImageIcon className="h-3.5 w-3.5" /> Nenhuma imagem encontrada no documento
+      </div>
+    );
+  }
 
-      {/* Image gallery from Word */}
-      {images.length > 0 && (
-        <div>
-          <h4 className="font-semibold text-sm mb-2">Imagens do Documento</h4>
-          <div className={`grid gap-4 ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
-            {images.map((src, i) => (
-              <img
-                key={i}
-                src={src}
-                alt={`Imagem ${i + 1}`}
-                className="rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-shadow max-h-96 w-full object-contain"
-                onClick={() => setLightbox(src)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">{images.length} imagem(ns) extraída(s)</p>
+      <div className={`grid gap-3 ${images.length === 1 ? "grid-cols-1" : images.length === 2 ? "grid-cols-2" : "grid-cols-2 md:grid-cols-3"}`}>
+        {images.map((src, i) => (
+          <img
+            key={i}
+            src={src}
+            alt={`Imagem ${i + 1}`}
+            className="rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-shadow max-h-80 w-full object-contain bg-muted/30"
+            onClick={() => setLightbox(src)}
+          />
+        ))}
+      </div>
 
       <Dialog open={!!lightbox} onOpenChange={() => setLightbox(null)}>
         <DialogContent className="max-w-4xl p-2">
