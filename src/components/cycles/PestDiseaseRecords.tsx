@@ -416,7 +416,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Data</TableHead><TableHead>Nome</TableHead><TableHead>Tipo</TableHead>
-              <TableHead>Sev.</TableHead><TableHead>Nota</TableHead><TableHead>Inc. %</TableHead>
+              <TableHead>Sev.</TableHead><TableHead>Inc. %</TableHead>
               <TableHead>Parental</TableHead><TableHead>Estádio</TableHead><TableHead>NDE</TableHead>
               <TableHead>Ação</TableHead><TableHead>Fotos</TableHead><TableHead className="w-20"></TableHead>
             </TableRow></TableHeader>
