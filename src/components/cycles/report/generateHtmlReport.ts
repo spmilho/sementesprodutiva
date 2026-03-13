@@ -218,10 +218,8 @@ export async function generateHtmlReport(
   const title = `Relatório — ${data.cycle.hybrid_name} — Safra ${data.cycle.season}`;
   const fullHtml = wrapInDocument(html, title);
 
-  // Use Blob URL to ensure proper HTML rendering
-  const htmlBlob = new Blob([fullHtml], { type: "text/html;charset=utf-8" });
-  const blobUrl = URL.createObjectURL(htmlBlob);
-  window.open(blobUrl, "_blank");
+  // Open in new tab using document.write for proper rendering
+  openHtmlInNewTab(fullHtml);
 
   // Step 5: Upload
   progress("Salvando cópia...", 5);
