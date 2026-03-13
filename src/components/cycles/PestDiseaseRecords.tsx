@@ -338,7 +338,6 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
                   <Select value={severity} onValueChange={setSeverity}><SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{SEVERITIES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
                 </div>
-                <div><Label>Nota (1-9) *</Label><Input type="number" min="1" max="9" value={score} onChange={e => setScore(e.target.value)} /></div>
                 <div><Label>Estádio</Label>
                   <Select value={stage} onValueChange={setStage}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>{STAGES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
