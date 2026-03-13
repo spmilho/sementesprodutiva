@@ -296,22 +296,31 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
             <DialogHeader><DialogTitle>{editingId ? "Editar Ocorrência" : "Nova Ocorrência Fitossanitária"}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
+                <div><Label>Tipo *</Label>
+                  <Select value={pestType} onValueChange={(v) => { setPestType(v); setPestName(""); setShowCustomName(false); }}><SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{PEST_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>
+                </div>
                 <div><Label>Data *</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
-                <div className="relative">
+                <div className="col-span-2">
                   <Label>Nome *</Label>
-                  <Input value={pestName} onChange={e => { setPestName(e.target.value); setShowSuggestions(true); }} placeholder="Ex: Spodoptera frugiperda"
-                    onFocus={() => setShowSuggestions(true)} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} />
-                  {showSuggestions && suggestions.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md max-h-40 overflow-y-auto">
-                      {suggestions.map(s => (
-                        <button key={s} className="w-full px-3 py-1.5 text-left text-sm hover:bg-accent" onMouseDown={() => { setPestName(s); setShowSuggestions(false); }}>{s}</button>
-                      ))}
+                  {!showCustomName && nameOptions.length > 0 ? (
+                    <div className="space-y-1.5">
+                      <Select value={pestName} onValueChange={(v) => { if (v === "__custom__") { setShowCustomName(true); setPestName(""); } else { setPestName(v); } }}>
+                        <SelectTrigger><SelectValue placeholder="Selecione a ocorrência" /></SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {nameOptions.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                          <SelectItem value="__custom__">✏️ Digitar outro nome...</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input value={pestName} onChange={e => setPestName(e.target.value)} placeholder="Digite o nome da praga/doença" className="flex-1" />
+                      {nameOptions.length > 0 && (
+                        <Button type="button" variant="outline" size="sm" onClick={() => { setShowCustomName(false); setPestName(""); }}>Lista</Button>
+                      )}
                     </div>
                   )}
-                </div>
-                <div><Label>Tipo</Label>
-                  <Select value={pestType} onValueChange={setPestType}><SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{PEST_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>
                 </div>
                 <div><Label>Incidência (%)</Label><Input type="number" step="0.1" min="0" max="100" value={incidence} onChange={e => setIncidence(e.target.value)} /></div>
                 <div><Label>Severidade</Label>
