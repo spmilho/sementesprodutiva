@@ -26,7 +26,7 @@ export default function ManejoTab({
   const { data: inputs = [], isLoading } = useCropInputs(cycleId);
   const { data: imports = [] } = useCropInputImports(cycleId);
   const { data: plantingDate } = usePlantingDate(cycleId);
-  const { upsertInputs, insertManual, saveImportRecord } = useManejoMutations(cycleId, orgId);
+  const { upsertInputs, insertManual, saveImportRecord, deleteImportRecord } = useManejoMutations(cycleId, orgId);
 
   const [importOpen, setImportOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
