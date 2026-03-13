@@ -38,7 +38,7 @@ export default function ExcelPreview({ data, onMappingConfirm, showMappingStep =
   const numericCols = useMemo(() => {
     return data.headers.filter(h => {
       const m = mappings[h];
-      return m && m !== "date" && m !== "";
+      return m && m !== "date" && m !== "ignore";
     });
   }, [mappings, data.headers]);
 
@@ -211,7 +211,7 @@ export default function ExcelPreview({ data, onMappingConfirm, showMappingStep =
               {data.headers.map(h => (
                 <div key={h} className="space-y-1">
                   <label className="text-xs font-medium truncate block">{h}</label>
-                  <Select value={mappings[h] || ""} onValueChange={v => setMappings(prev => ({ ...prev, [h]: v }))}>
+                  <Select value={mappings[h] || "ignore"} onValueChange={v => setMappings(prev => ({ ...prev, [h]: v }))}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Ignorar" /></SelectTrigger>
                     <SelectContent>{COLUMN_MAPPING_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                   </Select>
