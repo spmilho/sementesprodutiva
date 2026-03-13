@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { generateFullReport } from "./generateFullReport";
+import { generateHtmlReport } from "./generateHtmlReport";
 
 interface ReportTabProps {
   cycleId: string;
@@ -44,7 +44,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
     setProgressPct(0);
 
     try {
-      await generateFullReport(cycleId, cycle, (msg, current, total) => {
+      await generateHtmlReport(cycleId, cycle, (msg, current, total) => {
         setProgressMsg(msg);
         setProgressPct(Math.round((current / total) * 100));
       });
@@ -104,7 +104,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
               </div>
               <Button size="lg" className="px-8" onClick={handleGenerate}>
                 <FileText className="h-5 w-5 mr-2" />
-                Gerar Relatório PDF
+                Gerar Relatório
               </Button>
             </>
           ) : (
