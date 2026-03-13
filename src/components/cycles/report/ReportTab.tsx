@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FileText, Download, Trash2, Loader2, CheckCircle } from "lucide-react";
+import { FileText, Download, Trash2, Loader2, CheckCircle, Eye, Clipboard, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -21,6 +21,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
   const [generating, setGenerating] = useState(false);
   const [progressMsg, setProgressMsg] = useState("");
   const [progressPct, setProgressPct] = useState(0);
+  const [lastHtml, setLastHtml] = useState<string | null>(null);
 
   // Fetch previous reports
   const { data: reports = [], isLoading: loadingReports } = useQuery({
@@ -44,11 +45,12 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
     setProgressPct(0);
 
     try {
-      await generateHtmlReport(cycleId, cycle, (msg, current, total) => {
+      const result = await generateHtmlReport(cycleId, cycle, (msg, current, total) => {
         setProgressMsg(msg);
         setProgressPct(Math.round((current / total) * 100));
       });
 
+      setLastHtml(result.html);
       setProgressMsg("✅ Relatório gerado com sucesso!");
       setProgressPct(100);
       toast.success("Relatório gerado e salvo com sucesso!");
@@ -67,6 +69,28 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
       setProgressPct(0);
     }
   }, [cycleId, cycle, queryClient]);
+
+  const handleCopyHtml = useCallback(async () => {
+    if (!lastHtml) {
+      toast.error("Gere um relatório primeiro.");
+      return;
+    }
+    await navigator.clipboard.writeText(lastHtml);
+    toast.success("HTML copiado para a área de transferência!");
+  }, [lastHtml]);
+
+  const handleViewReport = useCallback(async (fileUrl: string) => {
+    window.open(fileUrl, "_blank");
+  }, []);
+
+  const handlePrintReport = useCallback(async (fileUrl: string) => {
+    const win = window.open(fileUrl, "_blank");
+    if (win) {
+      win.addEventListener("load", () => {
+        setTimeout(() => win.print(), 500);
+      });
+    }
+  }, []);
 
   const deleteMutation = useMutation({
     mutationFn: async (attachId: string) => {
@@ -94,18 +118,26 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
                 <FileText className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-foreground">📄 Gerar Relatório do Ciclo</h2>
+                <h2 className="text-xl font-bold text-foreground">📄 Gerar Relatório Completo</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Relatório completo com todos os dados registrados até o momento.
+                  Relatório profissional gerado por análise avançada com todos os dados do ciclo.
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Inclui apenas seções com dados reais — sem dados de planejamento.
+                  O relatório abre em nova aba e é salvo automaticamente no histórico.
                 </p>
               </div>
-              <Button size="lg" className="px-8" onClick={handleGenerate}>
-                <FileText className="h-5 w-5 mr-2" />
-                Gerar Relatório
-              </Button>
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <Button size="lg" className="px-8" onClick={handleGenerate}>
+                  <FileText className="h-5 w-5 mr-2" />
+                  Gerar Relatório
+                </Button>
+                {lastHtml && (
+                  <Button size="lg" variant="outline" onClick={handleCopyHtml}>
+                    <Clipboard className="h-4 w-4 mr-2" />
+                    Copiar HTML
+                  </Button>
+                )}
+              </div>
             </>
           ) : (
             <div className="space-y-4 max-w-md mx-auto">
@@ -168,19 +200,46 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {r.file_url && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => window.open(r.file_url, "_blank")}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Visualizar"
+                              onClick={() => handleViewReport(r.file_url)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Imprimir"
+                              onClick={() => handlePrintReport(r.file_url)}
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Baixar"
+                              onClick={() => {
+                                const a = document.createElement("a");
+                                a.href = r.file_url;
+                                a.download = r.file_name;
+                                a.click();
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
+                          title="Excluir"
                           onClick={() => deleteMutation.mutate(r.id)}
                           disabled={deleteMutation.isPending}
                         >
