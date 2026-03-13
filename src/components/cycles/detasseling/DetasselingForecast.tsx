@@ -59,7 +59,7 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
     const map = new Map<string, number>();
     plantingActuals.forEach((p: any) => {
       const d = p.planting_date;
-      const area = Number(p.area_planted_ha) || 0;
+      const area = Number(p.actual_area) || 0;
       map.set(d, (map.get(d) || 0) + area);
     });
     return Array.from(map.entries())
