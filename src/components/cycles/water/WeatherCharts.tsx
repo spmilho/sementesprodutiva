@@ -291,7 +291,7 @@ export default function WeatherCharts({ records, cycleId }: Props) {
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                {renderStageReferenceLines()}
+                {renderStageReferenceLines("left")}
                 <Bar yAxisId="left" dataKey="dailyGdu" name="GDU diário" fill="hsl(25 85% 55%)" radius={[2, 2, 0, 0]} />
                 <Line yAxisId="right" type="monotone" dataKey="accGdu" name="GDU acumulado" stroke="hsl(0 70% 45%)" strokeWidth={2} dot={false} />
               </ComposedChart>
