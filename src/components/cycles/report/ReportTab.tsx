@@ -44,7 +44,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
     setProgressPct(0);
 
     try {
-      await generateFullReport(cycleId, cycle, (msg, current, total) => {
+      await generateHtmlReport(cycleId, cycle, (msg, current, total) => {
         setProgressMsg(msg);
         setProgressPct(Math.round((current / total) * 100));
       });
