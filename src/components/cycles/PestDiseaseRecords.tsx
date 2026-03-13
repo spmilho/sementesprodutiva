@@ -372,24 +372,41 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
         </Dialog>
       </div>
 
-      {/* Chart */}
-      {chartData && (
-        <Card><CardContent className="p-4">
-          <p className="text-sm font-medium mb-3">Incidência ao Longo do Tempo</p>
+      {/* Charts per pest/disease */}
+      {chartsByPest && chartsByPest.map(([name, data]) => (
+        <Card key={name}><CardContent className="p-4">
+          <p className="text-sm font-medium mb-3 italic">{name}</p>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={chartData}>
+            <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis yAxisId="left" tick={{ fontSize: 11 }} domain={[0, 100]} unit="%" />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} domain={[1, 9]} />
-              <Tooltip />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} domain={[0, 5]}
+                tickFormatter={(v: number) => ["", "Baixa", "Moderada", "Alta", "Crítica"][v] || ""} />
+              <Tooltip content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const d = payload[0]?.payload;
+                return (
+                  <div className="bg-popover border border-border rounded-md p-2 text-xs shadow-md">
+                    <p className="font-medium">{d.date} {d.estádio && `— ${d.estádio}`}</p>
+                    <p className="text-primary">Incidência: {d.incidência}%</p>
+                    <p className="text-destructive">Severidade: {d.severidadeLabel}</p>
+                  </div>
+                );
+              }} />
               <Legend />
-              <Line yAxisId="left" type="monotone" dataKey="incidência" name="Incidência %" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
-              <Line yAxisId="right" type="monotone" dataKey="nota" name="Nota" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 3 }} />
+              <Line yAxisId="left" type="monotone" dataKey="incidência" name="Incidência %" stroke="hsl(var(--primary))" strokeWidth={2}
+                dot={({ cx, cy, payload }: any) => (
+                  <g key={`dot-${cx}-${cy}`}>
+                    <circle cx={cx} cy={cy} r={4} fill="hsl(var(--primary))" />
+                    {payload.estádio && <text x={cx} y={cy - 10} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">{payload.estádio}</text>}
+                  </g>
+                )} />
+              <Line yAxisId="right" type="monotone" dataKey="severidade" name="Severidade" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent></Card>
-      )}
+      ))}
 
       {/* Table */}
       {records.length === 0 ? (
