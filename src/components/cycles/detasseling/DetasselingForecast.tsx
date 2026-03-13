@@ -420,7 +420,7 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
   );
 }
 
-// Custom tooltip
+// Custom tooltip - destaca a data central e dias ±
 function ForecastTooltip({ active, payload, label, windows, margin }: any) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
@@ -429,31 +429,57 @@ function ForecastTooltip({ active, payload, label, windows, margin }: any) {
   const today = new Date();
   const recordDate = parseISO(data.date);
   const daysDiff = differenceInDays(recordDate, today);
+  const totalWindowDays = margin * 2 + 1;
 
   return (
-    <div className="bg-popover border rounded-md p-3 shadow-md text-xs space-y-1 max-w-[280px]">
-      <p className="font-bold text-sm">{format(recordDate, "dd/MM/yyyy")}</p>
-      <p className="text-muted-foreground">
-        {daysDiff > 0 ? `Em ${daysDiff} dias` : daysDiff === 0 ? "HOJE" : `Há ${Math.abs(daysDiff)} dias`}
-      </p>
+    <div className="bg-popover border rounded-lg p-4 shadow-lg text-xs space-y-2 max-w-[320px]">
+      <div className="flex items-center justify-between pb-2 border-b">
+        <p className="font-bold text-base">{format(recordDate, "dd/MM/yyyy")}</p>
+        <span className={daysDiff === 0 ? "text-destructive font-bold" : "text-muted-foreground"}>
+          {daysDiff > 0 ? `Em ${daysDiff} dias` : daysDiff === 0 ? "HOJE" : `Há ${Math.abs(daysDiff)} dias`}
+        </span>
+      </div>
+
       {data.totalHa > 0 && (
-        <p className="font-medium">Hectares na janela: {data.totalHa.toFixed(1)} ha</p>
+        <p className="font-semibold text-sm">
+          Hectares na janela: <span className="text-primary">{data.totalHa.toFixed(1)} ha</span>
+        </p>
       )}
-      <div className="border-t pt-1 mt-1 space-y-0.5">
+
+      <div className="space-y-1.5 pt-1">
+        <p className="text-xs font-medium text-muted-foreground">Detalhamento por plantio:</p>
         {windows.map((w: any) => {
           const inWindow = data.date >= w.startDate && data.date <= w.endDate;
-          if (!inWindow && data[`p${w.index}`] === 0) return null;
           const windowDay = differenceInDays(parseISO(data.date), parseISO(w.startDate)) + 1;
-          const totalWindowDays = margin * 2 + 1;
+          const isCenter = data.date === w.centerDate;
+          const daysFromCenter = differenceInDays(parseISO(data.date), parseISO(w.centerDate));
+
           return (
-            <p key={w.index} style={{ color: w.color }}>
-              Plantio {format(parseISO(w.planting_date), "dd/MM")} ({w.area_ha.toFixed(0)}ha):{" "}
-              {inWindow ? `dia ${windowDay}/${totalWindowDays}` : "fora da janela"}
-            </p>
+            <div key={w.index} className={`flex items-center gap-2 p-1.5 rounded ${isCenter ? "bg-primary/10 border border-primary/20" : ""}`}>
+              <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: w.color }} />
+              <span className="flex-1">
+                <span className="font-medium">{w.label}</span> ({w.area_ha.toFixed(0)}ha)
+              </span>
+              <span className={isCenter ? "font-bold text-primary" : "text-muted-foreground"}>
+                {isCenter ? (
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    CENTRO
+                  </span>
+                ) : inWindow ? (
+                  `${daysFromCenter > 0 ? "+" : ""}${daysFromCenter}d (${windowDay}/${totalWindowDays})`
+                ) : (
+                  "fora da janela"
+                )}
+              </span>
+            </div>
           );
         })}
       </div>
-      <p className="text-muted-foreground border-t pt-1">Acumulado: {data.accHa} ha</p>
+
+      <p className="text-muted-foreground border-t pt-2 text-xs">
+        Acumulado: <span className="font-medium">{data.accHa} ha</span>
+      </p>
     </div>
   );
 }
