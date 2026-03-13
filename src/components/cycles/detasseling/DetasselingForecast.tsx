@@ -266,20 +266,34 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
               <Tooltip content={<ForecastTooltip windows={windows} margin={margin} />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
 
-              {/* Window shading areas */}
+              {/* Window shading areas - mais visíveis */}
               {windows.map((w) => {
                 const startLabel = chartData.find(d => d.date === w.startDate)?.dateLabel;
+                const centerLabel = chartData.find(d => d.date === w.centerDate)?.dateLabel;
                 const endLabel = chartData.find(d => d.date === w.endDate)?.dateLabel;
                 if (!startLabel || !endLabel) return null;
                 return (
-                  <ReferenceArea
-                    key={`area-${w.index}`}
-                    yAxisId="left"
-                    x1={startLabel}
-                    x2={endLabel}
-                    fill="rgba(255, 152, 0, 0.15)"
-                    strokeOpacity={0}
-                  />
+                  <g key={`window-${w.index}`}>
+                    {/* Faixa da janela com borda */}
+                    <ReferenceArea
+                      yAxisId="left"
+                      x1={startLabel}
+                      x2={endLabel}
+                      fill={w.color}
+                      fillOpacity={0.12}
+                      stroke={w.color}
+                      strokeOpacity={0.4}
+                      strokeWidth={1}
+                    />
+                    {/* Destaque para centro */}
+                    <ReferenceLine
+                      yAxisId="left"
+                      x={centerLabel}
+                      stroke={w.color}
+                      strokeWidth={3}
+                      strokeDasharray="0"
+                    />
+                  </g>
                 );
               })}
 
@@ -291,8 +305,9 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
                   dataKey={`p${w.index}`}
                   name={`Plantio ${format(parseISO(w.planting_date), "dd/MM")} (${w.area_ha.toFixed(0)}ha)`}
                   fill={w.color}
+                  fillOpacity={0.85}
                   stackId="ha"
-                  radius={w.index === windows.length - 1 ? [2, 2, 0, 0] : [0, 0, 0, 0]}
+                  radius={[2, 2, 0, 0]}
                 />
               ))}
 
@@ -302,51 +317,52 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
                 type="monotone"
                 dataKey="accHa"
                 name="ha acumulados"
-                stroke="hsl(0 0% 30%)"
+                stroke="hsl(var(--foreground))"
                 strokeWidth={2}
+                strokeOpacity={0.6}
                 dot={false}
               />
 
-              {/* Center date reference lines */}
-              {windows.map((w) => {
-                const lbl = chartData.find(d => d.date === w.centerDate)?.dateLabel;
-                if (!lbl) return null;
-                return (
-                  <ReferenceLine
-                    key={`center-${w.index}`}
-                    yAxisId="left"
-                    x={lbl}
-                    stroke="#dc2626"
-                    strokeDasharray="4 4"
-                    strokeWidth={1.5}
-                    label={{
-                      value: `${w.label}: ${format(parseISO(w.centerDate), "dd/MM")}`,
-                      position: "top",
-                      fontSize: 9,
-                      fontWeight: "bold",
-                      fill: "#dc2626",
-                    }}
-                  />
-                );
-              })}
-
-              {/* TODAY reference line */}
+              {/* TODAY reference line - mais destacado */}
               {todayLabel && (
                 <ReferenceLine
                   yAxisId="left"
                   x={todayLabel}
-                  stroke="hsl(0 0% 10%)"
+                  stroke="hsl(var(--destructive))"
                   strokeDasharray="6 3"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   label={{
                     value: "HOJE",
                     position: "top",
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: "bold",
-                    fill: "hsl(0 0% 10%)",
+                    fill: "hsl(var(--destructive))",
+                    dy: -5,
                   }}
                 />
               )}
+
+              {/* Center date labels - posicionados acima do gráfico */}
+              {windows.map((w) => {
+                const centerLabel = chartData.find(d => d.date === w.centerDate)?.dateLabel;
+                if (!centerLabel) return null;
+                return (
+                  <ReferenceLine
+                    key={`center-label-${w.index}`}
+                    yAxisId="left"
+                    x={centerLabel}
+                    stroke="transparent"
+                    label={{
+                      value: `${w.label}\n${format(parseISO(w.centerDate), "dd/MM")}`,
+                      position: "insideTop",
+                      fontSize: 10,
+                      fontWeight: "bold",
+                      fill: w.color,
+                      dy: -25,
+                    }}
+                  />
+                );
+              })}
             </ComposedChart>
           </ResponsiveContainer>
         </CardContent>
