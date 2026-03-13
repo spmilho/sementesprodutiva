@@ -427,7 +427,6 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
                   <TableCell className="text-xs font-medium italic">{r.pest_name}</TableCell>
                   <TableCell><Badge variant="outline" className={TYPE_COLORS[r.pest_type] || ""}>{r.pest_type}</Badge></TableCell>
                   <TableCell><Badge variant="outline" className={SEV_COLORS[r.severity] || ""}>{r.severity}</Badge></TableCell>
-                  <TableCell className="text-xs font-mono">{r.severity_score}</TableCell>
                   <TableCell className="text-xs">{r.incidence_pct != null ? `${r.incidence_pct}%` : "—"}</TableCell>
                   <TableCell className="text-xs">{r.affected_parent}</TableCell>
                   <TableCell className="text-xs">{r.growth_stage || "—"}</TableCell>
