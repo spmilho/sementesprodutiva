@@ -38,7 +38,7 @@ export default function ExcelPreview({ data, onMappingConfirm, showMappingStep =
   const numericCols = useMemo(() => {
     return data.headers.filter(h => {
       const m = mappings[h];
-      return m && m !== "date" && m !== "";
+      return m && m !== "date" && m !== "ignore";
     });
   }, [mappings, data.headers]);
 

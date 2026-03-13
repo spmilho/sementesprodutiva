@@ -65,7 +65,7 @@ export const CONTENT_TYPE_OPTIONS = [
 ] as const;
 
 export const COLUMN_MAPPING_OPTIONS = [
-  { value: "", label: "— Ignorar —" },
+  { value: "ignore", label: "— Ignorar —" },
   { value: "date", label: "Data" },
   { value: "irrigation_mm", label: "Lâmina (mm)" },
   { value: "duration_h", label: "Tempo (h)" },
