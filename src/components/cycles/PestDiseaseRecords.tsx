@@ -161,7 +161,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
     setPestType(r.pest_type || "Praga");
     setIncidence(r.incidence_pct != null ? String(r.incidence_pct) : "");
     setSeverity(r.severity || "Baixa");
-    setScore(r.severity_score != null ? String(r.severity_score) : "1");
+    // score removed
     setStage(r.growth_stage || "");
     setParent(r.affected_parent || "Ambos");
     setArea(r.affected_area_ha != null ? String(r.affected_area_ha) : "");
