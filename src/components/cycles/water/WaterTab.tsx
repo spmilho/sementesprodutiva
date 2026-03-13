@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Paperclip, Plus, Loader2 } from "lucide-react";
+import { Paperclip, Plus, Loader2, CloudSun, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -11,8 +11,11 @@ import FileClassifyDialog from "./FileClassifyDialog";
 import ExcelPreview from "./ExcelPreview";
 import WaterFileCard from "./WaterFileCard";
 import ManualRecordDialog from "./ManualRecordDialog";
-import { useWaterFiles, useIrrigationRecords, useRainfallRecords, useWaterMutations } from "./useWaterData";
+import WeatherImportDialog from "./WeatherImportDialog";
+import WeatherCharts from "./WeatherCharts";
+import { useWaterFiles, useIrrigationRecords, useRainfallRecords, useWeatherRecords, useWaterMutations } from "./useWaterData";
 import type { ParsedExcelData } from "./types";
+import { format } from "date-fns";
 
 interface Props {
   cycleId: string;
@@ -28,13 +31,21 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
   const { data: files = [], isLoading: loadingFiles } = useWaterFiles(cycleId);
   const { data: irrigationRecords = [] } = useIrrigationRecords(cycleId);
   const { data: rainfallRecords = [] } = useRainfallRecords(cycleId);
-  const { saveFile, deleteFile, saveIrrigation, saveRainfall } = useWaterMutations(cycleId, orgId);
+  const { data: weatherRecords = [] } = useWeatherRecords(cycleId);
+  const { saveFile, deleteFile, saveIrrigation, saveRainfall, saveWeatherRecords, deleteWeatherBatch } = useWaterMutations(cycleId, orgId);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const weatherFileRef = useRef<HTMLInputElement>(null);
   const [classifyFile, setClassifyFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
   const [excelPreview, setExcelPreview] = useState<{ data: ParsedExcelData; file: File; contentType: string; description: string; referenceDate: string } | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
+
+  // Weather import state
+  const [weatherImportOpen, setWeatherImportOpen] = useState(false);
+  const [weatherHeaders, setWeatherHeaders] = useState<string[]>([]);
+  const [weatherRawData, setWeatherRawData] = useState<any[][]>([]);
+  const [weatherImporting, setWeatherImporting] = useState(false);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -43,6 +54,39 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
     setClassifyFile(file);
     e.target.value = "";
   }, []);
+
+  const handleWeatherFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array", cellDates: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const json: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      if (json.length < 2) { toast.error("Planilha vazia"); return; }
+      const hdrs = (json[0] || []).map((h: any) => String(h || "").trim());
+      const rows = json.slice(1).filter(r => r.some(c => c !== null && c !== undefined && c !== ""));
+      setWeatherHeaders(hdrs);
+      setWeatherRawData(rows);
+      setWeatherImportOpen(true);
+    } catch {
+      toast.error("Erro ao ler planilha meteorológica");
+    }
+  }, []);
+
+  const handleWeatherImport = useCallback(async (records: Record<string, any>[]) => {
+    setWeatherImporting(true);
+    try {
+      await saveWeatherRecords.mutateAsync(records);
+      toast.success(`✅ ${records.length} registros meteorológicos importados`);
+      setWeatherImportOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao importar");
+    } finally {
+      setWeatherImporting(false);
+    }
+  }, [saveWeatherRecords]);
 
   const getFileExtension = (name: string) => {
     const ext = name.split(".").pop()?.toLowerCase() || "";
@@ -106,7 +150,6 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
     setProcessing(true);
     try {
       const ext = getFileExtension(classifyFile.name);
-
       if (ext === "xlsx" || ext === "xls" || ext === "csv") {
         const parsed = await processExcel(classifyFile);
         setExcelPreview({ data: parsed, file: classifyFile, contentType, description, referenceDate });
@@ -114,9 +157,7 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
         setProcessing(false);
         return;
       }
-
       const fileUrl = await uploadFileToStorage(classifyFile);
-
       if (ext === "docx") {
         const { html, images } = await processWord(classifyFile);
         await saveFile.mutateAsync({
@@ -126,14 +167,12 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
           extracted_html: html, extracted_images: images,
         });
       } else {
-        // PDF or other
         await saveFile.mutateAsync({
           file_name: classifyFile.name, file_type: ext, content_type: contentType,
           description: description || undefined, reference_date: referenceDate || undefined,
           file_url: fileUrl, file_size_bytes: classifyFile.size,
         });
       }
-
       setClassifyFile(null);
     } catch (err: any) {
       toast.error(`Erro ao processar: ${err.message}`);
@@ -149,20 +188,16 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
       const { file, data, contentType, description, referenceDate } = excelPreview;
       const fileUrl = await uploadFileToStorage(file);
       const ext = getFileExtension(file.name);
-
       const savedFile = await saveFile.mutateAsync({
         file_name: file.name, file_type: ext, content_type: contentType,
         description: description || undefined, reference_date: referenceDate || undefined,
         file_url: fileUrl, file_size_bytes: file.size,
         parsed_data: { ...data, columnMappings: mappings } as any,
       });
-
-      // Extract irrigation/rainfall records from mapped data
       const dateCol = Object.keys(mappings).find(k => mappings[k] === "date");
       const irrCol = Object.keys(mappings).find(k => mappings[k] === "irrigation_mm");
       const rainCol = Object.keys(mappings).find(k => mappings[k] === "precipitation_mm");
       const durCol = Object.keys(mappings).find(k => mappings[k] === "duration_h");
-
       if (dateCol && irrCol) {
         for (const row of data.rows) {
           const date = String(row[dateCol] ?? "");
@@ -188,7 +223,6 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
           }
         }
       }
-
       setExcelPreview(null);
       toast.success("Dados importados com sucesso!");
     } catch (err: any) {
@@ -211,7 +245,7 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-        {contractNumber && <><Badge variant="outline">Contrato: {contractNumber}</Badge></>}
+        {contractNumber && <Badge variant="outline">Contrato: {contractNumber}</Badge>}
         {hybridName && <span>Híbrido: {hybridName}</span>}
         {cooperatorName && <><span>•</span><span>Cooperado: {cooperatorName}</span></>}
         {pivotName && <><span>•</span><span>Pivô: {pivotName}</span></>}
@@ -229,15 +263,9 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
         onClick={() => fileInputRef.current?.click()}
       >
         <Paperclip className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-        <p className="font-medium">+ Adicionar Arquivo</p>
+        <p className="font-medium">+ Adicionar Arquivo de Irrigação/Chuva</p>
         <p className="text-xs text-muted-foreground mt-1">Excel (.xlsx, .xls, .csv), Word (.docx) ou PDF (.pdf)</p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          className="hidden"
-          accept=".xlsx,.xls,.csv,.docx,.pdf"
-          onChange={handleFileSelect}
-        />
+        <input ref={fileInputRef} type="file" className="hidden" accept=".xlsx,.xls,.csv,.docx,.pdf" onChange={handleFileSelect} />
       </div>
 
       {/* Excel preview step */}
@@ -248,21 +276,44 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
               <h3 className="font-semibold text-sm">Preview — {excelPreview.file.name}</h3>
               {processing && <Loader2 className="h-4 w-4 animate-spin" />}
             </div>
-            <ExcelPreview
-              data={excelPreview.data}
-              onMappingConfirm={handleExcelMappingConfirm}
-              showMappingStep
-            />
+            <ExcelPreview data={excelPreview.data} onMappingConfirm={handleExcelMappingConfirm} showMappingStep />
           </CardContent>
         </Card>
       )}
 
-      {/* Manual record button */}
-      <div className="flex gap-2">
+      {/* Action buttons */}
+      <div className="flex gap-2 flex-wrap">
         <Button variant="outline" size="sm" onClick={() => setManualOpen(true)}>
           <Plus className="h-4 w-4 mr-1" /> Registro Manual
         </Button>
+        <input ref={weatherFileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleWeatherFileSelect} />
+        <Button variant="outline" size="sm" onClick={() => weatherFileRef.current?.click()} className="gap-1">
+          <CloudSun className="h-4 w-4" /> Importar Dados Meteorológicos
+        </Button>
       </div>
+
+      {/* Weather charts */}
+      <WeatherCharts records={weatherRecords} />
+
+      {/* Weather delete option */}
+      {weatherRecords.length > 0 && (
+        <div className="text-xs text-muted-foreground flex items-center gap-2">
+          <span>{weatherRecords.length} registros meteorológicos</span>
+          <Button
+            variant="ghost" size="sm"
+            className="h-6 text-xs text-destructive hover:text-destructive"
+            onClick={() => {
+              if (confirm(`Excluir todos os ${weatherRecords.length} registros meteorológicos?`)) {
+                deleteWeatherBatch.mutate(undefined, {
+                  onSuccess: () => toast.success("Registros meteorológicos excluídos"),
+                });
+              }
+            }}
+          >
+            <Trash2 className="h-3 w-3 mr-1" /> Limpar
+          </Button>
+        </div>
+      )}
 
       {/* Files list */}
       {loadingFiles ? (
@@ -284,7 +335,6 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
         onCancel={() => setClassifyFile(null)}
         processing={processing}
       />
-
       <ManualRecordDialog
         open={manualOpen}
         onClose={() => setManualOpen(false)}
@@ -292,6 +342,16 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
         onSaveRainfall={(data) => { saveRainfall.mutate(data); setManualOpen(false); }}
         saving={saveIrrigation.isPending || saveRainfall.isPending}
       />
+      {weatherImportOpen && (
+        <WeatherImportDialog
+          open={weatherImportOpen}
+          onClose={() => setWeatherImportOpen(false)}
+          headers={weatherHeaders}
+          rawData={weatherRawData}
+          onImport={handleWeatherImport}
+          importing={weatherImporting}
+        />
+      )}
     </div>
   );
 }

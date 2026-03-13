@@ -7,11 +7,8 @@ export function useWaterFiles(cycleId: string) {
     queryKey: ["water_files", cycleId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("water_files")
-        .select("*")
-        .eq("cycle_id", cycleId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false });
+        .from("water_files").select("*").eq("cycle_id", cycleId)
+        .is("deleted_at", null).order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -23,11 +20,8 @@ export function useIrrigationRecords(cycleId: string) {
     queryKey: ["irrigation_records", cycleId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("irrigation_records")
-        .select("*")
-        .eq("cycle_id", cycleId)
-        .is("deleted_at", null)
-        .order("start_date", { ascending: true });
+        .from("irrigation_records").select("*").eq("cycle_id", cycleId)
+        .is("deleted_at", null).order("start_date", { ascending: true });
       if (error) throw error;
       return data || [];
     },
@@ -39,11 +33,21 @@ export function useRainfallRecords(cycleId: string) {
     queryKey: ["rainfall_records", cycleId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("rainfall_records")
-        .select("*")
-        .eq("cycle_id", cycleId)
-        .is("deleted_at", null)
-        .order("record_date", { ascending: true });
+        .from("rainfall_records").select("*").eq("cycle_id", cycleId)
+        .is("deleted_at", null).order("record_date", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
+export function useWeatherRecords(cycleId: string) {
+  return useQuery({
+    queryKey: ["weather_records", cycleId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("weather_records").select("*").eq("cycle_id", cycleId)
+        .is("deleted_at", null).order("record_date", { ascending: true });
       if (error) throw error;
       return data || [];
     },
@@ -56,6 +60,7 @@ export function useWaterMutations(cycleId: string, orgId: string) {
     qc.invalidateQueries({ queryKey: ["water_files", cycleId] });
     qc.invalidateQueries({ queryKey: ["irrigation_records", cycleId] });
     qc.invalidateQueries({ queryKey: ["rainfall_records", cycleId] });
+    qc.invalidateQueries({ queryKey: ["weather_records", cycleId] });
   };
 
   const saveFile = useMutation({
@@ -67,8 +72,7 @@ export function useWaterMutations(cycleId: string, orgId: string) {
     }) => {
       const { data: u } = await supabase.auth.getUser();
       const { data, error } = await (supabase as any).from("water_files").insert({
-        cycle_id: cycleId, org_id: orgId, created_by: u.user?.id,
-        ...file,
+        cycle_id: cycleId, org_id: orgId, created_by: u.user?.id, ...file,
       }).select().single();
       if (error) throw error;
       return data;
@@ -121,6 +125,33 @@ export function useWaterMutations(cycleId: string, orgId: string) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const saveWeatherRecords = useMutation({
+    mutationFn: async (records: Record<string, any>[]) => {
+      const { data: u } = await supabase.auth.getUser();
+      const rows = records.map(r => ({
+        cycle_id: cycleId, org_id: orgId, created_by: u.user?.id,
+        source: "imported", ...r,
+      }));
+      const { error } = await (supabase as any).from("weather_records").insert(rows);
+      if (error) throw error;
+    },
+    onSuccess: () => invalidate(),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteWeatherBatch = useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase as any)
+        .from("weather_records")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("cycle_id", cycleId)
+        .is("deleted_at", null);
+      if (error) throw error;
+    },
+    onSuccess: () => invalidate(),
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const deleteIrrigation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any).rpc("soft_delete_record", {
@@ -143,5 +174,5 @@ export function useWaterMutations(cycleId: string, orgId: string) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  return { saveFile, deleteFile, saveIrrigation, saveRainfall, deleteIrrigation, deleteRainfall };
+  return { saveFile, deleteFile, saveIrrigation, saveRainfall, saveWeatherRecords, deleteWeatherBatch, deleteIrrigation, deleteRainfall };
 }
