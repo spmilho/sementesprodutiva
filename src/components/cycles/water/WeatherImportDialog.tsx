@@ -118,7 +118,7 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
       const rec: Record<string, any> = {};
       headers.forEach((h, i) => {
         const field = mappings[h];
-        if (!field) return;
+        if (!field || field === "ignore") return;
         const val = row[i];
         if (field === "date") {
           rec.record_date = parseDate(val);
