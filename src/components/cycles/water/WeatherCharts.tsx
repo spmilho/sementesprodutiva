@@ -196,11 +196,12 @@ export default function WeatherCharts({ records, cycleId }: Props) {
   const hasEto = sortedData.some(r => r.eto_mm != null);
   const hasGdu = gduData.some(r => r.dailyGdu > 0);
 
-  const renderStageReferenceLines = () =>
+  const renderStageReferenceLines = (yAxisId?: string) =>
     stageTransitions.map((t, i) => (
       <ReferenceLine
         key={`stage-${i}`}
         x={t.dateLabel}
+        {...(yAxisId ? { yAxisId } : {})}
         stroke="hsl(var(--primary))"
         strokeDasharray="4 4"
         strokeOpacity={0.6}
