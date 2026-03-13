@@ -153,9 +153,7 @@ export default function Detasseling({ cycleId, orgId, contractNumber, pivotName,
   return (
     <div className="space-y-6">
       {/* Forecast Section */}
-      {detasselingDap && (
-        <DetasselingForecast cycleId={cycleId} detasselingDap={detasselingDap} />
-      )}
+      <DetasselingForecast cycleId={cycleId} detasselingDap={detasselingDap || 55} />
 
       {/* Header */}
       <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
