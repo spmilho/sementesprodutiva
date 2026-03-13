@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.ndvi-analysis]
 verify_jwt = false
+
+[functions.generate-report]
+verify_jwt = false

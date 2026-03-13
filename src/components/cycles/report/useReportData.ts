@@ -10,6 +10,7 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     orgSettingsRes,
     orgRes,
     seedLotsRes,
+    plantingPlanRes,
     plantingRes,
     glebasRes,
     standCountsRes,
@@ -23,12 +24,22 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     pestsRes,
     moistureRes,
     yieldEstRes,
+    harvestPlanRes,
     harvestRes,
     attachRes,
+    cropInputsRes,
+    irrigationRes,
+    rainfallRes,
+    waterFilesRes,
+    roguingRes,
+    ndviAnalysesRes,
+    fieldVisitsRes,
+    emergenceRes,
   ] = await Promise.all([
     sb.from("organization_settings").select("*").eq("org_id", orgId).maybeSingle(),
     sb.from("organizations").select("name, slogan").eq("id", orgId).single(),
     sb.from("seed_lots").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("parent_type").order("lot_number"),
+    sb.from("planting_plan").select("*, pivot_glebas(name, parent_type, area_ha)").eq("cycle_id", cycleId).is("deleted_at", null),
     sb.from("planting_actual").select("*, pivot_glebas(name, parent_type, area_ha)").eq("cycle_id", cycleId).is("deleted_at", null).order("planting_date"),
     sb.from("pivot_glebas").select("*").eq("cycle_id", cycleId).is("deleted_at", null),
     sb.from("stand_counts").select("*, pivot_glebas(name, parent_type)").eq("cycle_id", cycleId).is("deleted_at", null).order("count_date"),
@@ -42,8 +53,17 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     sb.from("pest_disease_records").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("observation_date"),
     sb.from("moisture_samples").select("*, pivot_glebas(name)").eq("cycle_id", cycleId).is("deleted_at", null).order("sample_date"),
     sb.from("yield_estimates").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("estimate_number", { ascending: false }).limit(1),
+    sb.from("harvest_plan").select("*, pivot_glebas(name)").eq("cycle_id", cycleId).is("deleted_at", null),
     sb.from("harvest_records").select("*, pivot_glebas(name)").eq("cycle_id", cycleId).is("deleted_at", null).order("harvest_date"),
     sb.from("attachments").select("*").eq("entity_id", cycleId).is("deleted_at", null),
+    sb.from("crop_inputs").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("execution_date"),
+    sb.from("irrigation_records").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("start_date"),
+    sb.from("rainfall_records").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("record_date"),
+    sb.from("water_files").select("*").eq("cycle_id", cycleId).is("deleted_at", null),
+    sb.from("roguing_records").select("*, pivot_glebas(name)").eq("cycle_id", cycleId).is("deleted_at", null).order("operation_date"),
+    sb.from("ndvi_analyses").select("*").eq("cycle_id", cycleId).order("analysis_date", { ascending: false }).limit(3),
+    sb.from("field_visits").select("*, field_visit_scores(*)").eq("cycle_id", cycleId).order("visit_date", { ascending: false }),
+    sb.from("emergence_counts").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("count_date"),
   ]);
 
   // Fetch seed lot treatments if we have seed lots
@@ -76,6 +96,22 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     const estId = yieldEstRes.data[0].id;
     const spRes = await sb.from("yield_sample_points").select("*").eq("yield_estimate_id", estId).order("point_number");
     yieldSamplePoints = spRes.data || [];
+  }
+
+  // Fetch stand count points
+  let standCountPoints: any[] = [];
+  if (standCountsRes.data?.length > 0) {
+    const scIds = standCountsRes.data.map((s: any) => s.id);
+    const scpRes = await sb.from("stand_count_points").select("*").in("stand_count_id", scIds);
+    standCountPoints = scpRes.data || [];
+  }
+
+  // Fetch CV points for planting actual
+  let cvPoints: any[] = [];
+  if (plantingRes.data?.length > 0) {
+    const paIds = plantingRes.data.map((p: any) => p.id);
+    const cvRes = await sb.from("planting_cv_points").select("*").in("planting_actual_id", paIds);
+    cvPoints = cvRes.data || [];
   }
 
   const reportCycle: ReportCycleData = {
@@ -123,9 +159,12 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     seedLots: seedLotsRes.data || [],
     seedLotTreatments,
     seedLotTreatmentProducts,
+    plantingPlan: plantingPlanRes.data || [],
     plantingActual: plantingRes.data || [],
+    cvPoints: cvPoints,
     glebas: glebasRes.data || [],
     standCounts: standCountsRes.data || [],
+    standCountPoints,
     fertilizations: fertRes.data || [],
     phenology: phenoRes.data || [],
     nickingMilestones: nickMilestonesRes.data || [],
@@ -138,7 +177,16 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     moisture: moistureRes.data || [],
     yieldEstimates: yieldEstRes.data || [],
     yieldSamplePoints,
+    harvestPlan: harvestPlanRes.data || [],
     harvestRecords: harvestRes.data || [],
     attachments: attachRes.data || [],
+    cropInputs: cropInputsRes.data || [],
+    irrigationRecords: irrigationRes.data || [],
+    rainfallRecords: rainfallRes.data || [],
+    waterFiles: waterFilesRes.data || [],
+    roguingRecords: roguingRes.data || [],
+    ndviAnalyses: ndviAnalysesRes.data || [],
+    fieldVisits: fieldVisitsRes.data || [],
+    emergenceCounts: emergenceRes.data || [],
   };
 }
