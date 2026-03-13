@@ -117,7 +117,7 @@ function buildAllData(data: ReportData) {
 }
 
 /**
- * Wraps AI-generated HTML in a full document shell with print button.
+ * Wraps AI-generated HTML in a full document shell with print toolbar.
  */
 function wrapInDocument(innerHtml: string, title: string): string {
   return `<!DOCTYPE html>
@@ -126,15 +126,23 @@ function wrapInDocument(innerHtml: string, title: string): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
+  <style>
+    @media print { .report-toolbar { display: none !important; } }
+  </style>
 </head>
 <body>
-  ${innerHtml}
-  <div class="no-print" style="position:fixed;bottom:20px;right:20px;z-index:999;display:flex;gap:10px;flex-wrap:wrap">
-    <button onclick="window.print()" style="background:#1B5E20;color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2)">🖨️ Imprimir / Salvar PDF</button>
+  <div class="report-toolbar" style="position:fixed;top:0;left:0;right:0;z-index:999;background:#1B5E20;color:white;display:flex;align-items:center;justify-content:space-between;padding:8px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.3);font-family:system-ui,sans-serif">
+    <span style="font-size:14px;font-weight:600">📄 ${title}</span>
+    <div style="display:flex;gap:8px">
+      <button onclick="window.print()" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.3);padding:6px 16px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer">🖨️ Imprimir / Salvar PDF</button>
+    </div>
   </div>
-  <style>@media print { .no-print { display: none !important; } }</style>
+  <div style="padding-top:50px">
+    ${innerHtml}
+  </div>
 </body>
 </html>`;
+}
 }
 
 /**
