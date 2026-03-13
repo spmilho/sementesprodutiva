@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { Paperclip, Plus, Loader2 } from "lucide-react";
+import { Paperclip, Plus, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
