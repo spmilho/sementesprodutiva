@@ -124,7 +124,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
   const [pestType, setPestType] = useState<string>("Praga");
   const [incidence, setIncidence] = useState("");
   const [severity, setSeverity] = useState<string>("Baixa");
-  const [score, setScore] = useState("1");
+  // score removed - using severity only
   const [stage, setStage] = useState("");
   const [parent, setParent] = useState<string>("Ambos");
   const [area, setArea] = useState("");
