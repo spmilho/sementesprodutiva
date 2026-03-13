@@ -224,7 +224,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
                               size="icon"
                               className="h-8 w-8"
                               title="Visualizar"
-                              onClick={() => handleViewReport(r.file_url)}
+                              onClick={() => handleViewReport(r.file_url, r.file_name)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
