@@ -35,6 +35,7 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     ndviAnalysesRes,
     fieldVisitsRes,
     emergenceRes,
+    weatherRes,
   ] = await Promise.all([
     sb.from("organization_settings").select("*").eq("org_id", orgId).maybeSingle(),
     sb.from("organizations").select("name, slogan").eq("id", orgId).single(),
@@ -64,6 +65,7 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     sb.from("ndvi_analyses").select("*").eq("cycle_id", cycleId).order("analysis_date", { ascending: false }).limit(3),
     sb.from("field_visits").select("*, field_visit_scores(*)").eq("cycle_id", cycleId).order("visit_date", { ascending: false }),
     sb.from("emergence_counts").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("count_date"),
+    sb.from("weather_records").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("record_date"),
   ]);
 
   // Fetch seed lot treatments if we have seed lots
@@ -114,6 +116,27 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     cvPoints = cvRes.data || [];
   }
 
+  // Fetch NDVI images
+  let ndviImages: any[] = [];
+  const ndviPolRes = await sb.from("ndvi_polygons").select("agro_polygon_id").eq("cycle_id", cycleId).is("deleted_at", null).maybeSingle();
+  if (ndviPolRes.data?.agro_polygon_id) {
+    const imgRes = await sb.from("ndvi_images").select("*").eq("agro_polygon_id", ndviPolRes.data.agro_polygon_id).order("capture_date", { ascending: false });
+    ndviImages = imgRes.data || [];
+  }
+
+  // Generate signed URLs for photos stored in private buckets
+  const photoSignedUrls = await resolvePhotoUrls(
+    seedLotsRes.data || [],
+    plantingRes.data || [],
+    detasselingRes.data || [],
+    chemicalsRes.data || [],
+    pestsRes.data || [],
+    moistureRes.data || [],
+    phenoRes.data || [],
+    roguingRes.data || [],
+    attachRes.data || [],
+  );
+
   const reportCycle: ReportCycleData = {
     id: cycle.id,
     org_id: orgId,
@@ -161,7 +184,7 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     seedLotTreatmentProducts,
     plantingPlan: plantingPlanRes.data || [],
     plantingActual: plantingRes.data || [],
-    cvPoints: cvPoints,
+    cvPoints,
     glebas: glebasRes.data || [],
     standCounts: standCountsRes.data || [],
     standCountPoints,
@@ -186,7 +209,57 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     waterFiles: waterFilesRes.data || [],
     roguingRecords: roguingRes.data || [],
     ndviAnalyses: ndviAnalysesRes.data || [],
+    ndviImages,
     fieldVisits: fieldVisitsRes.data || [],
     emergenceCounts: emergenceRes.data || [],
+    weatherRecords: weatherRes.data || [],
+    photoSignedUrls,
   };
+}
+
+/** Resolve storage paths to signed URLs for photos in private buckets */
+async function resolvePhotoUrls(...recordArrays: any[][]): Promise<Record<string, string>> {
+  const storagePaths = new Set<string>();
+
+  for (const records of recordArrays) {
+    for (const record of records) {
+      const photos = Array.isArray(record?.photos) ? record.photos : [];
+      for (const p of photos) {
+        if (p && typeof p === "string" && !p.startsWith("http")) {
+          storagePaths.add(p);
+        }
+      }
+      // Also check file_url for attachments
+      if (record?.file_url && typeof record.file_url === "string" && !record.file_url.startsWith("http")) {
+        storagePaths.add(record.file_url);
+      }
+    }
+  }
+
+  if (storagePaths.size === 0) return {};
+
+  const pathsArray = Array.from(storagePaths);
+  const urlMap: Record<string, string> = {};
+
+  // Try to create signed URLs in batches
+  const buckets = ["cycle-media", "field-visit-photos", "cycle-documents"];
+  for (const bucket of buckets) {
+    const bucketPaths = pathsArray.filter(p => !urlMap[p]);
+    if (bucketPaths.length === 0) break;
+
+    try {
+      const { data } = await sb.storage.from(bucket).createSignedUrls(bucketPaths, 60 * 60 * 24);
+      if (data) {
+        for (const item of data) {
+          if (item.signedUrl && !item.error) {
+            urlMap[item.path] = item.signedUrl;
+          }
+        }
+      }
+    } catch {
+      // Ignore - paths may not be in this bucket
+    }
+  }
+
+  return urlMap;
 }
