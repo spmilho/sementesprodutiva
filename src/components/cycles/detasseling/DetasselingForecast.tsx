@@ -27,7 +27,7 @@ const COLORS = ["#1E88E5", "#4CAF50", "#FF9800", "#E91E63", "#9C27B0", "#00BCD4"
 
 export default function DetasselingForecast({ cycleId, detasselingDap: defaultDap }: Props) {
   const sb = supabase as any;
-  const [dap, setDap] = useState(defaultDap || 55);
+  const [dap, setDap] = useState(defaultDap || 60);
   const [margin, setMargin] = useState(5);
 
   // Fetch female planting actuals
