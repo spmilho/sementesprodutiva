@@ -60,9 +60,9 @@ export default function ManejoImportDialog({ open, onClose, rawData, headers, on
             rec[field] = d.toISOString().split("T")[0];
           } else {
             const str = String(val).trim();
-            // Try dd/mm/yyyy
-            const parts = str.split("/");
-            if (parts.length === 3) {
+            // Try dd/mm/yyyy or dd-mm-yyyy
+            const parts = str.split(/[\/\-]/);
+            if (parts.length === 3 && parts[0].length <= 2) {
               rec[field] = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
             } else {
               rec[field] = str;
