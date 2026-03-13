@@ -116,7 +116,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
   const { addRecord } = useOfflineSyncContext();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showCustomName, setShowCustomName] = useState(false);
 
   // Form
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
