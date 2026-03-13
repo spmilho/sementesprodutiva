@@ -112,7 +112,7 @@ export default function ManejoOperationsView({ inputs, plantingDate }: Props) {
                   <span>{typeCfg.icon}</span>
                   <span className="font-medium">{item.product_name}</span>
                   {item.active_ingredient && <span className="text-muted-foreground">({item.active_ingredient})</span>}
-                  <span>— {item.dose_per_ha ?? "—"} {item.unit || ""}/ha</span>
+                  <span>— {item.dose_per_ha != null ? Number(item.dose_per_ha).toFixed(2) : "—"} {item.unit || ""}/ha</span>
                   <span className="text-muted-foreground">— {typeCfg.label}</span>
                   <Badge variant="outline" className={`ml-auto text-[10px] ${statusCfg.colorClass}`}>
                     {statusCfg.icon}
