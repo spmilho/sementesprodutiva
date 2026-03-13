@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { generateHtmlReport } from "./generateHtmlReport";
+import { generateHtmlReport, openHtmlInNewTab } from "./generateHtmlReport";
 
 interface ReportTabProps {
   cycleId: string;
@@ -79,16 +79,34 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
     toast.success("HTML copiado para a área de transferência!");
   }, [lastHtml]);
 
-  const handleViewReport = useCallback(async (fileUrl: string) => {
-    window.open(fileUrl, "_blank");
+  const handleViewReport = useCallback(async (fileUrl: string, fileName: string) => {
+    try {
+      // Extract storage path from signed URL or use file_url as path
+      const res = await fetch(fileUrl);
+      if (!res.ok) throw new Error("Falha ao baixar relatório");
+      const htmlText = await res.text();
+      openHtmlInNewTab(htmlText);
+    } catch (err: any) {
+      console.error("Erro ao visualizar relatório:", err);
+      toast.error("Erro ao abrir relatório. Tente baixar o arquivo.");
+    }
   }, []);
 
   const handlePrintReport = useCallback(async (fileUrl: string) => {
-    const win = window.open(fileUrl, "_blank");
-    if (win) {
-      win.addEventListener("load", () => {
-        setTimeout(() => win.print(), 500);
-      });
+    try {
+      const res = await fetch(fileUrl);
+      if (!res.ok) throw new Error("Falha ao baixar relatório");
+      const htmlText = await res.text();
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write(htmlText);
+        newWindow.document.close();
+        newWindow.addEventListener("load", () => {
+          setTimeout(() => newWindow.print(), 500);
+        });
+      }
+    } catch (err: any) {
+      toast.error("Erro ao imprimir relatório.");
     }
   }, []);
 
@@ -206,7 +224,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
                               size="icon"
                               className="h-8 w-8"
                               title="Visualizar"
-                              onClick={() => handleViewReport(r.file_url)}
+                              onClick={() => handleViewReport(r.file_url, r.file_name)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
