@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { Paperclip, Plus, Loader2 } from "lucide-react";
+import { Paperclip, Plus, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,7 +26,7 @@ export default function ManejoTab({
   const { data: inputs = [], isLoading } = useCropInputs(cycleId);
   const { data: imports = [] } = useCropInputImports(cycleId);
   const { data: plantingDate } = usePlantingDate(cycleId);
-  const { upsertInputs, insertManual, saveImportRecord } = useManejoMutations(cycleId, orgId);
+  const { upsertInputs, insertManual, saveImportRecord, deleteImportRecord } = useManejoMutations(cycleId, orgId);
 
   const [importOpen, setImportOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
@@ -151,6 +151,22 @@ export default function ManejoTab({
               <span>{imp.records_total} reg.</span>
               <Badge variant="outline" className="text-[10px]">{imp.records_new} novos</Badge>
               <Badge variant="outline" className="text-[10px]">{imp.records_updated} atualiz.</Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-destructive hover:text-destructive"
+                disabled={deleteImportRecord.isPending}
+                onClick={() => {
+                  if (confirm(`Excluir importação "${imp.file_name}" e seus ${imp.records_total} registros?`)) {
+                    deleteImportRecord.mutate(imp.id, {
+                      onSuccess: () => toast.success("Importação excluída"),
+                      onError: (err: any) => toast.error(err.message || "Erro ao excluir"),
+                    });
+                  }
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
           ))}
         </div>
