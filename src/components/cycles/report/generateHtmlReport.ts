@@ -166,13 +166,41 @@ export async function generateHtmlReport(
     });
 
     if (fnError) throw fnError;
-    if (!fnData?.html) throw new Error("Resposta vazia da análise avançada");
+    
+    // Handle both parsed JSON and raw string responses
+    let responseHtml: string | undefined;
+    if (typeof fnData === "string") {
+      try {
+        const parsed = JSON.parse(fnData);
+        responseHtml = parsed.html;
+      } catch {
+        responseHtml = fnData;
+      }
+    } else {
+      responseHtml = fnData?.html;
+    }
+    
+    if (!responseHtml) throw new Error("Resposta vazia da análise avançada");
 
-    html = fnData.html;
+    // Clean markdown fences and any preamble text
+    html = responseHtml
+      .replace(/^[\s\S]*?```html\n?/g, "")
+      .replace(/```[\s\S]*$/g, "")
+      .replace(/^[\s\S]*?(<style)/i, "$1")
+      .replace(/^[\s\S]*?(<\!DOCTYPE)/i, "$1")
+      .trim();
+      
+    // If it starts with <!DOCTYPE or <html, extract inner body content
+    if (html.toLowerCase().startsWith("<!doctype") || html.toLowerCase().startsWith("<html")) {
+      const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+      if (bodyMatch) {
+        const styleMatch = html.match(/(<style[\s\S]*?<\/style>)/gi);
+        html = (styleMatch ? styleMatch.join("\n") : "") + bodyMatch[1];
+      }
+    }
   } catch (err: any) {
     console.warn("Falha na análise avançada, usando fallback:", err.message);
     progress("⚠️ Usando template simplificado...", 3);
-    // Fallback: import the old static generator
     const { buildFallbackReport } = await import("./reportFallback");
     html = buildFallbackReport(data);
   }
@@ -182,11 +210,10 @@ export async function generateHtmlReport(
   const title = `Relatório — ${data.cycle.hybrid_name} — Safra ${data.cycle.season}`;
   const fullHtml = wrapInDocument(html, title);
 
-  const newWindow = window.open("", "_blank");
-  if (newWindow) {
-    newWindow.document.write(fullHtml);
-    newWindow.document.close();
-  }
+  // Use Blob URL to ensure proper HTML rendering
+  const htmlBlob = new Blob([fullHtml], { type: "text/html;charset=utf-8" });
+  const blobUrl = URL.createObjectURL(htmlBlob);
+  window.open(blobUrl, "_blank");
 
   // Step 5: Upload
   progress("Salvando cópia...", 5);
