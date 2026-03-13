@@ -165,7 +165,7 @@ export default function ManejoImportDialog({ open, onClose, rawData, headers, on
                         {typeCfg?.icon} {typeCfg?.label}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs">{r.dose_per_ha ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{r.dose_per_ha != null ? Number(r.dose_per_ha).toFixed(2) : "—"}</TableCell>
                     <TableCell className="text-xs">{r.unit || "—"}</TableCell>
                     <TableCell className="text-xs">{r.execution_date || r.recommendation_date || "—"}</TableCell>
                     <TableCell>
