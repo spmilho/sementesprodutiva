@@ -104,7 +104,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
               </div>
               <Button size="lg" className="px-8" onClick={handleGenerate}>
                 <FileText className="h-5 w-5 mr-2" />
-                Gerar Relatório PDF
+                Gerar Relatório
               </Button>
             </>
           ) : (
