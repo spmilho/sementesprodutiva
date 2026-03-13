@@ -35,7 +35,7 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
     queryKey: ["forecast-planting-actual-v2", cycleId],
     queryFn: async () => {
       const { data } = await sb.from("planting_actual")
-        .select("planting_date, area_planted_ha, type")
+        .select("planting_date, actual_area, type")
         .eq("cycle_id", cycleId).eq("type", "female").is("deleted_at", null)
         .order("planting_date");
       return data || [];
