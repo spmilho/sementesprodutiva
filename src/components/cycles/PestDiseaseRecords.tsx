@@ -149,7 +149,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
 
   const resetForm = () => {
     setDate(format(new Date(), "yyyy-MM-dd")); setPestName(""); setPestType("Praga");
-    setIncidence(""); setSeverity("Baixa"); setScore("1"); setStage(""); setParent("Ambos");
+    setIncidence(""); setSeverity("Baixa"); setStage(""); setParent("Ambos");
     setArea(""); setAction(""); setNde(false); setNotes(""); setLat(""); setLng("");
     setEditingId(null);
   };
