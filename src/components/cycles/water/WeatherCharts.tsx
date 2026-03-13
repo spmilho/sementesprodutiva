@@ -196,11 +196,12 @@ export default function WeatherCharts({ records, cycleId }: Props) {
   const hasEto = sortedData.some(r => r.eto_mm != null);
   const hasGdu = gduData.some(r => r.dailyGdu > 0);
 
-  const renderStageReferenceLines = () =>
+  const renderStageReferenceLines = (yAxisId?: string) =>
     stageTransitions.map((t, i) => (
       <ReferenceLine
         key={`stage-${i}`}
         x={t.dateLabel}
+        {...(yAxisId ? { yAxisId } : {})}
         stroke="hsl(var(--primary))"
         strokeDasharray="4 4"
         strokeOpacity={0.6}
@@ -290,7 +291,7 @@ export default function WeatherCharts({ records, cycleId }: Props) {
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                {renderStageReferenceLines()}
+                {renderStageReferenceLines("left")}
                 <Bar yAxisId="left" dataKey="dailyGdu" name="GDU diário" fill="hsl(25 85% 55%)" radius={[2, 2, 0, 0]} />
                 <Line yAxisId="right" type="monotone" dataKey="accGdu" name="GDU acumulado" stroke="hsl(0 70% 45%)" strokeWidth={2} dot={false} />
               </ComposedChart>
@@ -356,7 +357,7 @@ export default function WeatherCharts({ records, cycleId }: Props) {
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 9 }} />
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                {renderStageReferenceLines()}
+                {renderStageReferenceLines("left")}
                 {hasEto && <Bar yAxisId="left" dataKey="eto_mm" name="ETo (mm)" fill="hsl(45 80% 55%)" radius={[2, 2, 0, 0]} />}
                 <Bar yAxisId="left" dataKey="precipitation_mm" name="Chuva (mm)" fill="hsl(210 70% 55%)" radius={[2, 2, 0, 0]} />
                 {hasWind && <Line yAxisId="right" type="monotone" dataKey="wind_avg_kmh" name="Vento (km/h)" stroke="hsl(0 0% 50%)" strokeWidth={1.5} dot={false} />}
