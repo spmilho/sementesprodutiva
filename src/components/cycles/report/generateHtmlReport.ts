@@ -143,6 +143,16 @@ function wrapInDocument(innerHtml: string, title: string): string {
 </body>
 </html>`;
 }
+
+/**
+ * Opens HTML content in a new tab using document.write for proper rendering.
+ */
+export function openHtmlInNewTab(html: string) {
+  const newWindow = window.open('', '_blank');
+  if (newWindow) {
+    newWindow.document.write(html);
+    newWindow.document.close();
+  }
 }
 
 /**
