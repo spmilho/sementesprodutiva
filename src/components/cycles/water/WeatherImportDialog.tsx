@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const WEATHER_COLUMN_OPTIONS = [
-  { value: "", label: "— Ignorar —" },
+  { value: "ignore", label: "— Ignorar —" },
   { value: "date", label: "Data" },
   { value: "temp_max_c", label: "Temp. Máx (°C)" },
   { value: "temp_min_c", label: "Temp. Mín (°C)" },
