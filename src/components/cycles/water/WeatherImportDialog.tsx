@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const WEATHER_COLUMN_OPTIONS = [
-  { value: "", label: "— Ignorar —" },
+  { value: "ignore", label: "— Ignorar —" },
   { value: "date", label: "Data" },
   { value: "temp_max_c", label: "Temp. Máx (°C)" },
   { value: "temp_min_c", label: "Temp. Mín (°C)" },
@@ -94,7 +94,7 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
   });
 
   const hasDate = Object.values(mappings).includes("date");
-  const hasSomeData = Object.values(mappings).some(v => v && v !== "date");
+  const hasSomeData = Object.values(mappings).some(v => v && v !== "date" && v !== "ignore");
 
   const previewRows = useMemo(() => rawData.slice(0, 5), [rawData]);
 
@@ -118,7 +118,7 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
       const rec: Record<string, any> = {};
       headers.forEach((h, i) => {
         const field = mappings[h];
-        if (!field) return;
+        if (!field || field === "ignore") return;
         const val = row[i];
         if (field === "date") {
           rec.record_date = parseDate(val);
