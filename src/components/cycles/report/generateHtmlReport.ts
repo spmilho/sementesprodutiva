@@ -198,13 +198,14 @@ export async function generateHtmlReport(
 
   try {
     const storagePath = `reports/${data.cycle.org_id}/${cycleId}/${fileName}`;
-    await (supabase as any).storage.from("cycle-media").upload(storagePath, blob, {
+    const { error: uploadError } = await (supabase as any).storage.from("cycle-documents").upload(storagePath, blob, {
       contentType: "text/html",
       upsert: true,
     });
+    if (uploadError) throw uploadError;
 
-    const { data: urlData } = (supabase as any).storage.from("cycle-media").getPublicUrl(storagePath);
-    const fileUrl = urlData?.publicUrl || storagePath;
+    const { data: urlData } = await (supabase as any).storage.from("cycle-documents").createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+    const fileUrl = urlData?.signedUrl || storagePath;
 
     await (supabase as any).from("attachments").insert({
       entity_id: cycleId,
