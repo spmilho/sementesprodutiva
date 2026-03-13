@@ -43,9 +43,12 @@ export interface ReportData {
   seedLots: any[];
   seedLotTreatments: any[];
   seedLotTreatmentProducts: any[];
+  plantingPlan: any[];
   plantingActual: any[];
+  cvPoints: any[];
   glebas: any[];
   standCounts: any[];
+  standCountPoints: any[];
   fertilizations: any[];
   phenology: any[];
   nickingMilestones: any[];
@@ -58,8 +61,17 @@ export interface ReportData {
   moisture: any[];
   yieldEstimates: any[];
   yieldSamplePoints: any[];
+  harvestPlan: any[];
   harvestRecords: any[];
   attachments: any[];
+  cropInputs: any[];
+  irrigationRecords: any[];
+  rainfallRecords: any[];
+  waterFiles: any[];
+  roguingRecords: any[];
+  ndviAnalyses: any[];
+  fieldVisits: any[];
+  emergenceCounts: any[];
 }
 
 export type ProgressCallback = (message: string, current: number, total: number) => void;
