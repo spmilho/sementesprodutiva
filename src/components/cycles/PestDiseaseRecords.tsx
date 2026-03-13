@@ -177,7 +177,7 @@ export default function PestDiseaseRecords({ cycleId, orgId }: Props) {
     observation_date: date,
     pest_name: pestName, pest_type: pestType,
     incidence_pct: incidence ? parseFloat(incidence) : null,
-    severity, severity_score: parseInt(score),
+    severity, severity_score: null,
     growth_stage: stage || null, affected_parent: parent,
     affected_area_ha: area ? parseFloat(area) : null,
     action_taken: action || null, economic_damage_reached: nde,
