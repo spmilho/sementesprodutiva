@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import PlantingDashboard from "./PlantingDashboard";
 import PlantingPlanSection from "./PlantingPlanSection";
 import ActualPlantingSection from "./ActualPlantingSection";
-import StandCountSection from "./StandCountSection";
+import StandCvSection from "./StandCvSection";
 import PlantingComparative from "./PlantingComparative";
 import PlantingCvSection from "./PlantingCvSection";
 import { PLANTING_TYPES } from "./planting-utils";
