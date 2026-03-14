@@ -49,30 +49,41 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
       });
 
       const serialized = JSON.stringify(reportData);
-      const reportKey = `reportData:${cycleId}:${Date.now()}`;
+      const reportKey = `reportData:item:${cycleId}:${Date.now()}`;
 
-      // Salva por chave curta + ponteiros de fallback
+      // Salva por chave curta + ponteiros de fallback (local + sessão)
       localStorage.setItem(reportKey, serialized);
+      sessionStorage.setItem(reportKey, serialized);
       localStorage.setItem("reportData", serialized); // fallback legado
+      sessionStorage.setItem("reportData", serialized);
       localStorage.setItem("reportData:lastKey", reportKey);
+      sessionStorage.setItem("reportData:lastKey", reportKey);
 
-      // Limpeza simples para não acumular payloads antigos
-      const reportKeys = Object.keys(localStorage)
-        .filter((k) => k.startsWith("reportData:"))
-        .sort();
-      while (reportKeys.length > 15) {
-        const oldestKey = reportKeys.shift();
-        if (oldestKey) localStorage.removeItem(oldestKey);
-      }
+      // Limpeza segura: somente chaves de payload, preservando a chave recém-gerada
+      const parseKeyTimestamp = (k: string) => {
+        const ts = Number(k.split(":").pop());
+        return Number.isFinite(ts) ? ts : 0;
+      };
 
-      // Abre about:blank para injetar window.name como fallback cross-context
+      const payloadKeys = Object.keys(localStorage)
+        .filter((k) => k.startsWith("reportData:item:") || (/^reportData:[^:]+:\d+$/.test(k) && k !== "reportData:lastKey"))
+        .sort((a, b) => parseKeyTimestamp(b) - parseKeyTimestamp(a));
+
+      payloadKeys.slice(15).forEach((k) => {
+        if (k !== reportKey) {
+          localStorage.removeItem(k);
+          sessionStorage.removeItem(k);
+        }
+      });
+
       const reportUrl = `/report?key=${encodeURIComponent(reportKey)}`;
-      const reportWindow = window.open("about:blank", "_blank");
+      const reportWindow = window.open(reportUrl, "_blank");
       if (!reportWindow) {
         throw new Error("Popup bloqueado pelo navegador");
       }
-      reportWindow.name = serialized;
-      reportWindow.location.href = reportUrl;
+
+      // Ponteiro leve de fallback (evita payload gigante em window.name)
+      reportWindow.name = reportKey;
 
       setProgressMsg("✅ Relatório aberto em nova aba!");
       setProgressPct(100);

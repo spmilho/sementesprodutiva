@@ -17,32 +17,56 @@ import ReportAgua from "@/components/cycles/report/sections/ReportAgua";
 import ReportUmidade from "@/components/cycles/report/sections/ReportUmidade";
 import ReportEstimativa from "@/components/cycles/report/sections/ReportEstimativa";
 import ReportColheita from "@/components/cycles/report/sections/ReportColheita";
-import ReportVisitas from "@/components/cycles/report/sections/ReportVisitas";
+
 import ReportConclusao from "@/components/cycles/report/sections/ReportConclusao";
 
 export default function CycleReportPage() {
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
+    const tryParse = (raw: string | null) => {
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    };
+
     try {
       const params = new URLSearchParams(window.location.search);
       const keyParam = params.get("key");
-      const lastKey = localStorage.getItem("reportData:lastKey");
 
-      const candidates = [
-        keyParam ? localStorage.getItem(keyParam) : null,
-        lastKey ? localStorage.getItem(lastKey) : null,
-        window.name || null,
-        localStorage.getItem("reportData"),
-      ];
+      const keyCandidates = [
+        keyParam,
+        localStorage.getItem("reportData:lastKey"),
+        sessionStorage.getItem("reportData:lastKey"),
+        window.name?.startsWith("reportData:") ? window.name : null,
+      ].filter(Boolean) as string[];
 
-      const raw = candidates.find((value) => !!value) ?? null;
-
-      if (raw) {
-        setData(JSON.parse(raw));
+      for (const key of keyCandidates) {
+        const parsed = tryParse(localStorage.getItem(key)) || tryParse(sessionStorage.getItem(key));
+        if (parsed) {
+          setData(parsed);
+          if (window.name) window.name = "";
+          return;
+        }
       }
 
-      // Limpeza leve do fallback transitório
+      const rawCandidates = [
+        localStorage.getItem("reportData"),
+        sessionStorage.getItem("reportData"),
+        window.name && window.name.trim().startsWith("{") ? window.name : null,
+      ];
+
+      for (const raw of rawCandidates) {
+        const parsed = tryParse(raw);
+        if (parsed) {
+          setData(parsed);
+          break;
+        }
+      }
+
       if (window.name) window.name = "";
     } catch (e) {
       console.error("Erro ao ler dados do relatório:", e);
@@ -104,7 +128,7 @@ export default function CycleReportPage() {
         {data.umidade?.length > 0 && <ReportUmidade data={data} />}
         {data.estimativa && <ReportEstimativa data={data} />}
         {data.colheita?.length > 0 && <ReportColheita data={data} />}
-        {data.visitas?.length > 0 && <ReportVisitas data={data} />}
+        
 
         <ReportConclusao data={data} />
       </div>
