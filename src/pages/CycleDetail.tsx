@@ -33,7 +33,7 @@ const statusLabels: Record<string, string> = {
   detasseling: "Despendoamento", harvest: "Colheita", completed: "Concluído", cancelled: "Cancelado",
 };
 
-const tabItems = [
+const allTabItems = [
   { value: "resumo", label: "Resumo" },
   { value: "semente-basica", label: "Semente Básica" },
   { value: "plantio", label: "Plantio" },
@@ -49,9 +49,8 @@ const tabItems = [
   { value: "colheita", label: "Colheita" },
   { value: "mapa", label: "Mapa" },
   { value: "avaliacoes", label: "Avaliações" },
-  
   { value: "documentos", label: "Documentos" },
-  { value: "relatorio", label: "Relatório" },
+  { value: "relatorio", label: "Relatório", hideForClient: true },
 ];
 
 function SummaryCard({ label, value }: { label: string; value: string | number }) {
