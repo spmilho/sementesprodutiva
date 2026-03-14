@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import { useRole } from "@/hooks/useRole";
 
 interface WeatherRecord {
   id: string;
