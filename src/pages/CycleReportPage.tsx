@@ -26,37 +26,24 @@ export default function CycleReportPage() {
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      const dataParam = params.get("data");
       const keyParam = params.get("key");
+      const lastKey = localStorage.getItem("reportData:lastKey");
 
-      let raw: string | null = null;
+      const candidates = [
+        keyParam ? localStorage.getItem(keyParam) : null,
+        lastKey ? localStorage.getItem(lastKey) : null,
+        window.name || null,
+        localStorage.getItem("reportData"),
+      ];
 
-      if (dataParam) {
-        try {
-          const binary = atob(dataParam);
-          const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
-          raw = new TextDecoder().decode(bytes);
-        } catch {
-          raw = null;
-        }
-      }
-
-      if (!raw && keyParam) {
-        raw = localStorage.getItem(keyParam);
-      }
-
-      if (!raw && window.name) {
-        raw = window.name;
-      }
-
-      if (!raw) {
-        raw = localStorage.getItem("reportData");
-      }
+      const raw = candidates.find((value) => !!value) ?? null;
 
       if (raw) {
         setData(JSON.parse(raw));
-        if (window.name) window.name = "";
       }
+
+      // Limpeza leve do fallback transitório
+      if (window.name) window.name = "";
     } catch (e) {
       console.error("Erro ao ler dados do relatório:", e);
     }
