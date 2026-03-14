@@ -260,7 +260,9 @@ export default function CycleDetail() {
       <Tabs defaultValue="resumo">
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
           <TabsList className="inline-flex w-max">
-            {tabItems.map((t) => <TabsTrigger key={t.value} value={t.value} className="text-xs whitespace-nowrap">{t.label}</TabsTrigger>)}
+            {allTabItems
+              .filter((t) => !(isClient && (t as any).hideForClient))
+              .map((t) => <TabsTrigger key={t.value} value={t.value} className="text-xs whitespace-nowrap">{t.label}</TabsTrigger>)}
           </TabsList>
         </div>
 
