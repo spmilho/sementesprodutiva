@@ -38,7 +38,7 @@ interface PhenologyProps {
 
 const schema = z.object({
   observation_date: z.date({ required_error: "Data é obrigatória" }),
-  type: z.enum(["male", "female", "both"], { required_error: "Tipo é obrigatório" }),
+  type: z.string().min(1, "Tipo é obrigatório"),
   stage: z.string().min(1, "Estádio é obrigatório"),
   description: z.string().optional(),
 });
@@ -109,6 +109,25 @@ export default function Phenology({
     },
   });
 
+  // Detect which male types exist (male_1, male_2, male_3) from planting data
+  const { data: maleTypes = [] } = useQuery({
+    queryKey: ["male-types-phenology", cycleId],
+    queryFn: async () => {
+      if (!cycleId) return [];
+      const [actualRes, planRes] = await Promise.all([
+        (supabase as any).from("planting_actual").select("type").eq("cycle_id", cycleId).is("deleted_at", null),
+        (supabase as any).from("planting_plan").select("type").eq("cycle_id", cycleId).is("deleted_at", null),
+      ]);
+      const allTypes = new Set<string>();
+      for (const r of [...(actualRes.data || []), ...(planRes.data || [])]) {
+        if (r.type && r.type.startsWith("male")) allTypes.add(r.type);
+      }
+      // Sort: male_1, male_2, male_3
+      return Array.from(allTypes).sort();
+    },
+    enabled: !!cycleId,
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { description: "" },
@@ -170,7 +189,9 @@ export default function Phenology({
         photoPath = filePath;
       }
 
-      const types = values.type === "both" ? ["male", "female"] : [values.type];
+      const types = values.type === "both"
+        ? ["female", ...(maleTypes.length > 0 ? maleTypes : ["male"])]
+        : [values.type];
 
       for (const t of types) {
         const row: any = {
@@ -235,6 +256,7 @@ export default function Phenology({
           <PhenologyTimeline
             records={records}
             plantingDate={plantingDate}
+            maleTypes={maleTypes}
             onClickFuture={(stage) => {
               setEditingId(null);
               setPhotoFile(null);
@@ -290,7 +312,7 @@ export default function Phenology({
                           ? "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400"
                           : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
                       )}>
-                        {r.type === "female" ? "Fêmea" : "Macho"}
+                        {r.type === "female" ? "Fêmea" : r.type === "male_1" ? "Macho 1" : r.type === "male_2" ? "Macho 2" : r.type === "male_3" ? "Macho 3" : "Macho"}
                       </span>
                     </div>
                     {r.description && <p className="text-sm text-muted-foreground">{r.description}</p>}
@@ -358,8 +380,16 @@ export default function Phenology({
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="female">🟣 Fêmea</SelectItem>
-                      <SelectItem value="male">🔵 Macho</SelectItem>
-                      <SelectItem value="both">🔵🟣 Ambos</SelectItem>
+                      {maleTypes.length > 0 ? (
+                        <>
+                          {maleTypes.includes("male_1") && <SelectItem value="male_1">🔵 Macho 1</SelectItem>}
+                          {maleTypes.includes("male_2") && <SelectItem value="male_2">🔵 Macho 2</SelectItem>}
+                          {maleTypes.includes("male_3") && <SelectItem value="male_3">🔵 Macho 3</SelectItem>}
+                        </>
+                      ) : (
+                        <SelectItem value="male">🔵 Macho</SelectItem>
+                      )}
+                      <SelectItem value="both">🔵🟣 Todos</SelectItem>
                     </SelectContent>
                   </Select>
                 )} />
