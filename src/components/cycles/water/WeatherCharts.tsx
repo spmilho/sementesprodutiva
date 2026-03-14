@@ -162,43 +162,48 @@ export default function WeatherCharts({ records, cycleId }: Props) {
     enabled: !!cycleId,
   });
 
-  // Fetch female planting dates (prioriza realizado; fallback para planejamento)
+  // Generic fetch planting dates by type
+  const fetchPlantingDates = async (type: string): Promise<string[]> => {
+    if (!cycleId) return [];
+    const [actualRes, planRes] = await Promise.all([
+      (supabase as any)
+        .from("planting_actual")
+        .select("planting_date")
+        .eq("cycle_id", cycleId)
+        .eq("type", type)
+        .is("deleted_at", null)
+        .order("planting_date"),
+      (supabase as any)
+        .from("planting_plan")
+        .select("planned_date")
+        .eq("cycle_id", cycleId)
+        .eq("type", type)
+        .is("deleted_at", null)
+        .order("planned_date"),
+    ]);
+    if (actualRes.error) throw actualRes.error;
+    if (planRes.error) throw planRes.error;
+    const actualDates = (actualRes.data || []).map((p: any) => normalizeDateKey(p.planting_date)).filter(Boolean) as string[];
+    const planDates = (planRes.data || []).map((p: any) => normalizeDateKey(p.planned_date)).filter(Boolean) as string[];
+    const sourceDates = actualDates.length > 0 ? actualDates : planDates;
+    return Array.from(new Set(sourceDates)).sort((a, b) => a.localeCompare(b));
+  };
+
   const { data: femalePlantingDates = [] } = useQuery({
     queryKey: ["female_planting_dates_for_gdu", cycleId],
-    queryFn: async () => {
-      if (!cycleId) return [] as string[];
+    queryFn: () => fetchPlantingDates("female"),
+    enabled: !!cycleId,
+  });
 
-      const [actualRes, planRes] = await Promise.all([
-        (supabase as any)
-          .from("planting_actual")
-          .select("planting_date")
-          .eq("cycle_id", cycleId)
-          .eq("type", "female")
-          .is("deleted_at", null)
-          .order("planting_date"),
-        (supabase as any)
-          .from("planting_plan")
-          .select("planned_date")
-          .eq("cycle_id", cycleId)
-          .eq("type", "female")
-          .is("deleted_at", null)
-          .order("planned_date"),
-      ]);
+  const { data: male1PlantingDates = [] } = useQuery({
+    queryKey: ["male1_planting_dates_for_gdu", cycleId],
+    queryFn: () => fetchPlantingDates("male_1"),
+    enabled: !!cycleId,
+  });
 
-      if (actualRes.error) throw actualRes.error;
-      if (planRes.error) throw planRes.error;
-
-      const actualDates = (actualRes.data || [])
-        .map((p: any) => normalizeDateKey(p.planting_date))
-        .filter(Boolean) as string[];
-
-      const planDates = (planRes.data || [])
-        .map((p: any) => normalizeDateKey(p.planned_date))
-        .filter(Boolean) as string[];
-
-      const sourceDates = actualDates.length > 0 ? actualDates : planDates;
-      return Array.from(new Set(sourceDates)).sort((a, b) => a.localeCompare(b));
-    },
+  const { data: male2PlantingDates = [] } = useQuery({
+    queryKey: ["male2_planting_dates_for_gdu", cycleId],
+    queryFn: () => fetchPlantingDates("male_2"),
     enabled: !!cycleId,
   });
 
