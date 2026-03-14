@@ -201,11 +201,18 @@ function pickKeys(obj: any, keys: string[]): any {
   return result;
 }
 
+const MODELS = [
+  "google/gemini-2.5-pro",
+  "google/gemini-2.5-flash",
+  "google/gemini-3-flash-preview",
+  "openai/gpt-5-mini",
+];
+
 async function callAiGateway(systemPrompt: string, userMessage: string, retryOnFail = true): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("Chave de API não configurada");
 
-  const doCall = async (repair = false): Promise<string> => {
+  const doCall = async (model: string, repair = false): Promise<string> => {
     const messages: any[] = [
       { role: "system", content: systemPrompt },
       { role: "user", content: userMessage },
@@ -218,6 +225,7 @@ async function callAiGateway(systemPrompt: string, userMessage: string, retryOnF
       });
     }
 
+    console.log(`Trying model: ${model}`);
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -225,17 +233,17 @@ async function callAiGateway(systemPrompt: string, userMessage: string, retryOnF
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model,
         messages,
         max_tokens: 65000,
       }),
     });
 
     if (!response.ok) {
-      if (response.status === 429) throw new Error("RATE_LIMIT");
-      if (response.status === 402) throw new Error("PAYMENT_REQUIRED");
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error(`Model ${model} error:`, response.status, t);
+      if (response.status === 429) throw new Error("RATE_LIMIT");
+      if (response.status === 402) throw new Error("PAYMENT_REQUIRED:" + model);
       throw new Error(`Erro na API: ${response.status}`);
     }
 
@@ -243,14 +251,28 @@ async function callAiGateway(systemPrompt: string, userMessage: string, retryOnF
     return data.choices?.[0]?.message?.content || "";
   };
 
-  let html = cleanHtml(await doCall(false));
-
-  if (retryOnFail && (!html || hasInvalidTemplateTokens(html))) {
-    console.log("First response invalid, retrying...");
-    html = cleanHtml(await doCall(true));
+  // Try models in order, failover on 402
+  for (const model of MODELS) {
+    try {
+      let html = cleanHtml(await doCall(model, false));
+      if (retryOnFail && (!html || hasInvalidTemplateTokens(html))) {
+        console.log(`First response invalid with ${model}, retrying...`);
+        html = cleanHtml(await doCall(model, true));
+      }
+      if (html) {
+        console.log(`Success with model: ${model}`);
+        return html;
+      }
+    } catch (e: any) {
+      if (e.message === "RATE_LIMIT") throw e;
+      if (e.message?.startsWith("PAYMENT_REQUIRED")) {
+        console.warn(`Model ${model} returned 402, trying next...`);
+        continue;
+      }
+      throw e;
+    }
   }
-
-  return html;
+  throw new Error("Todos os modelos falharam. Tente novamente mais tarde.");
 }
 
 serve(async (req) => {
