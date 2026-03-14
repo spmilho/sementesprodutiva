@@ -179,7 +179,9 @@ export default function WeatherCharts({ records, cycleId }: Props) {
 
   // Build stage map for date labels
   const stageMap = useMemo(() => {
-    const weatherDates = sortedData.map(r => r.record_date);
+    const weatherDates = sortedData
+      .map((r) => normalizeDateKey(r.record_date))
+      .filter(Boolean) as string[];
     return assignStages(weatherDates, phenologyRecords);
   }, [sortedData, phenologyRecords]);
 
