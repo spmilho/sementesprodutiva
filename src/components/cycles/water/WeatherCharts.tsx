@@ -738,6 +738,101 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
           </CardContent>
         </Card>
       )}
+
+      {/* ═══ ANÁLISE CLIMÁTICA DO CAMPO ═══ */}
+      {stats && cycleId && (
+        <Card className="border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              📊 Análise Climática do Campo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {latestWeatherAnalysis ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  {latestWeatherAnalysis.growth_stage && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      {latestWeatherAnalysis.growth_stage}
+                    </span>
+                  )}
+                  {latestWeatherAnalysis.dap != null && <span className="text-muted-foreground">{latestWeatherAnalysis.dap} DAP</span>}
+                  <span className="text-muted-foreground">
+                    {format(new Date(latestWeatherAnalysis.created_at), "dd/MM/yyyy HH:mm")}
+                  </span>
+                </div>
+
+                <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
+                  <ReactMarkdown>{latestWeatherAnalysis.analysis_text}</ReactMarkdown>
+                </div>
+
+                <p className="text-[10px] text-muted-foreground">
+                  🕐 Atualizado em {format(new Date(latestWeatherAnalysis.created_at), "dd/MM/yyyy HH:mm")}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma análise climática disponível. Clique em "Gerar análise" para obter o primeiro parecer.
+              </p>
+            )}
+
+            <div className="flex flex-wrap gap-2 pt-1 border-t">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => generateWeatherAnalysisMut.mutate()}
+                disabled={generateWeatherAnalysisMut.isPending}
+              >
+                {generateWeatherAnalysisMut.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+                {generateWeatherAnalysisMut.isPending ? "Analisando..." : "🔄 Gerar análise"}
+              </Button>
+              {latestWeatherAnalysis && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={() => {
+                    navigator.clipboard.writeText(latestWeatherAnalysis.analysis_text);
+                    toast.success("Análise copiada!");
+                  }}
+                >
+                  <ClipboardCopy className="h-3 w-3" /> 📋 Copiar
+                </Button>
+              )}
+            </div>
+
+            {weatherAnalyses.length > 1 && (
+              <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 w-full justify-start">
+                    <ChevronDown className={cn("h-3 w-3 transition-transform", historyOpen && "rotate-180")} />
+                    📊 Pareceres Anteriores ({weatherAnalyses.length - 1})
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 mt-2">
+                  {weatherAnalyses.slice(1).map((a: any) => (
+                    <div key={a.id} className="border rounded-lg p-3 bg-muted/30">
+                      <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+                        {a.growth_stage && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border">{a.growth_stage}</span>}
+                        {a.dap != null && <span>{a.dap} DAP</span>}
+                        <span>{format(new Date(a.created_at), "dd/MM/yyyy HH:mm")}</span>
+                      </div>
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed">
+                        <ReactMarkdown>{a.analysis_text}</ReactMarkdown>
+                      </div>
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
