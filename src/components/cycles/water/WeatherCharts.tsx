@@ -366,6 +366,7 @@ export default function WeatherCharts({ records, cycleId }: Props) {
   const hasWind = sortedData.some(r => r.wind_avg_kmh != null);
   const hasEto = sortedData.some(r => r.eto_mm != null);
   const hasGdu = gduData.some(r => r.dailyGdu > 0);
+  const hasRadiation = sortedData.some(r => r.radiation_mj != null);
 
   const renderStageReferenceLines = (yAxisId?: string) =>
     stageTransitions.map((t, i) => (
