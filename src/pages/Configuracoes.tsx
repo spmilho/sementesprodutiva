@@ -95,6 +95,11 @@ export default function Configuracoes() {
           <OfflineQueueTab />
         </TabsContent>
         {isAdmin && (
+          <TabsContent value="backup">
+            <BackupTab />
+          </TabsContent>
+        )}
+        {isAdmin && (
           <TabsContent value="contrato-acesso">
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">Gerencie quem pode visualizar, inserir e deletar contratos.</p>
