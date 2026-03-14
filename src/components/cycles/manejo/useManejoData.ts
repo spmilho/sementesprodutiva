@@ -13,7 +13,10 @@ export function useCropInputs(cycleId: string) {
         .is("deleted_at", null)
         .order("execution_date", { ascending: true, nullsFirst: false });
       if (error) throw error;
-      return (data || []) as CropInput[];
+      // Filter out applied items with zero dose (e.g. Yamato SC 0.00 lt/ha)
+      return ((data || []) as CropInput[]).filter(
+        (item) => !(item.status === "applied" && (item.dose_per_ha === 0 || item.dose_per_ha === null) && (item.qty_applied === 0 || item.qty_applied === null))
+      );
     },
     enabled: !!cycleId,
   });
