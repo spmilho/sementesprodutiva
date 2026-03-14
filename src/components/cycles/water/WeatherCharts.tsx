@@ -162,20 +162,42 @@ export default function WeatherCharts({ records, cycleId }: Props) {
     enabled: !!cycleId,
   });
 
-  // Fetch female planting dates
-  const { data: femalePlantings = [] } = useQuery({
-    queryKey: ["female_plantings_for_gdu", cycleId],
+  // Fetch female planting dates (prioriza planejamento; fallback para realizado)
+  const { data: femalePlantingDates = [] } = useQuery({
+    queryKey: ["female_planting_dates_for_gdu", cycleId],
     queryFn: async () => {
-      if (!cycleId) return [];
-      const { data, error } = await (supabase as any)
-        .from("planting_actual")
-        .select("id, planting_date, type, actual_area")
-        .eq("cycle_id", cycleId)
-        .eq("type", "female")
-        .is("deleted_at", null)
-        .order("planting_date");
-      if (error) throw error;
-      return (data || []) as { id: string; planting_date: string; type: string; actual_area: number }[];
+      if (!cycleId) return [] as string[];
+
+      const [planRes, actualRes] = await Promise.all([
+        (supabase as any)
+          .from("planting_plan")
+          .select("planned_date")
+          .eq("cycle_id", cycleId)
+          .eq("type", "female")
+          .is("deleted_at", null)
+          .order("planned_date"),
+        (supabase as any)
+          .from("planting_actual")
+          .select("planting_date")
+          .eq("cycle_id", cycleId)
+          .eq("type", "female")
+          .is("deleted_at", null)
+          .order("planting_date"),
+      ]);
+
+      if (planRes.error) throw planRes.error;
+      if (actualRes.error) throw actualRes.error;
+
+      const planDates = (planRes.data || [])
+        .map((p: any) => normalizeDateKey(p.planned_date))
+        .filter(Boolean) as string[];
+
+      const actualDates = (actualRes.data || [])
+        .map((p: any) => normalizeDateKey(p.planting_date))
+        .filter(Boolean) as string[];
+
+      const sourceDates = planDates.length > 0 ? planDates : actualDates;
+      return Array.from(new Set(sourceDates)).sort((a, b) => a.localeCompare(b));
     },
     enabled: !!cycleId,
   });
