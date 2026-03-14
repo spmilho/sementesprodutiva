@@ -49,29 +49,25 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
       });
 
       const serialized = JSON.stringify(reportData);
-      const reportKey = `reportData:${Date.now()}`;
-      localStorage.setItem(reportKey, serialized);
-      localStorage.setItem("reportData", serialized); // legacy fallback
+      const reportKey = `reportData:${cycleId}:${Date.now()}`;
 
-      let reportUrl = `/report?key=${encodeURIComponent(reportKey)}`;
-      try {
-        const bytes = new TextEncoder().encode(serialized);
-        let binary = "";
-        bytes.forEach((b) => { binary += String.fromCharCode(b); });
-        const encoded = btoa(binary);
-        if (encoded.length < 120000) {
-          reportUrl = `/report?data=${encodeURIComponent(encoded)}&key=${encodeURIComponent(reportKey)}`;
-        }
-      } catch {
-        // fallback to key/localStorage only
+      // Salva os dados por chave curta (evita URL gigante e erro HTTP 431)
+      localStorage.setItem(reportKey, serialized);
+      localStorage.setItem("reportData", serialized); // fallback legado
+
+      // Limpeza simples para não acumular payloads antigos
+      const reportKeys = Object.keys(localStorage)
+        .filter((k) => k.startsWith("reportData:"))
+        .sort();
+      while (reportKeys.length > 15) {
+        const oldestKey = reportKeys.shift();
+        if (oldestKey) localStorage.removeItem(oldestKey);
       }
 
-      const reportWindow = window.open("about:blank", "_blank");
-      if (reportWindow) {
-        reportWindow.name = serialized;
-        reportWindow.location.href = reportUrl;
-      } else {
-        window.open(reportUrl, "_blank");
+      const reportUrl = `/report?key=${encodeURIComponent(reportKey)}`;
+      const reportWindow = window.open(reportUrl, "_blank");
+      if (!reportWindow) {
+        throw new Error("Popup bloqueado pelo navegador");
       }
 
       setProgressMsg("✅ Relatório aberto em nova aba!");
