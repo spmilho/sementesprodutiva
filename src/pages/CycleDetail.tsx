@@ -253,7 +253,7 @@ export default function CycleDetail() {
         <SummaryCard label="Área Total" value={`${cycle.pivot_area ?? cycle.total_area} ha`} />
         <SummaryCard label="Área Fêmea" value={`${cycle.female_area} ha`} />
         <SummaryCard label="Área Macho" value={`${cycle.male_area} ha`} />
-        <SummaryCard label="Produção Esperada" value={expectedProduction} />
+        <SummaryCard label="Target Yield MPB" value={expectedProduction} />
         <SummaryCard label="Umidade Alvo" value={`${cycle.target_moisture ?? 18}%`} />
       </div>
 
