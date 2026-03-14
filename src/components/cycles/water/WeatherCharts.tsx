@@ -200,7 +200,7 @@ export default function WeatherCharts({ records, cycleId }: Props) {
     const dateMap = buildPhenologyMap(phenologyRecords);
     const transitions: { dateLabel: string; stage: string }[] = [];
     dateMap.forEach((stage, date) => {
-      const match = sortedData.find(r => r.record_date === date);
+      const match = sortedData.find((r) => normalizeDateKey(r.record_date) === date);
       if (match) {
         transitions.push({ dateLabel: match.dateLabel, stage });
       }

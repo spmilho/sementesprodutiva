@@ -63,20 +63,57 @@ interface Props {
   importing: boolean;
 }
 
+function formatDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function parseDate(val: any): string | null {
-  if (!val) return null;
-  if (val instanceof Date && !isNaN(val.getTime())) return val.toISOString().split("T")[0];
-  const str = String(val).trim();
-  // dd/mm/yyyy or dd-mm-yyyy
-  const parts = str.split(/[\/\-]/);
-  if (parts.length === 3 && parts[0].length <= 2 && parts[2].length === 4) {
-    return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+  if (val == null || val === "") return null;
+
+  if (val instanceof Date && !Number.isNaN(val.getTime())) {
+    return formatDateString(val);
   }
-  // yyyy-mm-dd
-  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
-  // Try Date.parse for formats like "Sat Jan 03 2026..."
-  const d = new Date(str);
-  if (!isNaN(d.getTime())) return d.toISOString().split("T")[0];
+
+  // Excel serial date fallback
+  if (typeof val === "number" && Number.isFinite(val)) {
+    const excelEpochOffset = 25569;
+    const secondsPerDay = 86400;
+    const utcValue = Math.floor((val - excelEpochOffset) * secondsPerDay);
+    const date = new Date(utcValue * 1000);
+    if (!Number.isNaN(date.getTime())) {
+      const y = date.getUTCFullYear();
+      const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+      const d = String(date.getUTCDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+  }
+
+  const str = String(val).trim();
+  if (!str) return null;
+
+  // dd/mm/yyyy or dd-mm-yyyy
+  const br = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (br) {
+    const [, d, m, y] = br;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  // yyyy-mm-dd or yyyy-m-d(+time)
+  const iso = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    const [, y, m, d] = iso;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  // Fallback for textual formats (e.g. "Sat Jan 03 2026")
+  const parsed = new Date(str);
+  if (!Number.isNaN(parsed.getTime())) {
+    return formatDateString(parsed);
+  }
+
   return null;
 }
 
