@@ -66,25 +66,47 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
     },
   });
 
-  // Determine data source: prefer actuals, fallback to plan
-  const dataSource = plantingActuals.length > 0 ? "actual" : "plan";
+  // Determine data source: prefer plan dates (represent distinct planting lots),
+  // fallback to actuals only if no plan exists
+  const dataSource = plantingPlans.length > 0 ? "plan" : (plantingActuals.length > 0 ? "actual" : "none");
 
-  // Group plantings by date (actuals or plan)
+  // Group plantings by date — use PLAN dates as the authoritative lot definition
+  // Sum actual areas that correspond to each plan date window, or use planned_area
   const plantings = useMemo<PlantingEntry[]>(() => {
     const map = new Map<string, number>();
-    if (plantingActuals.length > 0) {
-      plantingActuals.forEach((p: any) => {
-        const d = p.planting_date;
-        const area = Number(p.actual_area) || 0;
-        map.set(d, (map.get(d) || 0) + area);
-      });
-    } else {
+
+    if (plantingPlans.length > 0) {
+      // Use plan dates as lots
       plantingPlans.forEach((p: any) => {
         const d = p.planned_date;
         const area = Number(p.planned_area) || 0;
         if (d) map.set(d, (map.get(d) || 0) + area);
       });
+
+      // If actuals exist, override areas with actual totals for matching dates
+      if (plantingActuals.length > 0) {
+        const actualMap = new Map<string, number>();
+        plantingActuals.forEach((p: any) => {
+          const d = p.planting_date;
+          const area = Number(p.actual_area) || 0;
+          actualMap.set(d, (actualMap.get(d) || 0) + area);
+        });
+        // Replace plan areas with actual areas when a matching plan date has actuals
+        for (const [planDate] of map) {
+          if (actualMap.has(planDate)) {
+            map.set(planDate, actualMap.get(planDate)!);
+          }
+        }
+      }
+    } else {
+      // No plan — fallback to actuals
+      plantingActuals.forEach((p: any) => {
+        const d = p.planting_date;
+        const area = Number(p.actual_area) || 0;
+        map.set(d, (map.get(d) || 0) + area);
+      });
     }
+
     return Array.from(map.entries())
       .map(([planting_date, area_ha]) => ({ planting_date, area_ha }))
       .sort((a, b) => a.planting_date.localeCompare(b.planting_date));
