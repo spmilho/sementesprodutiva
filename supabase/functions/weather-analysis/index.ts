@@ -14,22 +14,23 @@ async function callLovableAI(messages: any[], apiKey: string) {
   return response;
 }
 
-async function callGeminiDirect(messages: any[], apiKey: string) {
+async function callClaude(messages: any[], apiKey: string) {
   const systemMsg = messages.find((m: any) => m.role === "system");
   const userMsg = messages.find((m: any) => m.role === "user");
-  const contents = [];
-  if (systemMsg) contents.push({ role: "user", parts: [{ text: `[Instrução do sistema]: ${systemMsg.content}` }] });
-  if (systemMsg) contents.push({ role: "model", parts: [{ text: "Entendido. Seguirei essas instruções." }] });
-  if (userMsg) contents.push({ role: "user", parts: [{ text: userMsg.content }] });
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents }),
-    }
-  );
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2048,
+      system: systemMsg?.content || "",
+      messages: [{ role: "user", content: userMsg?.content || "" }],
+    }),
+  });
   return response;
 }
 
@@ -140,19 +141,19 @@ Redija o parecer técnico de monitoramento climático e impacto na produtividade
       usedFallback = true;
     }
 
-    // Fallback to Gemini direct
+    // Fallback to Claude (Anthropic)
     if (usedFallback || !analysisText) {
-      const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
-      if (!GOOGLE_AI_API_KEY) throw new Error("Nenhuma chave de IA disponível");
+      const CLAUDE_API_KEY = Deno.env.get("emiliocloude");
+      if (!CLAUDE_API_KEY) throw new Error("Nenhuma chave de IA disponível");
 
-      const geminiResp = await callGeminiDirect(messages, GOOGLE_AI_API_KEY);
-      if (!geminiResp.ok) {
-        const t = await geminiResp.text();
-        console.error("Gemini error:", geminiResp.status, t);
-        throw new Error("Erro ao gerar análise climática via Gemini");
+      const claudeResp = await callClaude(messages, CLAUDE_API_KEY);
+      if (!claudeResp.ok) {
+        const t = await claudeResp.text();
+        console.error("Claude error:", claudeResp.status, t);
+        throw new Error("Erro ao gerar análise climática via Claude");
       }
-      const geminiData = await geminiResp.json();
-      analysisText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "Não foi possível gerar a análise.";
+      const claudeData = await claudeResp.json();
+      analysisText = claudeData.content?.[0]?.text || "Não foi possível gerar a análise.";
     }
 
     return new Response(JSON.stringify({
