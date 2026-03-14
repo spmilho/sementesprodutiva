@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import PlantingDashboard from "./PlantingDashboard";
 import PlantingPlanSection from "./PlantingPlanSection";
 import ActualPlantingSection from "./ActualPlantingSection";
-import StandCountSection from "./StandCountSection";
+import StandCvSection from "./StandCvSection";
 import PlantingComparative from "./PlantingComparative";
 import PlantingCvSection from "./PlantingCvSection";
 import { PLANTING_TYPES } from "./planting-utils";
@@ -224,15 +224,11 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
         femaleMaleRatio={props.femaleMaleRatio || "4F:2M"}
       />
 
-      {/* Section 4 - Stand Counts */}
-      <StandCountSection
+      {/* Section 4 - Stand Final CV% */}
+      <StandCvSection
         cycleId={cycleId}
         orgId={orgId}
-        standCounts={standCounts}
-        standPoints={standPoints}
-        plans={plans}
-        actuals={actuals}
-        glebas={glebas}
+        femaleMaleRatio={props.femaleMaleRatio || "4F:2M"}
       />
 
       {/* Section 5 - Comparative */}
