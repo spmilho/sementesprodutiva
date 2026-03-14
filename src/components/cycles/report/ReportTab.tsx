@@ -51,9 +51,10 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
       const serialized = JSON.stringify(reportData);
       const reportKey = `reportData:${cycleId}:${Date.now()}`;
 
-      // Salva os dados por chave curta (evita URL gigante e erro HTTP 431)
+      // Salva por chave curta + ponteiros de fallback
       localStorage.setItem(reportKey, serialized);
       localStorage.setItem("reportData", serialized); // fallback legado
+      localStorage.setItem("reportData:lastKey", reportKey);
 
       // Limpeza simples para não acumular payloads antigos
       const reportKeys = Object.keys(localStorage)
@@ -64,11 +65,14 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
         if (oldestKey) localStorage.removeItem(oldestKey);
       }
 
+      // Abre about:blank para injetar window.name como fallback cross-context
       const reportUrl = `/report?key=${encodeURIComponent(reportKey)}`;
-      const reportWindow = window.open(reportUrl, "_blank");
+      const reportWindow = window.open("about:blank", "_blank");
       if (!reportWindow) {
         throw new Error("Popup bloqueado pelo navegador");
       }
+      reportWindow.name = serialized;
+      reportWindow.location.href = reportUrl;
 
       setProgressMsg("✅ Relatório aberto em nova aba!");
       setProgressPct(100);
