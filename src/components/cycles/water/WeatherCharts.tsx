@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import { useRole } from "@/hooks/useRole";
 
 interface WeatherRecord {
   id: string;
@@ -156,6 +157,7 @@ function StageTick({ x, y, payload, stageMap }: any) {
 export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybridName }: Props) {
   const queryClient = useQueryClient();
   const [historyOpen, setHistoryOpen] = useState(false);
+  const { isAdmin } = useRole();
   // Fetch phenology records for this cycle
   const { data: phenologyRecords = [] } = useQuery({
     queryKey: ["phenology_records_for_weather", cycleId],
@@ -782,7 +784,8 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
                 variant="outline"
                 className="h-8 text-xs gap-1.5"
                 onClick={() => generateWeatherAnalysisMut.mutate()}
-                disabled={generateWeatherAnalysisMut.isPending}
+                disabled={generateWeatherAnalysisMut.isPending || !isAdmin}
+                title={!isAdmin ? "Apenas administradores podem gerar análises" : undefined}
               >
                 {generateWeatherAnalysisMut.isPending ? (
                   <Loader2 className="h-3 w-3 animate-spin" />

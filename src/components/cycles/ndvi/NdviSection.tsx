@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useRole } from "@/hooks/useRole";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -76,6 +77,7 @@ export default function NdviSection({
   cycleId, orgId, pivotId, pivotName, hybridName, phenologyRecords,
 }: NdviSectionProps) {
   const queryClient = useQueryClient();
+  const { isAdmin } = useRole();
   const [opacity, setOpacity] = useState(70);
   const [layerType, setLayerType] = useState<"ndvi" | "truecolor" | "falsecolor">("ndvi");
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
@@ -812,7 +814,8 @@ export default function NdviSection({
                 variant="outline"
                 className="h-8 text-xs gap-1.5"
                 onClick={() => generateAnalysisMut.mutate()}
-                disabled={generateAnalysisMut.isPending}
+                disabled={generateAnalysisMut.isPending || !isAdmin}
+                title={!isAdmin ? "Apenas administradores podem gerar análises" : undefined}
               >
                 {generateAnalysisMut.isPending ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
