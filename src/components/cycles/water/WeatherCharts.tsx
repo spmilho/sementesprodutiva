@@ -164,14 +164,17 @@ export default function WeatherCharts({ records, cycleId }: Props) {
 
   const sortedData = useMemo(() => {
     return [...records]
-      .sort((a, b) => a.record_date.localeCompare(b.record_date))
-      .map(r => {
-        const [y, m, d] = r.record_date.split("-");
+      .map((r) => {
+        const normalizedDate = normalizeDateKey(r.record_date);
+        const safeDate = normalizedDate || r.record_date;
         return {
           ...r,
-          dateLabel: `${d}/${m}`,
+          record_date: safeDate,
+          dateLabel: normalizedDate ? toDateLabel(normalizedDate) : String(r.record_date),
+          _sortTs: normalizedDate ? dateKeyToTimestamp(normalizedDate) : Number.POSITIVE_INFINITY,
         };
-      });
+      })
+      .sort((a, b) => a._sortTs - b._sortTs);
   }, [records]);
 
   // Build stage map for date labels
