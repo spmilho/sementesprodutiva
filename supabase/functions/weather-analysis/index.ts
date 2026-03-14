@@ -161,13 +161,11 @@ Redija o parecer técnico de monitoramento climático e impacto na produtividade
     }
 
     if (!analysisText && shouldUseClaude) {
-      const CLAUDE_API_KEY = Deno.env.get("emiliocloude");
+      const CLAUDE_API_KEY_RAW = Deno.env.get("emiliocloude");
+      const CLAUDE_API_KEY = CLAUDE_API_KEY_RAW?.trim();
 
       if (!CLAUDE_API_KEY || !CLAUDE_API_KEY.startsWith("sk-ant-")) {
-        throw new HttpError(
-          lovableFailureStatus === 402 || lovableFailureStatus === 429 ? lovableFailureStatus : 401,
-          "A chave do Claude no secret 'emiliocloude' está inválida.",
-        );
+        throw new HttpError(401, "A chave do Claude no secret 'emiliocloude' está inválida.");
       }
 
       const claudeResp = await callClaude(messages, CLAUDE_API_KEY);
