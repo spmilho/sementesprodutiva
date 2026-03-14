@@ -38,7 +38,7 @@ interface PhenologyProps {
 
 const schema = z.object({
   observation_date: z.date({ required_error: "Data é obrigatória" }),
-  type: z.enum(["male", "female", "both"], { required_error: "Tipo é obrigatório" }),
+  type: z.string().min(1, "Tipo é obrigatório"),
   stage: z.string().min(1, "Estádio é obrigatório"),
   description: z.string().optional(),
 });
