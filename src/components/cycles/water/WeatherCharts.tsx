@@ -153,7 +153,9 @@ function StageTick({ x, y, payload, stageMap }: any) {
   );
 }
 
-export default function WeatherCharts({ records, cycleId }: Props) {
+export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybridName }: Props) {
+  const queryClient = useQueryClient();
+  const [historyOpen, setHistoryOpen] = useState(false);
   // Fetch phenology records for this cycle
   const { data: phenologyRecords = [] } = useQuery({
     queryKey: ["phenology_records_for_weather", cycleId],
