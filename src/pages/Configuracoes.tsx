@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Users, Layers, FileText, Download, WifiOff, FileSignature } from "lucide-react";
+import { Building2, Users, Layers, FileText, Download, WifiOff, FileSignature, Database } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 import { Navigate } from "react-router-dom";
 import OrganizationTab from "@/components/settings/OrganizationTab";
@@ -10,6 +10,7 @@ import ExportDataTab from "@/components/settings/ExportDataTab";
 import CooperadosTab from "@/components/settings/CooperadosTab";
 import ClientsTab from "@/components/settings/ClientsTab";
 import OfflineQueueTab from "@/components/settings/OfflineQueueTab";
+import BackupTab from "@/components/settings/BackupTab";
 import { useState } from "react";
 import ContratoAcessoModal from "@/components/contratos/ContratoAcessoModal";
 
@@ -56,6 +57,11 @@ export default function Configuracoes() {
             <WifiOff className="h-3.5 w-3.5" /> Fila Offline
           </TabsTrigger>
           {isAdmin && (
+            <TabsTrigger value="backup" className="gap-1.5 text-xs">
+              <Database className="h-3.5 w-3.5" /> 💾 Backup
+            </TabsTrigger>
+          )}
+          {isAdmin && (
             <TabsTrigger value="contrato-acesso" className="gap-1.5 text-xs">
               <FileSignature className="h-3.5 w-3.5" /> Acesso Contratos
             </TabsTrigger>
@@ -88,6 +94,11 @@ export default function Configuracoes() {
         <TabsContent value="offline">
           <OfflineQueueTab />
         </TabsContent>
+        {isAdmin && (
+          <TabsContent value="backup">
+            <BackupTab />
+          </TabsContent>
+        )}
         {isAdmin && (
           <TabsContent value="contrato-acesso">
             <div className="space-y-4">
