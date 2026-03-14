@@ -14,22 +14,23 @@ async function callLovableAI(messages: any[], apiKey: string) {
   return response;
 }
 
-async function callGeminiDirect(messages: any[], apiKey: string) {
+async function callClaude(messages: any[], apiKey: string) {
   const systemMsg = messages.find((m: any) => m.role === "system");
   const userMsg = messages.find((m: any) => m.role === "user");
-  const contents = [];
-  if (systemMsg) contents.push({ role: "user", parts: [{ text: `[Instrução do sistema]: ${systemMsg.content}` }] });
-  if (systemMsg) contents.push({ role: "model", parts: [{ text: "Entendido. Seguirei essas instruções." }] });
-  if (userMsg) contents.push({ role: "user", parts: [{ text: userMsg.content }] });
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents }),
-    }
-  );
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2048,
+      system: systemMsg?.content || "",
+      messages: [{ role: "user", content: userMsg?.content || "" }],
+    }),
+  });
   return response;
 }
 
