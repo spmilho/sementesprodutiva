@@ -1,9 +1,11 @@
+import defaultLogo from "@/assets/report-logo-default.png";
+
 export default function ReportCover({ data }: { data: any }) {
+  const logoSrc = data.logo_url || defaultLogo;
+
   return (
     <div className="report-cover">
-      {data.logo_url && (
-        <img src={data.logo_url} alt="Logo" style={{ height: 60, marginBottom: 30, objectFit: "contain" }} />
-      )}
+      <img src={logoSrc} alt="Logo" style={{ height: 60, marginBottom: 30, objectFit: "contain" }} />
       <div className="cover-label">RELATÓRIO DE PRODUÇÃO</div>
       <div className="cover-hybrid">{data.hibrido}</div>
       <div className="cover-season">Safra {data.safra}</div>

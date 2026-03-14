@@ -14,27 +14,38 @@ const TYPE_LABELS: Record<string, string> = {
 
 const COLORS = ["#2E7D32", "#1565C0", "#EF6C00", "#7B1FA2", "#C62828", "#00838F", "#4E342E", "#546E7A"];
 
+function fmt2(v: number | null | undefined): string {
+  if (v == null) return "—";
+  return v.toFixed(2).replace(".", ",");
+}
+
 export default function ReportManejo({ data }: { data: any }) {
+  // Filter out products with 0 dose
+  const insumos = (data.insumos || []).filter((i: any) => {
+    const dose = Number(i.dose_ha);
+    return !(dose === 0);
+  });
+
   const typeCounts: Record<string, number> = {};
-  data.insumos.forEach((i: any) => {
+  insumos.forEach((i: any) => {
     const t = i.tipo || "other";
     typeCounts[t] = (typeCounts[t] || 0) + 1;
   });
   const pieData = Object.entries(typeCounts).map(([k, v]) => ({ name: TYPE_LABELS[k] || k, value: v }));
 
   const dateMap: Record<string, Record<string, number>> = {};
-  data.insumos.forEach((i: any) => {
+  insumos.forEach((i: any) => {
     const d = i.data_exec || i.data_rec || "N/A";
     const t = TYPE_LABELS[i.tipo] || i.tipo || "Outro";
     if (!dateMap[d]) dateMap[d] = {};
     dateMap[d][t] = (dateMap[d][t] || 0) + 1;
   });
 
-  const allTypes = [...new Set(data.insumos.map((i: any) => TYPE_LABELS[i.tipo] || i.tipo || "Outro"))];
+  const allTypes = [...new Set(insumos.map((i: any) => TYPE_LABELS[i.tipo] || i.tipo || "Outro"))];
   const barData = Object.entries(dateMap).map(([date, types]) => ({ date, ...types }));
 
-  const applied = data.insumos.filter((i: any) => i.status === "applied").length;
-  const recommended = data.insumos.filter((i: any) => i.status === "recommended").length;
+  const applied = insumos.filter((i: any) => i.status === "applied").length;
+  const recommended = insumos.filter((i: any) => i.status === "recommended").length;
 
   return (
     <div className="report-section">
@@ -42,7 +53,7 @@ export default function ReportManejo({ data }: { data: any }) {
 
       <div className="kpi-grid">
         <div className="kpi-card">
-          <div className="kpi-value">{data.insumos.length}</div>
+          <div className="kpi-value">{insumos.length}</div>
           <div className="kpi-label">Total de registros</div>
         </div>
         <div className="kpi-card blue">
@@ -115,13 +126,13 @@ export default function ReportManejo({ data }: { data: any }) {
           </tr>
         </thead>
         <tbody>
-          {data.insumos.map((i: any, idx: number) => (
+          {insumos.map((i: any, idx: number) => (
             <tr key={idx}>
               <td>{i.data_exec || "—"}</td>
               <td style={{ fontWeight: 500 }}>{i.produto}</td>
               <td>{i.ia ?? "—"}</td>
               <td>{TYPE_LABELS[i.tipo] || i.tipo || "—"}</td>
-              <td>{i.dose_ha ?? "—"}</td>
+              <td>{fmt2(i.dose_ha)}</td>
               <td>{i.unidade || "—"}</td>
               <td>
                 <span
