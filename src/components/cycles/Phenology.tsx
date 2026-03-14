@@ -380,8 +380,16 @@ export default function Phenology({
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="female">🟣 Fêmea</SelectItem>
-                      <SelectItem value="male">🔵 Macho</SelectItem>
-                      <SelectItem value="both">🔵🟣 Ambos</SelectItem>
+                      {maleTypes.length > 0 ? (
+                        <>
+                          {maleTypes.includes("male_1") && <SelectItem value="male_1">🔵 Macho 1</SelectItem>}
+                          {maleTypes.includes("male_2") && <SelectItem value="male_2">🔵 Macho 2</SelectItem>}
+                          {maleTypes.includes("male_3") && <SelectItem value="male_3">🔵 Macho 3</SelectItem>}
+                        </>
+                      ) : (
+                        <SelectItem value="male">🔵 Macho</SelectItem>
+                      )}
+                      <SelectItem value="both">🔵🟣 Todos</SelectItem>
                     </SelectContent>
                   </Select>
                 )} />
