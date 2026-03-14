@@ -195,14 +195,23 @@ export function useCreateAditivo() {
 }
 
 export async function parseContratoPdf(file: File, tipo: string): Promise<any> {
-  // Read PDF as text using pdf.js alternative - send raw to AI
   const text = await file.text();
 
-  const { data, error } = await supabase.functions.invoke("parse-contrato", {
-    body: { text, tipo },
-  });
-  if (error) throw error;
-  return data?.dados || {};
+  const systemPrompt = `Você é um especialista em análise de contratos de produção de milho híbrido e beneficiamento de sementes.\nAnalise o texto do contrato fornecido e extraia os dados comerciais principais em formato estruturado.\n\nRetorne APENAS o JSON com os seguintes campos (use null se não encontrar):\n{\n  "titulo": "título/objeto do contrato",\n  "numero_contrato": "número do contrato",\n  "contratante": "nome da empresa contratante",\n  "contratado": "nome da empresa contratada",\n  "tipo": "producao_campo" ou "beneficiamento",\n  "hibrido": "nome do híbrido",\n  "safra": "safra (ex: 2025/2026)",\n  "data_inicio": "YYYY-MM-DD",\n  "data_fim": "YYYY-MM-DD",\n  "area_ha": número em hectares,\n  "volume_sacos": número de sacos,\n  "preco_por_ha": preço por hectare em R$,\n  "preco_por_saco": preço por saco em R$,\n  "valor_total": valor total do contrato em R$,\n  "clausulas_importantes": ["lista de cláusulas relevantes resumidas"],\n  "condicoes_pagamento": "condições de pagamento",\n  "penalidades": "penalidades por descumprimento",\n  "observacoes_gerais": "observações importantes"\n}`;
+
+  const userPrompt = `Analise este contrato de ${tipo === 'beneficiamento' ? 'beneficiamento de sementes' : 'produção de campo de milho híbrido'}:\n\n${text}`;
+
+  const { callAnthropic } = await import("@/lib/anthropic");
+  const content = await callAnthropic(systemPrompt, userPrompt, 2048);
+
+  let parsed;
+  try {
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+  } catch {
+    parsed = { raw_response: content };
+  }
+  return parsed;
 }
 
 export async function uploadContratoPdf(file: File, orgId: string): Promise<string> {
