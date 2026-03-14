@@ -162,20 +162,13 @@ export default function WeatherCharts({ records, cycleId }: Props) {
     enabled: !!cycleId,
   });
 
-  // Fetch female planting dates (prioriza planejamento; fallback para realizado)
+  // Fetch female planting dates (prioriza realizado; fallback para planejamento)
   const { data: femalePlantingDates = [] } = useQuery({
     queryKey: ["female_planting_dates_for_gdu", cycleId],
     queryFn: async () => {
       if (!cycleId) return [] as string[];
 
-      const [planRes, actualRes] = await Promise.all([
-        (supabase as any)
-          .from("planting_plan")
-          .select("planned_date")
-          .eq("cycle_id", cycleId)
-          .eq("type", "female")
-          .is("deleted_at", null)
-          .order("planned_date"),
+      const [actualRes, planRes] = await Promise.all([
         (supabase as any)
           .from("planting_actual")
           .select("planting_date")
@@ -183,20 +176,27 @@ export default function WeatherCharts({ records, cycleId }: Props) {
           .eq("type", "female")
           .is("deleted_at", null)
           .order("planting_date"),
+        (supabase as any)
+          .from("planting_plan")
+          .select("planned_date")
+          .eq("cycle_id", cycleId)
+          .eq("type", "female")
+          .is("deleted_at", null)
+          .order("planned_date"),
       ]);
 
-      if (planRes.error) throw planRes.error;
       if (actualRes.error) throw actualRes.error;
-
-      const planDates = (planRes.data || [])
-        .map((p: any) => normalizeDateKey(p.planned_date))
-        .filter(Boolean) as string[];
+      if (planRes.error) throw planRes.error;
 
       const actualDates = (actualRes.data || [])
         .map((p: any) => normalizeDateKey(p.planting_date))
         .filter(Boolean) as string[];
 
-      const sourceDates = planDates.length > 0 ? planDates : actualDates;
+      const planDates = (planRes.data || [])
+        .map((p: any) => normalizeDateKey(p.planned_date))
+        .filter(Boolean) as string[];
+
+      const sourceDates = actualDates.length > 0 ? actualDates : planDates;
       return Array.from(new Set(sourceDates)).sort((a, b) => a.localeCompare(b));
     },
     enabled: !!cycleId,
