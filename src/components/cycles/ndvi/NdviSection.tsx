@@ -336,42 +336,42 @@ export default function NdviSection({
       const previousNdviVal = previousNdvi?.mean != null ? Number(previousNdvi.mean) : null;
       const timelineForStats = filteredTimeline.length > 0 ? filteredTimeline : ndviTimeline;
       const cleanImgs = filteredImages.filter(img => img.cl < 0.3);
+      const totalImages = filteredImages.length;
+      const cleanCount = cleanImgs.length;
+      const cloudyCount = totalImages - cleanCount;
+      const minMean = timelineForStats.length > 0 ? Math.min(...timelineForStats.map(t => Number(t.mean || 999))) : null;
+      const maxMean = timelineForStats.length > 0 ? Math.max(...timelineForStats.map(t => Number(t.mean || 0))) : null;
+      const pDate = plantingDates?.date || null;
+      const trend = currentNdviVal != null && previousNdviVal != null ? currentNdviVal - previousNdviVal : null;
 
-      const { data, error } = await supabase.functions.invoke("ndvi-analysis", {
-        body: {
-          ndviData: {
-            currentMean: currentNdviVal,
-            previousMean: previousNdviVal,
-            totalImages: filteredImages.length,
-            cleanImages: cleanImgs.length,
-            minMean: timelineForStats.length > 0 ? Math.min(...timelineForStats.map(t => Number(t.mean || 999))) : null,
-            maxMean: timelineForStats.length > 0 ? Math.max(...timelineForStats.map(t => Number(t.mean || 0))) : null,
-          },
-          plantingDate: plantingDates?.date || null,
-          phenologyStage: latestStage,
-          pivotName,
-          hybridName: hybridName || null,
-          filterStartDate: filterStartDate ? format(filterStartDate, "yyyy-MM-dd") : null,
-        },
-      });
+      let dap: number | null = null;
+      if (pDate) {
+        dap = Math.floor((Date.now() - new Date(pDate).getTime()) / (1000 * 60 * 60 * 24));
+      }
 
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
+      const filterStart = filterStartDate ? format(filterStartDate, "yyyy-MM-dd") : null;
+
+      const systemPrompt = `Você é um ENGENHEIRO AGRÔNOMO experiente em produção de sementes de milho híbrido redigindo um parecer técnico de monitoramento de campo via satélite.\n\nTom: técnico, direto, objetivo. Sem mencionar que você é uma IA ou modelo de linguagem. Escreva em primeira pessoa do singular como se fosse o agrônomo responsável pelo monitoramento.\n\nEstruture o parecer EXATAMENTE assim:\n\n1. Primeiro parágrafo: SITUAÇÃO ATUAL (2-3 frases: NDVI + estádio + o que isso significa agronomicamente)\n\n2. "✅ Situação normal:" ou "⚠️ Pontos de atenção:" (lista com hifens, 2-4 itens)\n\n3. "📋 Observações:" (lista com hifens, 2-3 itens sobre qualidade dos dados, nuvens, confiabilidade)\n\n4. "📈 Perspectiva:" (1-2 frases sobre o que esperar nas próximas semanas)\n\nFaixas de referência NDVI para milho:\n- VE-V4: 0.10-0.30\n- V6-V8: 0.30-0.50\n- V10-V12: 0.50-0.70\n- VT-R1: 0.70-0.90\n- R3-R5: 0.60-0.80\n- R6: 0.40-0.60\n\nSeja específico com números. Não invente dados que não foram fornecidos.`;
+
+      const userPrompt = `Dados do campo "${pivotName}"${hybridName ? ` (híbrido: ${hybridName})` : ""}:\n\n- NDVI atual: ${currentNdviVal != null ? currentNdviVal.toFixed(3) : "não disponível"}\n- NDVI anterior: ${previousNdviVal != null ? previousNdviVal.toFixed(3) : "não disponível"}\n- Tendência: ${trend != null ? (trend > 0 ? `+${trend.toFixed(3)} (subindo)` : `${trend.toFixed(3)} (descendo)`) : "não calculável"}\n- Estádio fenológico registrado: ${latestStage || "não registrado"}\n- Data do plantio: ${pDate || "não registrada"}\n- DAP: ${dap != null ? dap : "não calculável"}\n- Total de capturas no período: ${totalImages}\n- Capturas limpas (sem nuvem): ${cleanCount}\n- Capturas descartadas por nuvem: ${cloudyCount}\n- Período de análise iniciando em: ${filterStart || "todas as imagens"}\n- NDVI mínimo no período: ${minMean != null ? minMean.toFixed(3) : "—"}\n- NDVI máximo no período: ${maxMean != null ? maxMean.toFixed(3) : "—"}\n\nRedija o parecer técnico de monitoramento.`;
+
+      const { callAnthropic } = await import("@/lib/anthropic");
+      const analysisText = await callAnthropic(systemPrompt, userPrompt, 1500);
 
       // Persist
       await (supabase as any).from("ndvi_analyses").insert({
         cycle_id: cycleId,
         org_id: orgId,
-        analysis_text: data.analysis,
-        ndvi_value: data.ndviValue,
-        growth_stage: data.growthStage || latestStage,
-        dap: data.dap,
-        filter_start_date: filterStartDate ? format(filterStartDate, "yyyy-MM-dd") : null,
+        analysis_text: analysisText,
+        ndvi_value: currentNdviVal,
+        growth_stage: latestStage,
+        dap,
+        filter_start_date: filterStart,
       });
 
       refetchAnalyses();
       toast.success("Análise atualizada!");
-      return data;
+      return { analysis: analysisText };
     },
     onError: (e: any) => toast.error(e.message || "Erro ao gerar análise"),
   });

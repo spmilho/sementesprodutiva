@@ -445,32 +445,35 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
   // Generate analysis mutation
   const generateWeatherAnalysisMut = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("weather-analysis", {
-        body: {
-          weatherData: weatherSummary,
-          plantingDate: analysisPlantingDate || null,
-          phenologyStage: latestStage,
-          pivotName: pivotName || "Campo",
-          hybridName: hybridName || null,
-        },
-      });
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
+      const wd = weatherSummary || {};
+      const pDate = analysisPlantingDate || null;
+      let dap: number | null = null;
+      if (pDate) {
+        dap = Math.floor((Date.now() - new Date(pDate).getTime()) / (1000 * 60 * 60 * 24));
+      }
+      const pName = pivotName || "Campo";
+
+      const systemPrompt = `Você é um ENGENHEIRO AGRÔNOMO experiente em produção de sementes de milho híbrido redigindo um parecer técnico de monitoramento climático do campo.\n\nTom: técnico, direto, objetivo. Sem mencionar que você é uma IA ou modelo de linguagem. Escreva em primeira pessoa do singular como se fosse o agrônomo responsável.\n\nEstruture o parecer EXATAMENTE assim:\n\n1. Primeiro parágrafo: SITUAÇÃO CLIMÁTICA ATUAL (2-3 frases resumindo temperatura, radiação solar e umidade do período e o que significam para o milho no estádio atual)\n\n2. "🌡️ Temperatura:" (lista com hifens, 2-3 itens analisando médias, extremos, amplitude térmica e impacto no desenvolvimento)\n\n3. "☀️ Radiação Solar:" (lista com hifens, 2-3 itens sobre média, variação e impacto na fotossíntese/enchimento de grão)\n\n4. "💧 Umidade Relativa:" (lista com hifens, 2-3 itens sobre médias, extremos e risco de doenças foliares ou estresse)\n\n5. "⚠️ Pontos de atenção:" ou "✅ Situação favorável:" (lista 2-4 itens sobre riscos ou condições positivas)\n\n6. "📈 Impacto na produtividade:" (2-3 frases sobre como as condições climáticas recentes podem afetar a produtividade esperada do milho)\n\nReferências agronômicas para milho:\n- Temperatura ideal: 25-30°C (dia), 15-20°C (noite)\n- Estresse por calor: >35°C\n- Estresse por frio: <10°C\n- Amplitude térmica ideal: 8-12°C\n- Radiação solar ideal: >18 MJ/m²/dia\n- Radiação baixa: <14 MJ/m²\n- Umidade relativa: 50-80% ideal\n- UR >90% prolongada: risco de doenças foliares\n- UR <40%: estresse hídrico atmosférico\n\nSeja específico com números. Não invente dados.`;
+
+      const userPrompt = `Dados climáticos do campo "${pName}"${hybridName ? ` (híbrido: ${hybridName})` : ""}:\n\n- Período analisado: ${(wd as any).totalDays || "?"} dias\n- Estádio fenológico: ${latestStage || "não registrado"}\n- DAP: ${dap != null ? dap : "não calculável"}\n- Data do plantio: ${pDate || "não registrada"}\n\nTEMPERATURA:\n- Média geral: ${(wd as any).avgTemp != null ? (wd as any).avgTemp.toFixed(1) + "°C" : "—"}\n- Máxima registrada: ${(wd as any).maxTemp != null ? (wd as any).maxTemp.toFixed(1) + "°C" : "—"}\n- Mínima registrada: ${(wd as any).minTemp != null ? (wd as any).minTemp.toFixed(1) + "°C" : "—"}\n- Dias com máxima >35°C: ${(wd as any).daysAbove35 ?? "—"}\n- Dias com mínima <10°C: ${(wd as any).daysBelow10 ?? "—"}\n\nRADIAÇÃO SOLAR:\n- Média: ${(wd as any).avgRadiation != null ? (wd as any).avgRadiation.toFixed(1) + " MJ/m²" : "—"}\n- Máxima: ${(wd as any).maxRadiation != null ? (wd as any).maxRadiation.toFixed(1) + " MJ/m²" : "—"}\n- Mínima: ${(wd as any).minRadiation != null ? (wd as any).minRadiation.toFixed(1) + " MJ/m²" : "—"}\n- Dias com radiação <14 MJ/m²: ${(wd as any).daysLowRadiation ?? "—"}\n\nUMIDADE RELATIVA:\n- Média: ${(wd as any).avgHumidity != null ? (wd as any).avgHumidity.toFixed(0) + "%" : "—"}\n- Máxima: ${(wd as any).maxHumidity != null ? (wd as any).maxHumidity.toFixed(0) + "%" : "—"}\n- Mínima: ${(wd as any).minHumidity != null ? (wd as any).minHumidity.toFixed(0) + "%" : "—"}\n- Dias com UR >90%: ${(wd as any).daysHighHumidity ?? "—"}\n\nGDU/HU:\n- GDU acumulado total: ${(wd as any).totalGdu ?? "—"}\n- Precipitação total: ${(wd as any).totalPrecip != null ? (wd as any).totalPrecip.toFixed(1) + " mm" : "—"}\n- ETo total: ${(wd as any).totalEto != null ? (wd as any).totalEto.toFixed(1) + " mm" : "—"}\n\nRedija o parecer técnico de monitoramento climático e impacto na produtividade.`;
+
+      const { callAnthropic } = await import("@/lib/anthropic");
+      const analysisText = await callAnthropic(systemPrompt, userPrompt, 2048);
 
       // Persist
       if (orgId && cycleId) {
         await (supabase as any).from("weather_analyses").insert({
           cycle_id: cycleId,
           org_id: orgId,
-          analysis_text: data.analysis,
-          growth_stage: data.growthStage || latestStage,
-          dap: data.dap,
+          analysis_text: analysisText,
+          growth_stage: latestStage,
+          dap,
         });
       }
 
       refetchAnalyses();
       toast.success("Análise climática atualizada!");
-      return data;
+      return { analysis: analysisText };
     },
     onError: (e: any) => toast.error(e.message || "Erro ao gerar análise"),
   });
