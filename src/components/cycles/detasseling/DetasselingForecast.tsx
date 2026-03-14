@@ -212,9 +212,14 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold flex items-center gap-2">
-        📅 Previsão de Despendoamento
-      </h3>
+      <div className="flex items-center gap-3">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          📅 Previsão de Despendoamento
+        </h3>
+        <Badge variant={dataSource === "actual" ? "default" : "secondary"} className="text-xs">
+          {dataSource === "actual" ? "Plantio Realizado" : "Planejamento"}
+        </Badge>
+      </div>
 
       {/* Editable params */}
       <div className="flex gap-4 items-end flex-wrap">
