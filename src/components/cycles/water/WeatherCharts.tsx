@@ -1,12 +1,18 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area, ReferenceLine,
 } from "recharts";
-import { Thermometer, Droplets, Wind, Sun, Flame } from "lucide-react";
+import { Thermometer, Droplets, Wind, Sun, Flame, RefreshCw, Loader2, ClipboardCopy, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
 
 interface WeatherRecord {
   id: string;
@@ -34,6 +40,9 @@ interface PhenologyRecord {
 interface Props {
   records: WeatherRecord[];
   cycleId?: string;
+  orgId?: string;
+  pivotName?: string;
+  hybridName?: string;
 }
 
 const T_BASE = 10;
@@ -144,7 +153,9 @@ function StageTick({ x, y, payload, stageMap }: any) {
   );
 }
 
-export default function WeatherCharts({ records, cycleId }: Props) {
+export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybridName }: Props) {
+  const queryClient = useQueryClient();
+  const [historyOpen, setHistoryOpen] = useState(false);
   // Fetch phenology records for this cycle
   const { data: phenologyRecords = [] } = useQuery({
     queryKey: ["phenology_records_for_weather", cycleId],
@@ -360,6 +371,107 @@ export default function WeatherCharts({ records, cycleId }: Props) {
       days: records.length,
     };
   }, [records, gduData]);
+
+  // Fetch latest phenology stage
+  const latestStage = useMemo(() => {
+    if (!phenologyRecords.length) return null;
+    const sorted = [...phenologyRecords].sort((a: any, b: any) => b.observation_date.localeCompare(a.observation_date));
+    return sorted[0]?.stage || null;
+  }, [phenologyRecords]);
+
+  // Fetch planting date for analysis
+  const { data: analysisPlantingDate } = useQuery({
+    queryKey: ["planting-date-weather-analysis", cycleId],
+    queryFn: async () => {
+      if (!cycleId) return null;
+      const { data: actuals } = await (supabase as any)
+        .from("planting_actual").select("planting_date").eq("cycle_id", cycleId)
+        .is("deleted_at", null).order("planting_date", { ascending: true }).limit(1);
+      if (actuals?.length) return actuals[0].planting_date as string;
+      const { data: plans } = await (supabase as any)
+        .from("planting_plan").select("planned_date").eq("cycle_id", cycleId)
+        .is("deleted_at", null).order("planned_date", { ascending: true }).limit(1);
+      if (plans?.length) return plans[0].planned_date as string;
+      return null;
+    },
+    enabled: !!cycleId,
+  });
+
+  // Fetch previous weather analyses
+  const { data: weatherAnalyses = [], refetch: refetchAnalyses } = useQuery({
+    queryKey: ["weather_analyses", cycleId],
+    queryFn: async () => {
+      if (!cycleId) return [];
+      const { data, error } = await (supabase as any)
+        .from("weather_analyses").select("*").eq("cycle_id", cycleId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!cycleId,
+  });
+
+  const latestWeatherAnalysis = weatherAnalyses[0] || null;
+
+  // Build weather summary for AI
+  const weatherSummary = useMemo(() => {
+    if (!stats) return null;
+    const temps = records.filter(r => r.temp_max_c != null);
+    const rads = records.filter(r => r.radiation_mj != null);
+    const hums = records.filter(r => r.humidity_max_pct != null);
+    return {
+      totalDays: stats.days,
+      avgTemp: stats.avgTemp,
+      maxTemp: stats.maxTemp,
+      minTemp: stats.minTemp,
+      daysAbove35: temps.filter(r => (r.temp_max_c ?? 0) > 35).length,
+      daysBelow10: temps.filter(r => (r.temp_min_c ?? 99) < 10).length,
+      avgRadiation: stats.avgRadiation,
+      maxRadiation: rads.length > 0 ? Math.max(...rads.map(r => r.radiation_mj!)) : null,
+      minRadiation: rads.length > 0 ? Math.min(...rads.map(r => r.radiation_mj!)) : null,
+      daysLowRadiation: rads.filter(r => (r.radiation_mj ?? 99) < 14).length,
+      avgHumidity: stats.avgHumidity,
+      maxHumidity: hums.length > 0 ? Math.max(...hums.map(r => r.humidity_max_pct!)) : null,
+      minHumidity: records.filter(r => r.humidity_min_pct != null).length > 0 ? Math.min(...records.filter(r => r.humidity_min_pct != null).map(r => r.humidity_min_pct!)) : null,
+      daysHighHumidity: hums.filter(r => (r.humidity_max_pct ?? 0) > 90).length,
+      totalGdu: stats.totalGdu,
+      totalPrecip: stats.totalPrecip,
+      totalEto: stats.totalEto,
+    };
+  }, [stats, records]);
+
+  // Generate analysis mutation
+  const generateWeatherAnalysisMut = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("weather-analysis", {
+        body: {
+          weatherData: weatherSummary,
+          plantingDate: analysisPlantingDate || null,
+          phenologyStage: latestStage,
+          pivotName: pivotName || "Campo",
+          hybridName: hybridName || null,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      // Persist
+      if (orgId && cycleId) {
+        await (supabase as any).from("weather_analyses").insert({
+          cycle_id: cycleId,
+          org_id: orgId,
+          analysis_text: data.analysis,
+          growth_stage: data.growthStage || latestStage,
+          dap: data.dap,
+        });
+      }
+
+      refetchAnalyses();
+      toast.success("Análise climática atualizada!");
+      return data;
+    },
+    onError: (e: any) => toast.error(e.message || "Erro ao gerar análise"),
+  });
 
   if (records.length === 0) return null;
 
@@ -623,6 +735,101 @@ export default function WeatherCharts({ records, cycleId }: Props) {
                 {hasWind && <Line yAxisId="right" type="monotone" dataKey="wind_avg_kmh" name="Vento (km/h)" stroke="hsl(0 0% 50%)" strokeWidth={1.5} dot={false} />}
               </ComposedChart>
             </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ═══ ANÁLISE CLIMÁTICA DO CAMPO ═══ */}
+      {stats && cycleId && (
+        <Card className="border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              📊 Análise Climática do Campo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {latestWeatherAnalysis ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  {latestWeatherAnalysis.growth_stage && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      {latestWeatherAnalysis.growth_stage}
+                    </span>
+                  )}
+                  {latestWeatherAnalysis.dap != null && <span className="text-muted-foreground">{latestWeatherAnalysis.dap} DAP</span>}
+                  <span className="text-muted-foreground">
+                    {format(new Date(latestWeatherAnalysis.created_at), "dd/MM/yyyy HH:mm")}
+                  </span>
+                </div>
+
+                <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
+                  <ReactMarkdown>{latestWeatherAnalysis.analysis_text}</ReactMarkdown>
+                </div>
+
+                <p className="text-[10px] text-muted-foreground">
+                  🕐 Atualizado em {format(new Date(latestWeatherAnalysis.created_at), "dd/MM/yyyy HH:mm")}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma análise climática disponível. Clique em "Gerar análise" para obter o primeiro parecer.
+              </p>
+            )}
+
+            <div className="flex flex-wrap gap-2 pt-1 border-t">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => generateWeatherAnalysisMut.mutate()}
+                disabled={generateWeatherAnalysisMut.isPending}
+              >
+                {generateWeatherAnalysisMut.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+                {generateWeatherAnalysisMut.isPending ? "Analisando..." : "🔄 Gerar análise"}
+              </Button>
+              {latestWeatherAnalysis && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={() => {
+                    navigator.clipboard.writeText(latestWeatherAnalysis.analysis_text);
+                    toast.success("Análise copiada!");
+                  }}
+                >
+                  <ClipboardCopy className="h-3 w-3" /> 📋 Copiar
+                </Button>
+              )}
+            </div>
+
+            {weatherAnalyses.length > 1 && (
+              <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 w-full justify-start">
+                    <ChevronDown className={cn("h-3 w-3 transition-transform", historyOpen && "rotate-180")} />
+                    📊 Pareceres Anteriores ({weatherAnalyses.length - 1})
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 mt-2">
+                  {weatherAnalyses.slice(1).map((a: any) => (
+                    <div key={a.id} className="border rounded-lg p-3 bg-muted/30">
+                      <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+                        {a.growth_stage && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border">{a.growth_stage}</span>}
+                        {a.dap != null && <span>{a.dap} DAP</span>}
+                        <span>{format(new Date(a.created_at), "dd/MM/yyyy HH:mm")}</span>
+                      </div>
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed">
+                        <ReactMarkdown>{a.analysis_text}</ReactMarkdown>
+                      </div>
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </CardContent>
         </Card>
       )}

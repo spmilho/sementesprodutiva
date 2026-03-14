@@ -4707,6 +4707,57 @@ export type Database = {
           },
         ]
       }
+      weather_analyses: {
+        Row: {
+          analysis_text: string
+          analysis_type: string
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          dap: number | null
+          growth_stage: string | null
+          id: string
+          org_id: string
+        }
+        Insert: {
+          analysis_text: string
+          analysis_type?: string
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          dap?: number | null
+          growth_stage?: string | null
+          id?: string
+          org_id: string
+        }
+        Update: {
+          analysis_text?: string
+          analysis_type?: string
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          dap?: number | null
+          growth_stage?: string | null
+          id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weather_analyses_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weather_analyses_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weather_records: {
         Row: {
           created_at: string
