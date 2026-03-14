@@ -17,7 +17,7 @@ import ReportAgua from "@/components/cycles/report/sections/ReportAgua";
 import ReportUmidade from "@/components/cycles/report/sections/ReportUmidade";
 import ReportEstimativa from "@/components/cycles/report/sections/ReportEstimativa";
 import ReportColheita from "@/components/cycles/report/sections/ReportColheita";
-import ReportVisitas from "@/components/cycles/report/sections/ReportVisitas";
+
 import ReportConclusao from "@/components/cycles/report/sections/ReportConclusao";
 
 export default function CycleReportPage() {
