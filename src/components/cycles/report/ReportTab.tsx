@@ -77,13 +77,15 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
       });
 
       const reportUrl = `/report?key=${encodeURIComponent(reportKey)}`;
-      const reportWindow = window.open(reportUrl, "_blank");
+
+      // Fluxo robusto: abre aba em branco, injeta fallback completo em window.name e então navega
+      const reportWindow = window.open("about:blank", "_blank");
       if (!reportWindow) {
         throw new Error("Popup bloqueado pelo navegador");
       }
 
-      // Ponteiro leve de fallback (evita payload gigante em window.name)
-      reportWindow.name = reportKey;
+      reportWindow.name = serialized;
+      reportWindow.location.href = reportUrl;
 
       setProgressMsg("✅ Relatório aberto em nova aba!");
       setProgressPct(100);
