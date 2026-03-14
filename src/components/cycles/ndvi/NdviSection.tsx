@@ -77,6 +77,7 @@ export default function NdviSection({
   cycleId, orgId, pivotId, pivotName, hybridName, phenologyRecords,
 }: NdviSectionProps) {
   const queryClient = useQueryClient();
+  const { isAdmin } = useRole();
   const [opacity, setOpacity] = useState(70);
   const [layerType, setLayerType] = useState<"ndvi" | "truecolor" | "falsecolor">("ndvi");
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
