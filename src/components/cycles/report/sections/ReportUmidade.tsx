@@ -47,7 +47,7 @@ export default function ReportUmidade({ data }: { data: any }) {
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: 10 }} />
               {glebas.map((g, i) => (
-                <Line key={g} type="monotone" dataKey={g} stroke={COLORS[i % COLORS.length]} strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                <Line key={String(g)} type="monotone" dataKey={String(g)} stroke={COLORS[i % COLORS.length]} strokeWidth={2} dot={{ r: 3 }} connectNulls />
               ))}
               {data.umidade_alvo && <ReferenceLine y={data.umidade_alvo} stroke="#C62828" strokeDasharray="5 5" label={{ value: `Alvo ${data.umidade_alvo}%`, fontSize: 10 }} />}
             </LineChart>

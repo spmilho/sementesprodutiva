@@ -73,7 +73,7 @@ export default function ReportManejo({ data }: { data: any }) {
                 <XAxis dataKey="date" tick={{ fontSize: 9 }} angle={-30} textAnchor="end" height={50} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip />
-                {allTypes.map((t, i) => <Bar key={t} dataKey={t} stackId="a" fill={COLORS[i % COLORS.length]} />)}
+                {allTypes.map((t, i) => <Bar key={String(t)} dataKey={String(t)} stackId="a" fill={COLORS[i % COLORS.length]} />)}
               </BarChart>
             </ResponsiveContainer>
           </div>
