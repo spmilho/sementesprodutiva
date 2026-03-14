@@ -276,73 +276,67 @@ export default function WeatherCharts({ records, cycleId }: Props) {
     "hsl(160 70% 40%)", "hsl(30 80% 50%)", "hsl(220 70% 55%)",
   ];
 
-  const uniqueFemalePlantingDates = useMemo(() => {
+  const MALE1_COLORS = [
+    "hsl(210 80% 50%)", "hsl(180 70% 40%)", "hsl(240 60% 55%)",
+    "hsl(150 70% 45%)", "hsl(270 60% 50%)", "hsl(195 80% 45%)",
+  ];
+
+  const MALE2_COLORS = [
+    "hsl(25 85% 50%)", "hsl(0 70% 50%)", "hsl(45 80% 45%)",
+    "hsl(350 65% 50%)", "hsl(15 75% 55%)", "hsl(40 70% 50%)",
+  ];
+
+  const dedup = (dates: string[]) => {
     const seen = new Set<string>();
-    return femalePlantingDates
-      .filter(Boolean)
-      .filter((d) => {
-        if (seen.has(d)) return false;
-        seen.add(d);
-        return true;
-      });
-  }, [femalePlantingDates]);
+    return dates.filter(Boolean).filter((d) => { if (seen.has(d)) return false; seen.add(d); return true; });
+  };
 
-  const gduByPlantingData = useMemo(() => {
-    if (uniqueFemalePlantingDates.length === 0 || sortedData.length === 0) return [];
+  const uniqueFemalePlantingDates = useMemo(() => dedup(femalePlantingDates), [femalePlantingDates]);
+  const uniqueMale1PlantingDates = useMemo(() => dedup(male1PlantingDates), [male1PlantingDates]);
+  const uniqueMale2PlantingDates = useMemo(() => dedup(male2PlantingDates), [male2PlantingDates]);
 
-    // Build a map of date -> daily GDU from weather records
-    const dailyGduMap = new Map<string, number>();
+  // Build daily GDU map once
+  const dailyGduMap = useMemo(() => {
+    const m = new Map<string, number>();
     sortedData.forEach(r => {
       const key = normalizeDateKey(r.record_date);
-      if (key) {
-        dailyGduMap.set(key, calcGDU(r.temp_max_c, r.temp_min_c));
-      }
+      if (key) m.set(key, calcGDU(r.temp_max_c, r.temp_min_c));
     });
+    return m;
+  }, [sortedData]);
 
-    // Determine full date range: from earliest planting date to last weather date
-    const earliestPlanting = uniqueFemalePlantingDates.reduce((a, b) => a < b ? a : b);
+  // Generic builder for GDU by planting data
+  const buildGduByPlanting = (plantingDates: string[], prefix: string) => {
+    if (plantingDates.length === 0 || sortedData.length === 0) return [];
+    const earliestPlanting = plantingDates.reduce((a, b) => a < b ? a : b);
     const lastWeatherDate = sortedData[sortedData.length - 1].record_date;
     const startTs = dateKeyToTimestamp(earliestPlanting);
     const endTs = dateKeyToTimestamp(lastWeatherDate);
-
-    // Generate all dates from earliest planting to last weather record
     const allDates: string[] = [];
     for (let ts = startTs; ts <= endTs; ts += 86400000) {
       const d = new Date(ts);
-      const yyyy = d.getUTCFullYear();
-      const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-      const dd = String(d.getUTCDate()).padStart(2, "0");
-      allDates.push(`${yyyy}-${mm}-${dd}`);
+      allDates.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`);
     }
-
-    // For each date in full range, compute accumulated GDU per planting date
-    // HU starts D+1 after planting (e.g. planted 03 -> count from 04)
     return allDates.map(dateStr => {
       const currentTs = dateKeyToTimestamp(dateStr);
-      const label = toDateLabel(dateStr);
-      const row: Record<string, any> = { dateLabel: label, record_date: dateStr };
-
-      uniqueFemalePlantingDates.forEach((plantDate) => {
-        const plantTs = dateKeyToTimestamp(plantDate);
-        // D+1: skip the planting day itself, start counting from the next day
-        const startTs = plantTs + 86400000;
-        if (currentTs < startTs) {
-          row[`gdu_${plantDate}`] = null;
-          return;
-        }
+      const row: Record<string, any> = { dateLabel: toDateLabel(dateStr), record_date: dateStr };
+      plantingDates.forEach((plantDate) => {
+        const plantStartTs = dateKeyToTimestamp(plantDate) + 86400000;
+        if (currentTs < plantStartTs) { row[`${prefix}_${plantDate}`] = null; return; }
         let acc = 0;
         for (const [dateKey, dailyGdu] of dailyGduMap.entries()) {
           const ts = dateKeyToTimestamp(dateKey);
-          if (ts >= startTs && ts <= currentTs) {
-            acc += dailyGdu;
-          }
+          if (ts >= plantStartTs && ts <= currentTs) acc += dailyGdu;
         }
-        row[`gdu_${plantDate}`] = Math.round(acc);
+        row[`${prefix}_${plantDate}`] = Math.round(acc);
       });
-
       return row;
     });
-  }, [sortedData, uniqueFemalePlantingDates]);
+  };
+
+  const gduByPlantingData = useMemo(() => buildGduByPlanting(uniqueFemalePlantingDates, "gdu"), [sortedData, uniqueFemalePlantingDates, dailyGduMap]);
+  const gduByMale1Data = useMemo(() => buildGduByPlanting(uniqueMale1PlantingDates, "gdu_m1"), [sortedData, uniqueMale1PlantingDates, dailyGduMap]);
+  const gduByMale2Data = useMemo(() => buildGduByPlanting(uniqueMale2PlantingDates, "gdu_m2"), [sortedData, uniqueMale2PlantingDates, dailyGduMap]);
 
   const stats = useMemo(() => {
     if (records.length === 0) return null;
