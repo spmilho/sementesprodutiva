@@ -25,7 +25,7 @@ export default function CycleReportPage() {
 
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem("reportData");
+      const raw = localStorage.getItem("reportData");
       if (raw) {
         setData(JSON.parse(raw));
       }

@@ -49,7 +49,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
       });
 
       // Save to sessionStorage and open new tab
-      sessionStorage.setItem("reportData", JSON.stringify(reportData));
+      localStorage.setItem("reportData", JSON.stringify(reportData));
       window.open("/report", "_blank");
 
       setProgressMsg("✅ Relatório aberto em nova aba!");
