@@ -5,124 +5,163 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Você é um engenheiro agrônomo sênior especialista em produção de sementes de milho híbrido.
-Gere um relatório HTML COMPLETO, autocontido, técnico e profissional com TODOS os dados recebidos em JSON.
+const STYLE_PROMPT = `ESTILO VISUAL OBRIGATÓRIO:
+- Fonte: 'Segoe UI', system-ui, sans-serif
+- Cor primária: #1B5E20 (verde escuro)
+- Cor secundária: #1565C0 (azul)
+- Cor acento: #FF9800 (laranja)
+- Fundo cards: #F5F5F5 com border-radius: 8px
+- Tabelas: header #1B5E20 com texto branco, linhas alternadas #F5F5F5/#FFFFFF,
+  border-collapse: collapse, padding: 8px 12px, font-size: 11px, width: 100%
+- KPI cards: display:flex, gap:16px, border-left:4px solid [cor], padding:16px,
+  background:#F5F5F5, border-radius:8px, valor em font-size:28px bold, label em font-size:11px uppercase #666
+- Seções: margin-top:40px, título font-size:20px bold com ícone emoji,
+  border-bottom:2px solid #1B5E20, padding-bottom:8px, margin-bottom:20px
+- Badges: border-radius:12px, padding:2px 10px, font-size:11px, font-weight:600
+  - Verde (ok): background:#E8F5E9, color:#2E7D32
+  - Amarelo (atenção): background:#FFF8E1, color:#F57F17
+  - Laranja (alerta): background:#FFF3E0, color:#E65100
+  - Vermelho (crítico): background:#FFEBEE, color:#C62828
+- Cada seção com page-break-before:always (class="page-break")
 
-REGRAS ABSOLUTAS:
-- Retorne APENAS HTML puro (sem markdown, sem blocos de código, sem \`\`\`).
-- O HTML DEVE começar com <style> e depois conteúdo HTML.
-- NÃO use JavaScript, NÃO use template literals (\${...}), NÃO use placeholders.
-- Todos os valores devem estar ESCRITOS no HTML como texto final já resolvido.
-- Se um array estiver vazio, NÃO gere a seção correspondente.
-- Se um campo for null, omita-o ou exiba "—".
-- Datas já vêm formatadas em DD/MM/AAAA — use como estão.
-- Decimais com vírgula (ex: 12,5).
-- Português brasileiro, tom técnico profissional de agrônomo.
-- NÃO mencione IA, Claude, Gemini, modelos de linguagem.
+GRÁFICOS SVG INLINE:
+Quando os dados permitirem visualização gráfica, gere SVGs inline com:
+- viewBox adequado, width:100%, max-width:560px, margin:16px auto, display:block
+- Cores do tema (#1B5E20, #1565C0, #FF9800, #4CAF50, #2196F3)
+- Eixos com labels, título do gráfico, legendas
+- Barras com border-radius nos cantos superiores
+- Linhas com stroke-width:2, pontos com circles r=4
+- Background branco, box-shadow via filter
 
-ESTILO VISUAL:
-- Visual executivo McKinsey/BCG, profissional e limpo
-- Fonte: Segoe UI, system-ui, sans-serif
-- Cor primária: #1B5E20 (verde escuro), secundária: #1E88E5, acento: #FF9800
-- Fundo branco, cabeçalhos com fundo verde escuro e texto branco
-- Tabelas: bordas finas #e0e0e0, cabeçalho verde #1B5E20 com texto branco, linhas alternadas #f5f5f5
-- KPIs: cards com borda esquerda colorida, valor grande e bold
-- Badges coloridos para status (verde=ok, laranja=atenção, vermelho=crítico)
-- @media print { @page { size: A4; margin: 15mm 12mm; } }
-- Quebra de página entre seções principais: page-break-before: always
+FOTOS:
+Se dados.fotos contém URLs com campo url:
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0">
+  <div><img src="URL" style="width:100%;border-radius:8px;object-fit:cover;max-height:250px">
+  <p style="font-size:10px;color:#666;margin:4px 0">[módulo - data - contexto]</p></div>
+</div>
 
-ESTRUTURA OBRIGATÓRIA DO RELATÓRIO (gere TODAS as seções que tiverem dados):
+FORMATAÇÃO:
+- Datas: já vêm em DD/MM/AAAA — use como estão
+- Decimais com vírgula (1.234,56 → 1.234,56)
+- Valores null/undefined: exibir "—"
+- Arrays vazios: NÃO gerar a seção
+- Tabelas com TODOS os registros (nunca resumir ou pular linhas)
+- Rodapé de tabela com totais/médias quando relevante
 
-1. CAPA — Logo (se logo_url), nome da organização, slogan, título "RELATÓRIO TÉCNICO DE CAMPO",
-   híbrido, safra, cliente, cooperado, fazenda, pivô, data de geração
+PROIBIDO:
+- JavaScript, template literals (\${...}), placeholders
+- Mencionar IA, Claude, Gemini, modelos de linguagem
+- Markdown, blocos de código
+- Resumir dados — incluir TODOS os registros`;
 
-2. DADOS DO CICLO — Tabela com TODOS os campos:
-   Híbrido, Linhagem Fêmea/Macho, Safra, Contrato, Cliente, Cooperado, Fazenda, Pivô,
-   Área Total/Fêmea/Macho, Proporção F:M, Split, Espaçamento FF/FM/MM,
-   Sistema de irrigação, Ciclo (dias), DAP despendoamento, Umidade alvo,
-   Produtividade esperada, Produção esperada, Status
+const PART1_INSTRUCTIONS = `Gere a PARTE 1 do relatório técnico. Inclua:
 
-3. GLEBAS — Tabela: Nome, Parental, Área (ha), Linhas
+1. <style> COMPLETO com TODO o CSS (será usado pelas 3 partes):
+   - Reset básico, fontes, cores
+   - Classes para tabelas, KPIs, badges, seções, page-break
+   - @media print { @page { size:A4; margin:15mm 12mm; } .report-toolbar,.no-print{display:none!important} table{page-break-inside:auto} tr{page-break-inside:avoid} }
 
-4. SEMENTE BÁSICA — Tabela de lotes: Lote, Parental, Origem, Safra, Peneira, PMS,
-   Germinação%, Vigor%, Pureza%, Umidade%, TS
-   Se houver tratamentos: sub-tabela com produtos (produto, IA, tipo, dose, unidade)
+2. CAPA:
+   - div height:100vh, background:linear-gradient(135deg,#1B5E20,#2E7D32,#388E3C)
+   - Se logo_url: <img src="logo_url" style="max-height:80px;margin-bottom:20px">
+   - Organização e slogan em branco
+   - "RELATÓRIO TÉCNICO DE CAMPO" em font-size:13px, letter-spacing:6px, uppercase
+   - Híbrido em font-size:42px, font-weight:700
+   - Grid 2×4 com: Safra, Contrato, Cliente, Cooperado, Fazenda, Pivô, Área Total, Status
+   - Data de geração no rodapé da capa
+   - page-break-after:always
 
-5. PLANEJAMENTO DE PLANTIO — Tabela: Gleba, Parental, Data prevista, Área, Sem/metro, Pop. alvo
+3. DADOS DO CICLO — Tabela completa com todos os campos do ciclo
 
-6. PLANTIO REALIZADO — Tabela COMPLETA: Data, Tipo, Gleba, Lote, Área, Espaçamento,
-   Sem/metro, Pop. alvo, CV%, Solo, Profundidade, Velocidade, Notas
-   Se houver cv_pontos: sub-tabela com pontos individuais de CV
+4. GLEBAS — Se existirem: tabela Nome, Parental, Área, Linhas
 
-7. EMERGÊNCIA — Tabela: Data, Tipo, Ponto, Contagem, Comprimento, Plantas/metro,
-   Plantas/ha, Emergência%, Pop. alvo, Observações
+5. SEMENTE BÁSICA — Tabela de lotes com todos os campos
+   Se houver tratamentos: sub-tabela por lote com produtos (produto, IA, tipo, dose, unidade)
 
-8. STAND — Tabela: Data, Tipo contagem, Parental, Gleba, DAP, Pontos, Pop (pl/ha), CV%, Emergência%
+6. PLANEJAMENTO DE PLANTIO — Tabela: Gleba, Parental, Data, Área, Sem/metro, Pop.alvo
 
-9. FENOLOGIA — Tabela cronológica: Data, Parental, Estádio, DAP, Observação
-   Incluir linha do tempo visual se possível
+7. PLANTIO REALIZADO — Tabela COMPLETA com todos os campos
+   Se houver cv_pontos: mencionar CV por ponto
 
-10. MANEJO INTEGRADO (INSUMOS) — Tabela COMPLETA: Data exec., Data rec., Produto, IA,
-    Tipo, Grupo, Dose/ha, Unidade, Qtd Rec., Qtd Aplic., Evento, Status, DAP, Estádio, Notas
-    Agrupar por tipo (fertilizante macro, micro, inseticida, herbicida, fungicida, adjuvante)
+8. EMERGÊNCIA — Se existir: tabela completa
 
-11. NUTRIÇÃO — Tabela: Data, Tipo, Produto, Dose/ha, Unidade, Área, Método, Estádio,
-    N%, P%, K%, N fornecido, P2O5, K2O, Alvo, Notas
-    Gerar KPI de balanço NPK total se possível
+9. STAND — Se existir: tabela completa
 
-12. APLICAÇÕES QUÍMICAS — Tabela: Data, Tipo, Produto, IA, Dose/ha, Área, Método,
-    Alvo, Volume calda, Prescrição, Responsável, Temp, UR, Vento, Notas
+Termine exatamente com: <!-- PARTE 1 FIM -->`;
 
-13. NICKING / SINCRONIA FLORAL — Marcos: Parental, Ponto, Marco, Data, DAP
-    Observações: Data, Ponto fixo, Parental, Estádio, Pendão%, Estigma%, Notas
+const PART2_INSTRUCTIONS = `Gere a PARTE 2 do relatório técnico. NÃO inclua <style> (já veio na Parte 1).
 
-14. INSPEÇÕES — Tabela: Número, Data, Despendoamento%, ER%, MP1%, MP2%, FP%, Observações
+10. MANEJO INTEGRADO (INSUMOS) — Tabela COMPLETA agrupada por tipo:
+    Data exec, Produto, IA, Tipo, Grupo, Dose/ha, Unidade, Qtd Rec, Qtd Aplic, Status, DAP, Estádio
+    Gerar SVG de barras: distribuição de insumos por tipo/grupo
 
-15. DESPENDOAMENTO — Tabela COMPLETA: Passada, Data, Gleba, Área, Método, Turno, Equipe,
-    % Removido, % Remanescente, Rendimento, Altura pendão, Máquina, Horas, Velocidade,
-    Dificuldades, NC, Notas
+11. NUTRIÇÃO — Se existir: tabela completa com N/P/K e balanço NPK (KPIs)
+    Gerar SVG: balanço NPK total (barras horizontais)
 
-16. ROGUING — Tabela: Data, Gleba, Tipo, Área, Plantas removidas, % Off-type, Equipe, Notas
+12. APLICAÇÕES QUÍMICAS — Se existir: tabela completa
 
-17. PRAGAS E DOENÇAS — Tabela: Data, Nome, Tipo, Incidência%, Severidade, Parental,
-    Estádio, Ação tomada, Notas
+13. FENOLOGIA — Tabela cronológica: Data, Parental, Estádio, DAP, Observação
+    Gerar SVG de timeline visual se possível
 
-18. CLIMA E IRRIGAÇÃO:
-    a) Resumo climático: KPIs (dias, temp média/máx/mín, UR média, vento, ETo total, chuva total, GDU total)
-    b) Tabela climática diária: Data, Temp max/min/média, UR max/min/média, Vento, Radiação, ETo, Chuva, GDU diário, GDU acumulado
-    c) Irrigação: tabela Data, Lâmina mm, Tempo h, Sistema
-    d) Chuva: tabela Data, mm
+14. NDVI — Se existir: tabela de imagens (data, NDVI médio/min/max)
+    Incluir parecer técnico se disponível
 
-19. UMIDADE — Tabela: Data, Gleba, Umidade%, Estádio, Ponto
+15. NICKING / SINCRONIA FLORAL — Marcos e observações em tabelas separadas
 
-20. ESTIMATIVA DE PRODUTIVIDADE — Se houver:
-    Pontos amostrais: Ponto, Gleba, Espigas/ha, Grãos/espiga, Umidade%, Prod. bruta
+16. INSPEÇÕES — Se existir: tabela com todos os dados
+
+17. DESPENDOAMENTO — Tabela COMPLETA com todos os campos
+    Gerar SVG: evolução % remanescente por passada
+
+18. ROGUING — Se existir: tabela completa
+
+19. PRAGAS E DOENÇAS — Tabela completa com badges de severidade
+
+Termine exatamente com: <!-- PARTE 2 FIM -->`;
+
+const PART3_INSTRUCTIONS = `Gere a PARTE 3 do relatório técnico. NÃO inclua <style>.
+
+20. CLIMA E IRRIGAÇÃO:
+    a) KPIs resumo: dias monitorados, temp média/máx/mín absolutas, UR média, vento, ETo total, chuva total, GDU total
+    b) Tabela climática diária COMPLETA (se dados existirem)
+    c) Gerar SVG: evolução temperatura + GDU acumulado (linhas duplas)
+    d) Irrigação: tabela Data, Lâmina, Tempo, Sistema
+    e) Chuva: tabela Data, mm
+
+21. UMIDADE — Se existir: tabela Data, Gleba, Umidade%, Estádio, Ponto
+
+22. ESTIMATIVA DE PRODUTIVIDADE — Se existir:
     KPIs: Prod. líquida kg/ha, Total ton, sc/ha
+    Tabela de pontos amostrais
 
-21. PLANO DE COLHEITA — Tabela: Gleba, Data início, Data fim, Ciclo dias, Fonte plantio,
-    Umidade alvo, Meta ha/dia, Peso saco, Notas
+23. PLANO DE COLHEITA — Se existir: tabela completa
 
-22. COLHEITA REALIZADA — Tabela COMPLETA: Data, Gleba, Área, Umidade%, Cargas, Peso/carga,
-    Total ton, Destino, Ticket, Colhedora, Transporte, Notas
+24. COLHEITA REALIZADA — Se existir: tabela COMPLETA
+    Gerar SVG: colheita acumulada por data (área de linha)
 
-23. VISITAS DE CAMPO — Para cada visita: Data, Número, Estágio, Técnico, Status,
-    Nota final/máxima, Observações
-    E sub-tabela de scores: Estágio, Subitem, Nota, Pontos, Observação
+25. VISITAS DE CAMPO — Para cada visita: dados + sub-tabela de scores
 
-24. GALERIA DE FOTOS — Exibir TODAS as fotos por módulo:
-    <img src="URL" style="max-width:100%; margin:8px 0"> com legenda (módulo, data, contexto)
+26. GALERIA DE FOTOS — Exibir TODAS as fotos em grid 2 colunas com legenda
 
-25. CONCLUSÃO TÉCNICA — Parecer técnico escrito como texto corrido profissional
-    analisando os dados reais do campo. Incluir recomendações.
+27. CONCLUSÃO TÉCNICA — Parecer técnico em texto corrido profissional:
+    - Um parágrafo por módulo que tem dados
+    - Tom de engenheiro agrônomo experiente
+    - Baseado nos dados reais fornecidos
+    - Recomendações técnicas
+    - Espaço para assinatura (linha horizontal + nome do responsável técnico)
 
-26. RODAPÉ — Texto de rodapé da organização, data de geração
+28. RODAPÉ — Texto de rodapé da organização + data de geração
 
-IMPORTANTE:
-- Gere TODAS as seções que tiverem dados — não omita nenhuma.
-- Cada tabela deve incluir TODOS os registros, não apenas os primeiros.
-- Use SVG inline para gráficos simples quando relevante (ex: evolução de GDU, NDVI).
-- As fotos devem ser incluídas com <img src="URL_FORNECIDA">.
-- O relatório deve ser COMPLETO e EXAUSTIVO — imagine que é um dossiê técnico para auditoria.`;
+Termine exatamente com: <!-- PARTE 3 FIM -->`;
+
+function makeSystemPrompt(): string {
+  return `Você é um designer de relatórios agrícolas de altíssimo nível profissional, gerando HTML para impressão A4.
+
+RETORNE APENAS HTML PURO. Sem markdown, sem crases, sem explicações.
+Todos os textos em português brasileiro.
+
+${STYLE_PROMPT}`;
+}
 
 function cleanHtml(rawHtml: string): string {
   let html = rawHtml
@@ -154,50 +193,72 @@ function hasInvalidTemplateTokens(html: string): boolean {
   );
 }
 
-async function callAiGateway(payload: string, repairMode = false): Promise<Response> {
+function pickKeys(obj: any, keys: string[]): any {
+  const result: any = {};
+  for (const key of keys) {
+    if (obj[key] !== undefined) result[key] = obj[key];
+  }
+  return result;
+}
+
+async function callAiGateway(systemPrompt: string, userMessage: string, retryOnFail = true): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("Chave de API não configurada");
 
-  const messages: any[] = [
-    { role: "system", content: SYSTEM_PROMPT },
-    {
-      role: "user",
-      content: `Gere o relatório HTML COMPLETO e EXAUSTIVO com base nestes dados JSON (todos os valores já estão resolvidos — use-os diretamente no HTML):\n\n${payload}`,
-    },
-  ];
+  const doCall = async (repair = false): Promise<string> => {
+    const messages: any[] = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userMessage },
+    ];
 
-  if (repairMode) {
-    messages.push({
-      role: "user",
-      content:
-        "A resposta anterior veio inválida com placeholders/template literals. Reescreva do zero e retorne SOMENTE HTML puro, sem ${...}, sem JavaScript e sem funções. TODOS os valores devem ser texto literal no HTML.",
+    if (repair) {
+      messages.push({
+        role: "user",
+        content: "A resposta anterior veio inválida com placeholders. Reescreva do zero: APENAS HTML puro, sem ${...}, sem JavaScript, sem funções. Todos os valores como texto literal.",
+      });
+    }
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-pro",
+        messages,
+        max_tokens: 65000,
+      }),
     });
+
+    if (!response.ok) {
+      if (response.status === 429) throw new Error("RATE_LIMIT");
+      if (response.status === 402) throw new Error("PAYMENT_REQUIRED");
+      const t = await response.text();
+      console.error("AI gateway error:", response.status, t);
+      throw new Error(`Erro na API: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || "";
+  };
+
+  let html = cleanHtml(await doCall(false));
+
+  if (retryOnFail && (!html || hasInvalidTemplateTokens(html))) {
+    console.log("First response invalid, retrying...");
+    html = cleanHtml(await doCall(true));
   }
 
-  return await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-pro",
-      messages,
-      max_tokens: 65000,
-    }),
-  });
-}
-
-async function parseGatewayResponse(response: Response): Promise<string> {
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || "";
+  return html;
 }
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { allData, reportData } = await req.json();
+    const body = await req.json();
+    const { reportData, allData, part } = body;
     const payload = reportData ?? allData;
 
     if (!payload) {
@@ -207,59 +268,68 @@ serve(async (req) => {
       });
     }
 
+    const systemPrompt = makeSystemPrompt();
+
+    // Single-part mode (backward compat) or multi-part mode
+    if (part) {
+      const dataStr = JSON.stringify(payload, null, 0);
+      const truncated = dataStr.length > 120000 ? `${dataStr.substring(0, 120000)}...(truncado)` : dataStr;
+      
+      let instructions = "";
+      if (part === 1) instructions = PART1_INSTRUCTIONS;
+      else if (part === 2) instructions = PART2_INSTRUCTIONS;
+      else if (part === 3) instructions = PART3_INSTRUCTIONS;
+      else throw new Error("Parte inválida: " + part);
+
+      const userMessage = `${instructions}\n\nDados JSON do ciclo (use diretamente no HTML, não interprete como código):\n\n${truncated}`;
+      
+      console.log(`Generating part ${part}, data size: ${dataStr.length} chars`);
+
+      try {
+        const html = await callAiGateway(systemPrompt, userMessage);
+
+        if (!html) {
+          throw new Error(`Parte ${part} retornou vazia`);
+        }
+
+        return new Response(JSON.stringify({ html, part }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e: any) {
+        if (e.message === "RATE_LIMIT") {
+          return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns minutos." }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (e.message === "PAYMENT_REQUIRED") {
+          return new Response(JSON.stringify({ error: "Créditos insuficientes. Contate o administrador." }), {
+            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        throw e;
+      }
+    }
+
+    // Legacy single-call mode
     const dataStr = JSON.stringify(payload, null, 0);
-    // Use a higher truncation limit for comprehensive reports
-    const truncatedData =
-      dataStr.length > 200000 ? `${dataStr.substring(0, 200000)}...(dados truncados)` : dataStr;
+    const truncated = dataStr.length > 200000 ? `${dataStr.substring(0, 200000)}...(truncado)` : dataStr;
+    console.log(`Report data size: ${dataStr.length} chars (single mode)`);
 
-    console.log(`Report data size: ${dataStr.length} chars`);
+    const userMessage = `Gere o relatório HTML COMPLETO e EXAUSTIVO com base nestes dados JSON:\n\n${truncated}`;
+    const html = await callAiGateway(systemPrompt, userMessage);
 
-    const firstResponse = await callAiGateway(truncatedData, false);
-
-    if (!firstResponse.ok) {
-      if (firstResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns minutos." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (firstResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes. Contate o administrador." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await firstResponse.text();
-      console.error("Gateway error:", firstResponse.status, t);
-      throw new Error(`Erro na API de geração: ${firstResponse.status}`);
-    }
-
-    let clean = cleanHtml(await parseGatewayResponse(firstResponse));
-
-    if (!clean || hasInvalidTemplateTokens(clean)) {
-      console.log("First response invalid, retrying in repair mode...");
-      const retryResponse = await callAiGateway(truncatedData, true);
-
-      if (!retryResponse.ok) {
-        const t = await retryResponse.text();
-        console.error("Gateway retry error:", retryResponse.status, t);
-        throw new Error(`Erro na API de geração (retry): ${retryResponse.status}`);
-      }
-
-      clean = cleanHtml(await parseGatewayResponse(retryResponse));
-    }
-
-    if (!clean || hasInvalidTemplateTokens(clean)) {
+    if (!html || hasInvalidTemplateTokens(html)) {
       throw new Error("A IA retornou HTML inválido com placeholders não resolvidos.");
     }
 
-    return new Response(JSON.stringify({ html: clean }), {
+    return new Response(JSON.stringify({ html }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("generate-report error:", e);
+    const msg = e instanceof Error ? e.message : "Erro desconhecido";
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }),
+      JSON.stringify({ error: msg }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
