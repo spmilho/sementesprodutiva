@@ -7,7 +7,7 @@ export async function callAnthropic(
   userPrompt: string,
   maxTokens = 2048,
 ): Promise<string> {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY || "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";
   if (!apiKey) {
     throw new Error("API key da Anthropic não configurada (VITE_ANTHROPIC_API_KEY)");
   }
