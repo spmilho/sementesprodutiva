@@ -481,13 +481,37 @@ export default function WeatherCharts({ records, cycleId }: Props) {
         </Card>
       )}
 
+      {/* HU Accumulated per Female Planting Block — mini dashboard */}
+      {hasGdu && uniqueFemalePlantingDates.length > 0 && gduByPlantingData.length > 0 && (() => {
+        const lastRow = gduByPlantingData[gduByPlantingData.length - 1];
+        return (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {uniqueFemalePlantingDates.map((plantDate, i) => {
+              const accValue = lastRow?.[`gdu_${plantDate}`];
+              return (
+                <Card key={plantDate}>
+                  <CardContent className="p-3 flex items-center gap-2">
+                    <Flame className="h-6 w-6 shrink-0" style={{ color: PLANTING_COLORS[i % PLANTING_COLORS.length] }} />
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">HU Fêmea {toDateLabel(plantDate)}</p>
+                      <p className="text-sm font-bold">{accValue ?? "—"}</p>
+                      <p className="text-[10px] text-muted-foreground">D+1 a partir de {toDateLabel(plantDate)}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* GDU by Female Planting Date */}
       {hasGdu && uniqueFemalePlantingDates.length > 0 && gduByPlantingData.length > 0 && (
         <Card>
           <CardContent className="p-4">
             <h4 className="font-medium text-xs mb-2 flex items-center gap-1">
               <Flame className="h-3.5 w-3.5 text-orange-500" />
-              GDU Acumulado por Data de Plantio — Fêmea
+              GDU Acumulado por Data de Plantio — Fêmea (D+1)
             </h4>
             <ResponsiveContainer width="100%" height={300}>
               <ComposedChart data={gduByPlantingData}>
