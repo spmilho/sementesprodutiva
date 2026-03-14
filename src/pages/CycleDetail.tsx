@@ -460,11 +460,13 @@ export default function CycleDetail() {
           <FieldEvaluationSection cycleId={id!} orgId={cycle.org_id} />
         </TabsContent>
 
-        <TabsContent value="relatorio">
-          <ReportTab cycleId={id!} orgId={cycle.org_id} cycle={cycle} />
-        </TabsContent>
+        {!isClient && (
+          <TabsContent value="relatorio">
+            <ReportTab cycleId={id!} orgId={cycle.org_id} cycle={cycle} />
+          </TabsContent>
+        )}
 
-        {tabItems.filter((t) => !["resumo", "semente-basica", "plantio", "manejo", "fenologia", "nicking", "despendoamento", "roguing", "pragas", "agua", "estimativa", "umidade", "colheita", "documentos", "mapa", "avaliacoes", "relatorio"].includes(t.value)).map((t) => (
+        {allTabItems.filter((t) => !["resumo", "semente-basica", "plantio", "manejo", "fenologia", "nicking", "despendoamento", "roguing", "pragas", "agua", "estimativa", "umidade", "colheita", "documentos", "mapa", "avaliacoes", "relatorio"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>
