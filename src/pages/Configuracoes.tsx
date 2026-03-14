@@ -57,6 +57,11 @@ export default function Configuracoes() {
             <WifiOff className="h-3.5 w-3.5" /> Fila Offline
           </TabsTrigger>
           {isAdmin && (
+            <TabsTrigger value="backup" className="gap-1.5 text-xs">
+              <Database className="h-3.5 w-3.5" /> 💾 Backup
+            </TabsTrigger>
+          )}
+          {isAdmin && (
             <TabsTrigger value="contrato-acesso" className="gap-1.5 text-xs">
               <FileSignature className="h-3.5 w-3.5" /> Acesso Contratos
             </TabsTrigger>
