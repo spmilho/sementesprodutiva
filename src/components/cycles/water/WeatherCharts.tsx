@@ -39,6 +39,48 @@ interface Props {
 const T_BASE = 10;
 const T_MAX_CAP = 30;
 
+function formatDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeDateKey(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    const [, y, m, d] = iso;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  const br = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (br) {
+    const [, d, m, y] = br;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) {
+    return formatDateString(parsed);
+  }
+
+  return null;
+}
+
+function dateKeyToTimestamp(dateKey: string): number {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1, 12, 0, 0).getTime();
+}
+
+function toDateLabel(dateKey: string): string {
+  const [, month, day] = dateKey.split("-");
+  return `${day}/${month}`;
+}
+
 function calcGDU(tmax: number | null, tmin: number | null): number {
   if (tmax == null || tmin == null) return 0;
   const adjMax = Math.min(tmax, T_MAX_CAP);
@@ -47,37 +89,45 @@ function calcGDU(tmax: number | null, tmin: number | null): number {
   return Math.max(0, gdu);
 }
 
-// Map phenology date -> stage label
 function buildPhenologyMap(records: PhenologyRecord[]): Map<string, string> {
-  // Sort by date, then build a map of date -> latest stage
-  const sorted = [...records].sort((a, b) => a.observation_date.localeCompare(b.observation_date));
+  const sorted = [...records]
+    .map((r) => ({ ...r, normalizedDate: normalizeDateKey(r.observation_date) }))
+    .filter((r) => !!r.normalizedDate)
+    .sort((a, b) => dateKeyToTimestamp(a.normalizedDate!) - dateKeyToTimestamp(b.normalizedDate!));
+
   const dateStageMap = new Map<string, string>();
-  sorted.forEach(r => {
-    dateStageMap.set(r.observation_date, r.stage);
+  sorted.forEach((r) => {
+    dateStageMap.set(r.normalizedDate!, r.stage);
   });
   return dateStageMap;
 }
 
-// Assign a phenology stage to each weather date based on most recent observation
 function assignStages(weatherDates: string[], phenologyRecords: PhenologyRecord[]): Map<string, string> {
-  const sorted = [...phenologyRecords].sort((a, b) => a.observation_date.localeCompare(b.observation_date));
+  const sortedPhenology = [...phenologyRecords]
+    .map((r) => ({ ...r, normalizedDate: normalizeDateKey(r.observation_date) }))
+    .filter((r) => !!r.normalizedDate)
+    .sort((a, b) => dateKeyToTimestamp(a.normalizedDate!) - dateKeyToTimestamp(b.normalizedDate!));
+
   const result = new Map<string, string>();
-  
+
   for (const date of weatherDates) {
+    const dateTs = dateKeyToTimestamp(date);
     let currentStage = "";
-    for (const pr of sorted) {
-      if (pr.observation_date <= date) {
+
+    for (const pr of sortedPhenology) {
+      if (dateKeyToTimestamp(pr.normalizedDate!) <= dateTs) {
         currentStage = pr.stage;
       } else {
         break;
       }
     }
+
     if (currentStage) result.set(date, currentStage);
   }
+
   return result;
 }
 
-// Custom tick that shows stage below date
 function StageTick({ x, y, payload, stageMap }: any) {
   const stage = stageMap?.get(payload?.value);
   return (
