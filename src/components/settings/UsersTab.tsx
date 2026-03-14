@@ -326,6 +326,11 @@ export default function UsersTab() {
                             ) : (
                               <span className="text-xs text-muted-foreground">Sem perfil</span>
                             )}
+                            {u.role === "client" && u.client_id && (
+                              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-[10px]">
+                                {clients.find((c: any) => c.id === u.client_id)?.name || "Cliente"}
+                              </Badge>
+                            )}
                             {u.feed_access && (
                               <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]">
                                 <Camera className="h-3 w-3 mr-0.5" /> Feed

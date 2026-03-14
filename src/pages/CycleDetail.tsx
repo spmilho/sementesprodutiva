@@ -33,7 +33,7 @@ const statusLabels: Record<string, string> = {
   detasseling: "Despendoamento", harvest: "Colheita", completed: "Concluído", cancelled: "Cancelado",
 };
 
-const tabItems = [
+const allTabItems = [
   { value: "resumo", label: "Resumo" },
   { value: "semente-basica", label: "Semente Básica" },
   { value: "plantio", label: "Plantio" },
@@ -49,9 +49,8 @@ const tabItems = [
   { value: "colheita", label: "Colheita" },
   { value: "mapa", label: "Mapa" },
   { value: "avaliacoes", label: "Avaliações" },
-  
   { value: "documentos", label: "Documentos" },
-  { value: "relatorio", label: "Relatório" },
+  { value: "relatorio", label: "Relatório", hideForClient: true },
 ];
 
 function SummaryCard({ label, value }: { label: string; value: string | number }) {
@@ -261,7 +260,9 @@ export default function CycleDetail() {
       <Tabs defaultValue="resumo">
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
           <TabsList className="inline-flex w-max">
-            {tabItems.map((t) => <TabsTrigger key={t.value} value={t.value} className="text-xs whitespace-nowrap">{t.label}</TabsTrigger>)}
+            {allTabItems
+              .filter((t) => !(isClient && (t as any).hideForClient))
+              .map((t) => <TabsTrigger key={t.value} value={t.value} className="text-xs whitespace-nowrap">{t.label}</TabsTrigger>)}
           </TabsList>
         </div>
 
@@ -459,11 +460,13 @@ export default function CycleDetail() {
           <FieldEvaluationSection cycleId={id!} orgId={cycle.org_id} />
         </TabsContent>
 
-        <TabsContent value="relatorio">
-          <ReportTab cycleId={id!} orgId={cycle.org_id} cycle={cycle} />
-        </TabsContent>
+        {!isClient && (
+          <TabsContent value="relatorio">
+            <ReportTab cycleId={id!} orgId={cycle.org_id} cycle={cycle} />
+          </TabsContent>
+        )}
 
-        {tabItems.filter((t) => !["resumo", "semente-basica", "plantio", "manejo", "fenologia", "nicking", "despendoamento", "roguing", "pragas", "agua", "estimativa", "umidade", "colheita", "documentos", "mapa", "avaliacoes", "relatorio"].includes(t.value)).map((t) => (
+        {allTabItems.filter((t) => !["resumo", "semente-basica", "plantio", "manejo", "fenologia", "nicking", "despendoamento", "roguing", "pragas", "agua", "estimativa", "umidade", "colheita", "documentos", "mapa", "avaliacoes", "relatorio"].includes(t.value)).map((t) => (
           <TabsContent key={t.value} value={t.value}><TabPlaceholder name={t.label} /></TabsContent>
         ))}
       </Tabs>
