@@ -127,19 +127,19 @@ Redija o parecer técnico de monitoramento.`;
       usedFallback = true;
     }
 
-    // Fallback to Gemini direct
+    // Fallback to Claude (Anthropic)
     if (usedFallback || !analysisText) {
-      const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
-      if (!GOOGLE_AI_API_KEY) throw new Error("Nenhuma chave de IA disponível");
+      const CLAUDE_API_KEY = Deno.env.get("emiliocloude");
+      if (!CLAUDE_API_KEY) throw new Error("Nenhuma chave de IA disponível");
 
-      const geminiResp = await callGeminiDirect(messages, GOOGLE_AI_API_KEY);
-      if (!geminiResp.ok) {
-        const t = await geminiResp.text();
-        console.error("Gemini error:", geminiResp.status, t);
-        throw new Error("Erro ao gerar análise via Gemini");
+      const claudeResp = await callClaude(messages, CLAUDE_API_KEY);
+      if (!claudeResp.ok) {
+        const t = await claudeResp.text();
+        console.error("Claude error:", claudeResp.status, t);
+        throw new Error("Erro ao gerar análise NDVI via Claude");
       }
-      const geminiData = await geminiResp.json();
-      analysisText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "Não foi possível gerar a análise.";
+      const claudeData = await claudeResp.json();
+      analysisText = claudeData.content?.[0]?.text || "Não foi possível gerar a análise.";
     }
 
     return new Response(JSON.stringify({

@@ -93,17 +93,17 @@ Retorne APENAS o JSON com os seguintes campos (use null se não encontrar):
     }
 
     if (usedFallback || !content) {
-      const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
-      if (!GOOGLE_AI_API_KEY) throw new Error("Nenhuma chave de IA disponível");
+      const CLAUDE_API_KEY = Deno.env.get("emiliocloude");
+      if (!CLAUDE_API_KEY) throw new Error("Nenhuma chave de IA disponível");
 
-      const geminiResp = await callGeminiDirect(messages, GOOGLE_AI_API_KEY);
-      if (!geminiResp.ok) {
-        const t = await geminiResp.text();
-        console.error("Gemini error:", geminiResp.status, t);
-        throw new Error("Erro ao analisar contrato via Gemini");
+      const claudeResp = await callClaude(messages, CLAUDE_API_KEY);
+      if (!claudeResp.ok) {
+        const t = await claudeResp.text();
+        console.error("Claude error:", claudeResp.status, t);
+        throw new Error("Erro ao analisar contrato via Claude");
       }
-      const geminiData = await geminiResp.json();
-      content = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const claudeData = await claudeResp.json();
+      content = claudeData.content?.[0]?.text || "";
     }
 
     // Extract JSON from response
