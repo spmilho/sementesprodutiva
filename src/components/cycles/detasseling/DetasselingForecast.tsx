@@ -202,7 +202,7 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
   if (!plantings.length) {
     return (
       <div className="text-sm text-muted-foreground p-4 border rounded-md border-dashed text-center">
-        📅 Registre o plantio real da fêmea para gerar a previsão de despendoamento.
+        📅 Registre o planejamento ou plantio real da fêmea para gerar a previsão de despendoamento.
       </div>
     );
   }
