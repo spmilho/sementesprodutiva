@@ -51,8 +51,9 @@ function TimelineBlock({ title, records, accent }: { title: string; records: any
       <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8 }}>
         {STAGES.map((stage, i) => {
           const rec = stageMap.get(stage);
-          const isReached = i <= currentIdx && !!rec;
-          const isCurrent = i === currentIdx && !!rec;
+          const isReached = i <= currentIdx;
+          const isCurrent = i === currentIdx;
+          const isFuture = i > currentIdx;
 
           return (
             <div
@@ -63,15 +64,23 @@ function TimelineBlock({ title, records, accent }: { title: string; records: any
                 padding: "8px 6px",
                 textAlign: "center",
                 border: isCurrent ? `2px solid ${accent}` : "1px solid #E0E0E0",
-                background: isCurrent ? "#FFF8E1" : isReached ? "#F1F8E9" : "#FAFAFA",
+                background: isCurrent ? "#E8F5E9" : isReached ? "#F1F8E9" : "#FAFAFA",
+                boxShadow: isCurrent ? `0 0 8px ${accent}40` : "none",
               }}
             >
               <div style={{ height: 72, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <CornPlantSvg stage={stage} isFuture={!isReached} isCurrent={isCurrent} size={0.7} />
+                <CornPlantSvg stage={stage} isFuture={isFuture} isCurrent={isCurrent} size={0.7} />
               </div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#263238", marginTop: 2 }}>{stage}</div>
-              {isCurrent && <div style={{ fontSize: 10, fontWeight: 600, color: "#EF6C00" }}>📍 Atual</div>}
-              <div style={{ fontSize: 10, color: "#607D8B", marginTop: 2 }}>{rec?.data || "—"}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: isCurrent ? "#2E7D32" : isFuture ? "#9E9E9E" : "#263238", marginTop: 2 }}>{stage}</div>
+              {isCurrent && (
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#2E7D32", display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
+                  🌿 Atual
+                </div>
+              )}
+              {isReached && !isCurrent && rec && (
+                <div style={{ fontSize: 10, color: "#4CAF50" }}>✓</div>
+              )}
+              <div style={{ fontSize: 10, color: isFuture ? "#BDBDBD" : "#607D8B", marginTop: 2 }}>{rec?.data || "—"}</div>
             </div>
           );
         })}
