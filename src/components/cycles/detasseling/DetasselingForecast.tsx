@@ -42,6 +42,18 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
     },
   });
 
+  // Fetch female planting plan (fallback when no actuals)
+  const { data: plantingPlans = [] } = useQuery({
+    queryKey: ["forecast-planting-plan", cycleId],
+    queryFn: async () => {
+      const { data } = await sb.from("planting_plan")
+        .select("planned_date, planned_area, type")
+        .eq("cycle_id", cycleId).eq("type", "female").is("deleted_at", null)
+        .order("planned_date");
+      return data || [];
+    },
+  });
+
   // Fetch detasseling records to check status
   const { data: detRecords = [] } = useQuery({
     queryKey: ["forecast-det-records-v2", cycleId],
@@ -54,18 +66,29 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
     },
   });
 
-  // Group plantings by date
+  // Determine data source: prefer actuals, fallback to plan
+  const dataSource = plantingActuals.length > 0 ? "actual" : "plan";
+
+  // Group plantings by date (actuals or plan)
   const plantings = useMemo<PlantingEntry[]>(() => {
     const map = new Map<string, number>();
-    plantingActuals.forEach((p: any) => {
-      const d = p.planting_date;
-      const area = Number(p.actual_area) || 0;
-      map.set(d, (map.get(d) || 0) + area);
-    });
+    if (plantingActuals.length > 0) {
+      plantingActuals.forEach((p: any) => {
+        const d = p.planting_date;
+        const area = Number(p.actual_area) || 0;
+        map.set(d, (map.get(d) || 0) + area);
+      });
+    } else {
+      plantingPlans.forEach((p: any) => {
+        const d = p.planned_date;
+        const area = Number(p.planned_area) || 0;
+        if (d) map.set(d, (map.get(d) || 0) + area);
+      });
+    }
     return Array.from(map.entries())
       .map(([planting_date, area_ha]) => ({ planting_date, area_ha }))
       .sort((a, b) => a.planting_date.localeCompare(b.planting_date));
-  }, [plantingActuals]);
+  }, [plantingActuals, plantingPlans]);
 
   // Compute windows for each planting date
   const windows = useMemo(() => {
@@ -179,7 +202,7 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
   if (!plantings.length) {
     return (
       <div className="text-sm text-muted-foreground p-4 border rounded-md border-dashed text-center">
-        📅 Registre o plantio real da fêmea para gerar a previsão de despendoamento.
+        📅 Registre o planejamento ou plantio real da fêmea para gerar a previsão de despendoamento.
       </div>
     );
   }
@@ -189,9 +212,14 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold flex items-center gap-2">
-        📅 Previsão de Despendoamento
-      </h3>
+      <div className="flex items-center gap-3">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          📅 Previsão de Despendoamento
+        </h3>
+        <Badge variant={dataSource === "actual" ? "default" : "secondary"} className="text-xs">
+          {dataSource === "actual" ? "Plantio Realizado" : "Planejamento"}
+        </Badge>
+      </div>
 
       {/* Editable params */}
       <div className="flex gap-4 items-end flex-wrap">
