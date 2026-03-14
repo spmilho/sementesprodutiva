@@ -109,6 +109,25 @@ export default function Phenology({
     },
   });
 
+  // Detect which male types exist (male_1, male_2, male_3) from planting data
+  const { data: maleTypes = [] } = useQuery({
+    queryKey: ["male-types-phenology", cycleId],
+    queryFn: async () => {
+      if (!cycleId) return [];
+      const [actualRes, planRes] = await Promise.all([
+        (supabase as any).from("planting_actual").select("type").eq("cycle_id", cycleId).is("deleted_at", null),
+        (supabase as any).from("planting_plan").select("type").eq("cycle_id", cycleId).is("deleted_at", null),
+      ]);
+      const allTypes = new Set<string>();
+      for (const r of [...(actualRes.data || []), ...(planRes.data || [])]) {
+        if (r.type && r.type.startsWith("male")) allTypes.add(r.type);
+      }
+      // Sort: male_1, male_2, male_3
+      return Array.from(allTypes).sort();
+    },
+    enabled: !!cycleId,
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { description: "" },
