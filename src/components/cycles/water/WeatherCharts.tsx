@@ -260,7 +260,7 @@ export default function WeatherCharts({ records, cycleId }: Props) {
   const gduByPlantingData = useMemo(() => {
     if (uniqueFemalePlantingDates.length === 0 || sortedData.length === 0) return [];
 
-    // Build a map of date -> daily GDU
+    // Build a map of date -> daily GDU from weather records
     const dailyGduMap = new Map<string, number>();
     sortedData.forEach(r => {
       const key = normalizeDateKey(r.record_date);
@@ -269,19 +269,34 @@ export default function WeatherCharts({ records, cycleId }: Props) {
       }
     });
 
-    // For each weather date, compute accumulated GDU from each planting date
-    return sortedData.map(r => {
-      const currentDate = normalizeDateKey(r.record_date);
-      const currentTs = currentDate ? dateKeyToTimestamp(currentDate) : 0;
-      const row: Record<string, any> = { dateLabel: r.dateLabel, record_date: r.record_date };
+    // Determine full date range: from earliest planting date to last weather date
+    const earliestPlanting = uniqueFemalePlantingDates.reduce((a, b) => a < b ? a : b);
+    const lastWeatherDate = sortedData[sortedData.length - 1].record_date;
+    const startTs = dateKeyToTimestamp(earliestPlanting);
+    const endTs = dateKeyToTimestamp(lastWeatherDate);
+
+    // Generate all dates from earliest planting to last weather record
+    const allDates: string[] = [];
+    for (let ts = startTs; ts <= endTs; ts += 86400000) {
+      const d = new Date(ts);
+      const yyyy = d.getUTCFullYear();
+      const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+      const dd = String(d.getUTCDate()).padStart(2, "0");
+      allDates.push(`${yyyy}-${mm}-${dd}`);
+    }
+
+    // For each date in full range, compute accumulated GDU per planting date
+    return allDates.map(dateStr => {
+      const currentTs = dateKeyToTimestamp(dateStr);
+      const label = toDateLabel(dateStr);
+      const row: Record<string, any> = { dateLabel: label, record_date: dateStr };
 
       uniqueFemalePlantingDates.forEach((plantDate) => {
         const plantTs = dateKeyToTimestamp(plantDate);
         if (currentTs < plantTs) {
-          row[`gdu_${plantDate}`] = null; // Before planting — no data
+          row[`gdu_${plantDate}`] = null;
           return;
         }
-        // Accumulate GDU from planting date to current date
         let acc = 0;
         for (const [dateKey, dailyGdu] of dailyGduMap.entries()) {
           const ts = dateKeyToTimestamp(dateKey);
