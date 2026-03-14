@@ -48,9 +48,31 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
         setProgressPct(Math.round((current / total) * 100));
       });
 
-      // Save to sessionStorage and open new tab
-      localStorage.setItem("reportData", JSON.stringify(reportData));
-      window.open("/report", "_blank");
+      const serialized = JSON.stringify(reportData);
+      const reportKey = `reportData:${Date.now()}`;
+      localStorage.setItem(reportKey, serialized);
+      localStorage.setItem("reportData", serialized); // legacy fallback
+
+      let reportUrl = `/report?key=${encodeURIComponent(reportKey)}`;
+      try {
+        const bytes = new TextEncoder().encode(serialized);
+        let binary = "";
+        bytes.forEach((b) => { binary += String.fromCharCode(b); });
+        const encoded = btoa(binary);
+        if (encoded.length < 120000) {
+          reportUrl = `/report?data=${encodeURIComponent(encoded)}&key=${encodeURIComponent(reportKey)}`;
+        }
+      } catch {
+        // fallback to key/localStorage only
+      }
+
+      const reportWindow = window.open("about:blank", "_blank");
+      if (reportWindow) {
+        reportWindow.name = serialized;
+        reportWindow.location.href = reportUrl;
+      } else {
+        window.open(reportUrl, "_blank");
+      }
 
       setProgressMsg("✅ Relatório aberto em nova aba!");
       setProgressPct(100);

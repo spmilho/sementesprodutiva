@@ -25,9 +25,37 @@ export default function CycleReportPage() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("reportData");
+      const params = new URLSearchParams(window.location.search);
+      const dataParam = params.get("data");
+      const keyParam = params.get("key");
+
+      let raw: string | null = null;
+
+      if (dataParam) {
+        try {
+          const binary = atob(dataParam);
+          const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+          raw = new TextDecoder().decode(bytes);
+        } catch {
+          raw = null;
+        }
+      }
+
+      if (!raw && keyParam) {
+        raw = localStorage.getItem(keyParam);
+      }
+
+      if (!raw && window.name) {
+        raw = window.name;
+      }
+
+      if (!raw) {
+        raw = localStorage.getItem("reportData");
+      }
+
       if (raw) {
         setData(JSON.parse(raw));
+        if (window.name) window.name = "";
       }
     } catch (e) {
       console.error("Erro ao ler dados do relatório:", e);
