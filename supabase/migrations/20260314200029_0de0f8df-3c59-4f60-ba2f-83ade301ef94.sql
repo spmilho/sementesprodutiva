@@ -1,0 +1,1 @@
+ALTER TABLE public.pest_disease_records ALTER COLUMN severity_score DROP NOT NULL;

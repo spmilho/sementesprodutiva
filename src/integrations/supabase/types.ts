@@ -2753,7 +2753,7 @@ export type Database = {
           pest_type: string
           photos: string[] | null
           severity: string
-          severity_score: number
+          severity_score: number | null
           updated_at: string
         }
         Insert: {
@@ -2777,7 +2777,7 @@ export type Database = {
           pest_type: string
           photos?: string[] | null
           severity?: string
-          severity_score?: number
+          severity_score?: number | null
           updated_at?: string
         }
         Update: {
@@ -2801,7 +2801,7 @@ export type Database = {
           pest_type?: string
           photos?: string[] | null
           severity?: string
-          severity_score?: number
+          severity_score?: number | null
           updated_at?: string
         }
         Relationships: [
