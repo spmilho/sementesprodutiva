@@ -311,6 +311,7 @@ export default function WeatherCharts({ records, cycleId }: Props) {
     }
 
     // For each date in full range, compute accumulated GDU per planting date
+    // HU starts D+1 after planting (e.g. planted 03 -> count from 04)
     return allDates.map(dateStr => {
       const currentTs = dateKeyToTimestamp(dateStr);
       const label = toDateLabel(dateStr);
@@ -318,14 +319,16 @@ export default function WeatherCharts({ records, cycleId }: Props) {
 
       uniqueFemalePlantingDates.forEach((plantDate) => {
         const plantTs = dateKeyToTimestamp(plantDate);
-        if (currentTs < plantTs) {
+        // D+1: skip the planting day itself, start counting from the next day
+        const startTs = plantTs + 86400000;
+        if (currentTs < startTs) {
           row[`gdu_${plantDate}`] = null;
           return;
         }
         let acc = 0;
         for (const [dateKey, dailyGdu] of dailyGduMap.entries()) {
           const ts = dateKeyToTimestamp(dateKey);
-          if (ts >= plantTs && ts <= currentTs) {
+          if (ts >= startTs && ts <= currentTs) {
             acc += dailyGdu;
           }
         }
