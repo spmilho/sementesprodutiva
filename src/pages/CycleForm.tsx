@@ -105,10 +105,12 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function CycleForm() {
+  const { id } = useParams<{ id: string }>();
+  const isEditing = !!id;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, control, watch, setValue, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       contract_number: "",
@@ -122,6 +124,54 @@ export default function CycleForm() {
       material_split: "",
     },
   });
+
+  // Load existing cycle for editing
+  const { data: existingCycle, isLoading: cycleLoading } = useQuery({
+    queryKey: ["cycle-edit", id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("production_cycles")
+        .select("*")
+        .eq("id", id!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: isEditing,
+  });
+
+  // Populate form when existing cycle loads
+  useEffect(() => {
+    if (existingCycle) {
+      reset({
+        contract_number: existingCycle.contract_number || "",
+        client_id: existingCycle.client_id,
+        cooperator_id: existingCycle.cooperator_id,
+        farm_id: existingCycle.farm_id,
+        pivot_id: existingCycle.pivot_id,
+        field_name: existingCycle.field_name,
+        season: existingCycle.season,
+        hybrid_name: existingCycle.hybrid_name,
+        female_line: existingCycle.female_line,
+        male_line: existingCycle.male_line,
+        total_area: existingCycle.total_area,
+        female_male_ratio: existingCycle.female_male_ratio,
+        irrigation_system: existingCycle.irrigation_system,
+        pivot_area: existingCycle.pivot_area || undefined,
+        material_cycle_days: existingCycle.material_cycle_days || undefined,
+        expected_productivity: existingCycle.expected_productivity || undefined,
+        target_moisture: existingCycle.target_moisture ?? 18,
+        isolation_distance: existingCycle.isolation_distance ?? 300,
+        temporal_isolation_days: existingCycle.temporal_isolation_days ?? 30,
+        material_split: existingCycle.material_split || "",
+        detasseling_dap: existingCycle.detasseling_dap || undefined,
+        spacing_female_female_cm: existingCycle.spacing_female_female_cm,
+        spacing_female_male_cm: existingCycle.spacing_female_male_cm,
+        spacing_male_male_cm: existingCycle.spacing_male_male_cm,
+        status: existingCycle.status,
+      });
+    }
+  }, [existingCycle, reset]);
 
   const [splitOpen, setSplitOpen] = useState(false);
 
