@@ -162,6 +162,24 @@ export default function WeatherCharts({ records, cycleId }: Props) {
     enabled: !!cycleId,
   });
 
+  // Fetch female planting dates
+  const { data: femalePlantings = [] } = useQuery({
+    queryKey: ["female_plantings_for_gdu", cycleId],
+    queryFn: async () => {
+      if (!cycleId) return [];
+      const { data, error } = await (supabase as any)
+        .from("planting_actual")
+        .select("id, planting_date, type, actual_area")
+        .eq("cycle_id", cycleId)
+        .eq("type", "female")
+        .is("deleted_at", null)
+        .order("planting_date");
+      if (error) throw error;
+      return (data || []) as { id: string; planting_date: string; type: string; actual_area: number }[];
+    },
+    enabled: !!cycleId,
+  });
+
   const sortedData = useMemo(() => {
     return [...records]
       .map((r) => {
@@ -224,6 +242,59 @@ export default function WeatherCharts({ records, cycleId }: Props) {
       };
     });
   }, [sortedData, stageMap]);
+
+  // GDU per female planting date — each planting date gets its own accumulated GDU line
+  const PLANTING_COLORS = [
+    "hsl(280 70% 50%)", "hsl(200 80% 45%)", "hsl(340 70% 50%)",
+    "hsl(160 70% 40%)", "hsl(30 80% 50%)", "hsl(220 70% 55%)",
+  ];
+
+  const uniqueFemalePlantingDates = useMemo(() => {
+    const seen = new Set<string>();
+    return femalePlantings
+      .map(p => normalizeDateKey(p.planting_date))
+      .filter(Boolean)
+      .filter(d => { if (seen.has(d!)) return false; seen.add(d!); return true; }) as string[];
+  }, [femalePlantings]);
+
+  const gduByPlantingData = useMemo(() => {
+    if (uniqueFemalePlantingDates.length === 0 || sortedData.length === 0) return [];
+
+    // Build a map of date -> daily GDU
+    const dailyGduMap = new Map<string, number>();
+    sortedData.forEach(r => {
+      const key = normalizeDateKey(r.record_date);
+      if (key) {
+        dailyGduMap.set(key, calcGDU(r.temp_max_c, r.temp_min_c));
+      }
+    });
+
+    // For each weather date, compute accumulated GDU from each planting date
+    return sortedData.map(r => {
+      const currentDate = normalizeDateKey(r.record_date);
+      const currentTs = currentDate ? dateKeyToTimestamp(currentDate) : 0;
+      const row: Record<string, any> = { dateLabel: r.dateLabel, record_date: r.record_date };
+
+      uniqueFemalePlantingDates.forEach((plantDate) => {
+        const plantTs = dateKeyToTimestamp(plantDate);
+        if (currentTs < plantTs) {
+          row[`gdu_${plantDate}`] = null; // Before planting — no data
+          return;
+        }
+        // Accumulate GDU from planting date to current date
+        let acc = 0;
+        for (const [dateKey, dailyGdu] of dailyGduMap.entries()) {
+          const ts = dateKeyToTimestamp(dateKey);
+          if (ts >= plantTs && ts <= currentTs) {
+            acc += dailyGdu;
+          }
+        }
+        row[`gdu_${plantDate}`] = Math.round(acc);
+      });
+
+      return row;
+    });
+  }, [sortedData, uniqueFemalePlantingDates]);
 
   const stats = useMemo(() => {
     if (records.length === 0) return null;
