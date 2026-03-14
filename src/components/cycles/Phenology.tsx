@@ -189,7 +189,9 @@ export default function Phenology({
         photoPath = filePath;
       }
 
-      const types = values.type === "both" ? ["male", "female"] : [values.type];
+      const types = values.type === "both"
+        ? ["female", ...(maleTypes.length > 0 ? maleTypes : ["male"])]
+        : [values.type];
 
       for (const t of types) {
         const row: any = {
