@@ -75,6 +75,7 @@ const App = () => (
                     <Route path="/" element={<HomePage />} />
                     <Route path="/ciclos" element={<Cycles />} />
                     <Route path="/ciclos/novo" element={<NonClientRoute><CycleForm /></NonClientRoute>} />
+                    <Route path="/ciclos/:id/editar" element={<NonClientRoute><CycleForm /></NonClientRoute>} />
                     <Route path="/ciclos/:id" element={<CycleDetail />} />
                     <Route path="/ciclos/:id/avaliacoes" element={<FieldEvaluationList />} />
                     <Route path="/ciclos/:id/avaliacoes/nova" element={<FieldEvaluationForm />} />
