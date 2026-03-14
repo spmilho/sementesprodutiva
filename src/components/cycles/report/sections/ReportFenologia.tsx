@@ -1,23 +1,97 @@
+import CornPlantSvg from "@/components/cycles/phenology/CornPlantSvg";
+
+const STAGES = ["VE", "V1", "V2", "V4", "V6", "V10", "V12", "V14/Vn", "VT", "R1", "R2", "R3", "R4", "R5", "R6"];
+
+function parseBrDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const [d, m, y] = value.split("/").map(Number);
+  if (!d || !m || !y) return null;
+  const dt = new Date(y, m - 1, d, 12, 0, 0);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+function normalizeStage(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const v = value.trim().toUpperCase();
+  return STAGES.includes(v) ? v : null;
+}
+
+function buildStageMap(records: any[]) {
+  const map = new Map<string, any>();
+  records.forEach((r) => {
+    const stage = normalizeStage(r.estadio);
+    if (!stage) return;
+    const current = map.get(stage);
+    if (!current) {
+      map.set(stage, r);
+      return;
+    }
+    const currentDate = parseBrDate(current.data)?.getTime() || 0;
+    const nextDate = parseBrDate(r.data)?.getTime() || 0;
+    if (nextDate < currentDate) map.set(stage, r);
+  });
+  return map;
+}
+
+function getLatestStageIndex(stageMap: Map<string, any>) {
+  let idx = -1;
+  STAGES.forEach((s, i) => {
+    if (stageMap.has(s)) idx = i;
+  });
+  return idx;
+}
+
+function TimelineBlock({ title, records, accent }: { title: string; records: any[]; accent: string }) {
+  const stageMap = buildStageMap(records);
+  const currentIdx = getLatestStageIndex(stageMap);
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#263238", marginBottom: 10 }}>{title}</div>
+      <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8 }}>
+        {STAGES.map((stage, i) => {
+          const rec = stageMap.get(stage);
+          const isReached = i <= currentIdx && !!rec;
+          const isCurrent = i === currentIdx && !!rec;
+
+          return (
+            <div
+              key={stage}
+              style={{
+                minWidth: 84,
+                borderRadius: 12,
+                padding: "8px 6px",
+                textAlign: "center",
+                border: isCurrent ? `2px solid ${accent}` : "1px solid #E0E0E0",
+                background: isCurrent ? "#FFF8E1" : isReached ? "#F1F8E9" : "#FAFAFA",
+              }}
+            >
+              <div style={{ height: 72, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <CornPlantSvg stage={stage} isFuture={!isReached} isCurrent={isCurrent} size={0.7} />
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#263238", marginTop: 2 }}>{stage}</div>
+              {isCurrent && <div style={{ fontSize: 10, fontWeight: 600, color: "#EF6C00" }}>📍 Atual</div>}
+              <div style={{ fontSize: 10, color: "#607D8B", marginTop: 2 }}>{rec?.data || "—"}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function ReportFenologia({ data }: { data: any }) {
+  const femaleRecords = (data.fenologia || []).filter((f: any) => String(f.parental || "").toLowerCase().includes("fême") || String(f.parental || "").toLowerCase().includes("feme"));
+  const maleRecords = (data.fenologia || []).filter((f: any) => {
+    const p = String(f.parental || "").toLowerCase();
+    return p.includes("macho") || p.includes("male");
+  });
+
   return (
     <div className="report-section">
       <div className="section-title">🌾 Fenologia</div>
-      <table className="report-table">
-        <thead>
-          <tr><th>Data</th><th>Parental</th><th>Estádio</th><th>DAP</th><th>Observação</th></tr>
-        </thead>
-        <tbody>
-          {data.fenologia.map((f: any, i: number) => (
-            <tr key={i}>
-              <td>{f.data || "—"}</td>
-              <td><span className={`badge ${f.parental === "Fêmea" ? "badge-green" : "badge-blue"}`}>{f.parental}</span></td>
-              <td style={{ fontWeight: 600 }}>{f.estadio || "—"}</td>
-              <td>{f.dap ?? "—"}</td>
-              <td>{f.observacao || "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <TimelineBlock title="Parental Fêmea" records={femaleRecords} accent="#7E57C2" />
+      <TimelineBlock title="Parental Macho" records={maleRecords} accent="#2E7D32" />
     </div>
   );
 }
