@@ -784,7 +784,8 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
                 variant="outline"
                 className="h-8 text-xs gap-1.5"
                 onClick={() => generateWeatherAnalysisMut.mutate()}
-                disabled={generateWeatherAnalysisMut.isPending}
+                disabled={generateWeatherAnalysisMut.isPending || !isAdmin}
+                title={!isAdmin ? "Apenas administradores podem gerar análises" : undefined}
               >
                 {generateWeatherAnalysisMut.isPending ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
