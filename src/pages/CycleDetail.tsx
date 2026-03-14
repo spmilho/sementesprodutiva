@@ -209,8 +209,10 @@ export default function CycleDetail() {
         </div>
         {!isClient && (
           <div className="flex items-center gap-2 shrink-0">
+            <Button variant="outline" size="sm" onClick={() => navigate(`/ciclos/${id}/editar`)}>
+              <Pencil className="h-4 w-4 mr-1" /> Editar
+            </Button>
             {isAdmin && (
-              <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10">
                     <Trash2 className="h-4 w-4 mr-1" /> Excluir
