@@ -372,6 +372,107 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
     };
   }, [records, gduData]);
 
+  // Fetch latest phenology stage
+  const latestStage = useMemo(() => {
+    if (!phenologyRecords.length) return null;
+    const sorted = [...phenologyRecords].sort((a: any, b: any) => b.observation_date.localeCompare(a.observation_date));
+    return sorted[0]?.stage || null;
+  }, [phenologyRecords]);
+
+  // Fetch planting date for analysis
+  const { data: analysisPlantingDate } = useQuery({
+    queryKey: ["planting-date-weather-analysis", cycleId],
+    queryFn: async () => {
+      if (!cycleId) return null;
+      const { data: actuals } = await (supabase as any)
+        .from("planting_actual").select("planting_date").eq("cycle_id", cycleId)
+        .is("deleted_at", null).order("planting_date", { ascending: true }).limit(1);
+      if (actuals?.length) return actuals[0].planting_date as string;
+      const { data: plans } = await (supabase as any)
+        .from("planting_plan").select("planned_date").eq("cycle_id", cycleId)
+        .is("deleted_at", null).order("planned_date", { ascending: true }).limit(1);
+      if (plans?.length) return plans[0].planned_date as string;
+      return null;
+    },
+    enabled: !!cycleId,
+  });
+
+  // Fetch previous weather analyses
+  const { data: weatherAnalyses = [], refetch: refetchAnalyses } = useQuery({
+    queryKey: ["weather_analyses", cycleId],
+    queryFn: async () => {
+      if (!cycleId) return [];
+      const { data, error } = await (supabase as any)
+        .from("weather_analyses").select("*").eq("cycle_id", cycleId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!cycleId,
+  });
+
+  const latestWeatherAnalysis = weatherAnalyses[0] || null;
+
+  // Build weather summary for AI
+  const weatherSummary = useMemo(() => {
+    if (!stats) return null;
+    const temps = records.filter(r => r.temp_max_c != null);
+    const rads = records.filter(r => r.radiation_mj != null);
+    const hums = records.filter(r => r.humidity_max_pct != null);
+    return {
+      totalDays: stats.days,
+      avgTemp: stats.avgTemp,
+      maxTemp: stats.maxTemp,
+      minTemp: stats.minTemp,
+      daysAbove35: temps.filter(r => (r.temp_max_c ?? 0) > 35).length,
+      daysBelow10: temps.filter(r => (r.temp_min_c ?? 99) < 10).length,
+      avgRadiation: stats.avgRadiation,
+      maxRadiation: rads.length > 0 ? Math.max(...rads.map(r => r.radiation_mj!)) : null,
+      minRadiation: rads.length > 0 ? Math.min(...rads.map(r => r.radiation_mj!)) : null,
+      daysLowRadiation: rads.filter(r => (r.radiation_mj ?? 99) < 14).length,
+      avgHumidity: stats.avgHumidity,
+      maxHumidity: hums.length > 0 ? Math.max(...hums.map(r => r.humidity_max_pct!)) : null,
+      minHumidity: records.filter(r => r.humidity_min_pct != null).length > 0 ? Math.min(...records.filter(r => r.humidity_min_pct != null).map(r => r.humidity_min_pct!)) : null,
+      daysHighHumidity: hums.filter(r => (r.humidity_max_pct ?? 0) > 90).length,
+      totalGdu: stats.totalGdu,
+      totalPrecip: stats.totalPrecip,
+      totalEto: stats.totalEto,
+    };
+  }, [stats, records]);
+
+  // Generate analysis mutation
+  const generateWeatherAnalysisMut = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("weather-analysis", {
+        body: {
+          weatherData: weatherSummary,
+          plantingDate: analysisPlantingDate || null,
+          phenologyStage: latestStage,
+          pivotName: pivotName || "Campo",
+          hybridName: hybridName || null,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      // Persist
+      if (orgId && cycleId) {
+        await (supabase as any).from("weather_analyses").insert({
+          cycle_id: cycleId,
+          org_id: orgId,
+          analysis_text: data.analysis,
+          growth_stage: data.growthStage || latestStage,
+          dap: data.dap,
+        });
+      }
+
+      refetchAnalyses();
+      toast.success("Análise climática atualizada!");
+      return data;
+    },
+    onError: (e: any) => toast.error(e.message || "Erro ao gerar análise"),
+  });
+
   if (records.length === 0) return null;
 
   const hasTemp = sortedData.some(r => r.temp_max_c != null || r.temp_min_c != null);
