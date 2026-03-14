@@ -5,14 +5,39 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function callLovableAI(messages: any[], apiKey: string) {
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "google/gemini-2.5-flash", messages }),
+  });
+  return response;
+}
+
+async function callGeminiDirect(messages: any[], apiKey: string) {
+  const systemMsg = messages.find((m: any) => m.role === "system");
+  const userMsg = messages.find((m: any) => m.role === "user");
+  const contents = [];
+  if (systemMsg) contents.push({ role: "user", parts: [{ text: `[Instrução do sistema]: ${systemMsg.content}` }] });
+  if (systemMsg) contents.push({ role: "model", parts: [{ text: "Entendido. Seguirei essas instruções." }] });
+  if (userMsg) contents.push({ role: "user", parts: [{ text: userMsg.content }] });
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents }),
+    }
+  );
+  return response;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { ndviData, plantingDate, phenologyStage, pivotName, hybridName, filterStartDate } = await req.json();
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("Chave de análise não configurada");
 
     // Calculate DAP
     let dap: number | null = null;
@@ -73,39 +98,48 @@ Seja específico com números. Não invente dados que não foram fornecidos.`;
 
 Redija o parecer técnico de monitoramento.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
+    const messages = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ];
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns minutos." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+    let analysisText = "";
+
+    // Try Lovable AI first
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    let usedFallback = false;
+
+    if (LOVABLE_API_KEY) {
+      const response = await callLovableAI(messages, LOVABLE_API_KEY);
+      if (response.ok) {
+        const data = await response.json();
+        analysisText = data.choices?.[0]?.message?.content || "";
+      } else if (response.status === 402 || response.status === 429) {
+        await response.text();
+        usedFallback = true;
+      } else {
+        const t = await response.text();
+        console.error("Lovable AI error:", response.status, t);
+        usedFallback = true;
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes. Contate o administrador." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("Gateway error:", response.status, t);
-      throw new Error("Erro ao gerar análise");
+    } else {
+      usedFallback = true;
     }
 
-    const data = await response.json();
-    const analysisText = data.choices?.[0]?.message?.content || "Não foi possível gerar a análise.";
+    // Fallback to Gemini direct
+    if (usedFallback || !analysisText) {
+      const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
+      if (!GOOGLE_AI_API_KEY) throw new Error("Nenhuma chave de IA disponível");
+
+      const geminiResp = await callGeminiDirect(messages, GOOGLE_AI_API_KEY);
+      if (!geminiResp.ok) {
+        const t = await geminiResp.text();
+        console.error("Gemini error:", geminiResp.status, t);
+        throw new Error("Erro ao gerar análise via Gemini");
+      }
+      const geminiData = await geminiResp.json();
+      analysisText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "Não foi possível gerar a análise.";
+    }
 
     return new Response(JSON.stringify({
       analysis: analysisText,
