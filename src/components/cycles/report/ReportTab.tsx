@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FileText, Download, Trash2, Loader2, CheckCircle, Eye, Clipboard, Printer } from "lucide-react";
+import { FileText, Trash2, Loader2, CheckCircle, Eye, Printer, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { generateHtmlReport, openHtmlInNewTab } from "./generateHtmlReport";
+import { generateReportData } from "./generateHtmlReport";
 
 interface ReportTabProps {
   cycleId: string;
@@ -21,9 +21,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
   const [generating, setGenerating] = useState(false);
   const [progressMsg, setProgressMsg] = useState("");
   const [progressPct, setProgressPct] = useState(0);
-  const [lastHtml, setLastHtml] = useState<string | null>(null);
 
-  // Fetch previous reports
   const { data: reports = [], isLoading: loadingReports } = useQuery({
     queryKey: ["report-attachments", cycleId],
     queryFn: async () => {
@@ -45,16 +43,18 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
     setProgressPct(0);
 
     try {
-      const result = await generateHtmlReport(cycleId, cycle, (msg, current, total) => {
+      const reportData = await generateReportData(cycleId, cycle, (msg, current, total) => {
         setProgressMsg(msg);
         setProgressPct(Math.round((current / total) * 100));
       });
 
-      setLastHtml(result.html);
-      setProgressMsg("✅ Relatório gerado com sucesso!");
+      // Save to sessionStorage and open new tab
+      sessionStorage.setItem("reportData", JSON.stringify(reportData));
+      window.open("/report", "_blank");
+
+      setProgressMsg("✅ Relatório aberto em nova aba!");
       setProgressPct(100);
-      toast.success("Relatório gerado e salvo com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["report-attachments", cycleId] });
+      toast.success("Relatório aberto em nova aba!");
 
       setTimeout(() => {
         setGenerating(false);
@@ -68,45 +68,20 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
       setProgressMsg("");
       setProgressPct(0);
     }
-  }, [cycleId, cycle, queryClient]);
+  }, [cycleId, cycle]);
 
-  const handleCopyHtml = useCallback(async () => {
-    if (!lastHtml) {
-      toast.error("Gere um relatório primeiro.");
-      return;
-    }
-    await navigator.clipboard.writeText(lastHtml);
-    toast.success("HTML copiado para a área de transferência!");
-  }, [lastHtml]);
-
-  const handleViewReport = useCallback(async (fileUrl: string, fileName: string) => {
-    try {
-      // Extract storage path from signed URL or use file_url as path
-      const res = await fetch(fileUrl);
-      if (!res.ok) throw new Error("Falha ao baixar relatório");
-      const htmlText = await res.text();
-      openHtmlInNewTab(htmlText);
-    } catch (err: any) {
-      console.error("Erro ao visualizar relatório:", err);
-      toast.error("Erro ao abrir relatório. Tente baixar o arquivo.");
-    }
-  }, []);
-
-  const handlePrintReport = useCallback(async (fileUrl: string) => {
+  const handleViewReport = useCallback(async (fileUrl: string) => {
     try {
       const res = await fetch(fileUrl);
-      if (!res.ok) throw new Error("Falha ao baixar relatório");
+      if (!res.ok) throw new Error("Falha ao baixar");
       const htmlText = await res.text();
-      const newWindow = window.open('', '_blank');
+      const newWindow = window.open("", "_blank");
       if (newWindow) {
         newWindow.document.write(htmlText);
         newWindow.document.close();
-        newWindow.addEventListener("load", () => {
-          setTimeout(() => newWindow.print(), 500);
-        });
       }
-    } catch (err: any) {
-      toast.error("Erro ao imprimir relatório.");
+    } catch {
+      toast.error("Erro ao abrir relatório.");
     }
   }, []);
 
@@ -127,7 +102,6 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Generate Button */}
       <Card className="border-primary/20">
         <CardContent className="p-8 text-center space-y-4">
           {!generating ? (
@@ -138,24 +112,16 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
               <div>
                 <h2 className="text-xl font-bold text-foreground">📄 Gerar Relatório Completo</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Relatório profissional gerado por análise avançada com todos os dados do ciclo.
+                  Relatório profissional com gráficos Recharts, tabelas e fotos — 100% client-side.
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  O relatório abre em nova aba e é salvo automaticamente no histórico.
+                  Abre em nova aba. Use "Imprimir / Salvar PDF" para gerar o PDF.
                 </p>
               </div>
-              <div className="flex items-center justify-center gap-3 flex-wrap">
-                <Button size="lg" className="px-8" onClick={handleGenerate}>
-                  <FileText className="h-5 w-5 mr-2" />
-                  Gerar Relatório
-                </Button>
-                {lastHtml && (
-                  <Button size="lg" variant="outline" onClick={handleCopyHtml}>
-                    <Clipboard className="h-4 w-4 mr-2" />
-                    Copiar HTML
-                  </Button>
-                )}
-              </div>
+              <Button size="lg" className="px-8" onClick={handleGenerate}>
+                <FileText className="h-5 w-5 mr-2" />
+                Gerar Relatório
+              </Button>
             </>
           ) : (
             <div className="space-y-4 max-w-md mx-auto">
@@ -172,11 +138,10 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
         </CardContent>
       </Card>
 
-      {/* Report History */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Histórico de Relatórios</CardTitle>
-          <CardDescription>Relatórios gerados anteriormente para este ciclo.</CardDescription>
+          <CardDescription>Relatórios gerados anteriormente.</CardDescription>
         </CardHeader>
         <CardContent>
           {loadingReports ? (
@@ -184,9 +149,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : reports.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Nenhum relatório gerado ainda.
-            </p>
+            <p className="text-sm text-muted-foreground text-center py-8">Nenhum relatório salvo.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -219,48 +182,15 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
                       <div className="flex items-center justify-end gap-1">
                         {r.file_url && (
                           <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="Visualizar"
-                              onClick={() => handleViewReport(r.file_url, r.file_name)}
-                            >
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Visualizar" onClick={() => handleViewReport(r.file_url)}>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="Imprimir"
-                              onClick={() => handlePrintReport(r.file_url)}
-                            >
-                              <Printer className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="Baixar"
-                              onClick={() => {
-                                const a = document.createElement("a");
-                                a.href = r.file_url;
-                                a.download = r.file_name;
-                                a.click();
-                              }}
-                            >
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Baixar" onClick={() => { const a = document.createElement("a"); a.href = r.file_url; a.download = r.file_name; a.click(); }}>
                               <Download className="h-4 w-4" />
                             </Button>
                           </>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          title="Excluir"
-                          onClick={() => deleteMutation.mutate(r.id)}
-                          disabled={deleteMutation.isPending}
-                        >
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Excluir" onClick={() => deleteMutation.mutate(r.id)} disabled={deleteMutation.isPending}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
