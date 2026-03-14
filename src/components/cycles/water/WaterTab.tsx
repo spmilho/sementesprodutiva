@@ -293,7 +293,7 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
       </div>
 
       {/* Weather charts */}
-      <WeatherCharts records={weatherRecords} cycleId={cycleId} />
+      <WeatherCharts records={weatherRecords} cycleId={cycleId} orgId={orgId} pivotName={pivotName} hybridName={hybridName} />
 
       {/* Weather delete option */}
       {weatherRecords.length > 0 && (

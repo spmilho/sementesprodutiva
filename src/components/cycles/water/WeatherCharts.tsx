@@ -40,6 +40,9 @@ interface PhenologyRecord {
 interface Props {
   records: WeatherRecord[];
   cycleId?: string;
+  orgId?: string;
+  pivotName?: string;
+  hybridName?: string;
 }
 
 const T_BASE = 10;
