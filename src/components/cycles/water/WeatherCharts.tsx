@@ -429,6 +429,53 @@ export default function WeatherCharts({ records, cycleId }: Props) {
         </Card>
       )}
 
+      {/* GDU by Female Planting Date */}
+      {hasGdu && uniqueFemalePlantingDates.length > 0 && gduByPlantingData.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <h4 className="font-medium text-xs mb-2 flex items-center gap-1">
+              <Flame className="h-3.5 w-3.5 text-orange-500" />
+              GDU Acumulado por Data de Plantio — Fêmea
+            </h4>
+            <ResponsiveContainer width="100%" height={300}>
+              <ComposedChart data={gduByPlantingData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis {...chartXAxisProps} />
+                <YAxis tick={{ fontSize: 9 }} label={{ value: "GDU acumulado", angle: -90, position: "insideLeft", fontSize: 10 }} />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    return (
+                      <div className="bg-popover border rounded-md p-2 shadow-md text-xs space-y-1">
+                        <p className="font-medium">{label}</p>
+                        {payload.filter((p: any) => p.value != null).map((p: any) => (
+                          <p key={p.dataKey} style={{ color: p.color }}>
+                            {p.name}: {p.value}
+                          </p>
+                        ))}
+                      </div>
+                    );
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                {uniqueFemalePlantingDates.map((plantDate, i) => (
+                  <Line
+                    key={plantDate}
+                    type="monotone"
+                    dataKey={`gdu_${plantDate}`}
+                    name={`Fêmea ${toDateLabel(plantDate)}`}
+                    stroke={PLANTING_COLORS[i % PLANTING_COLORS.length]}
+                    strokeWidth={2}
+                    dot={false}
+                    connectNulls={false}
+                  />
+                ))}
+              </ComposedChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Temperature chart */}
       {hasTemp && (
         <Card>
