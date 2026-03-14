@@ -814,7 +814,8 @@ export default function NdviSection({
                 variant="outline"
                 className="h-8 text-xs gap-1.5"
                 onClick={() => generateAnalysisMut.mutate()}
-                disabled={generateAnalysisMut.isPending}
+                disabled={generateAnalysisMut.isPending || !isAdmin}
+                title={!isAdmin ? "Apenas administradores podem gerar análises" : undefined}
               >
                 {generateAnalysisMut.isPending ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
