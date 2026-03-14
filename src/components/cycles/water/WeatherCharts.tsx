@@ -162,43 +162,48 @@ export default function WeatherCharts({ records, cycleId }: Props) {
     enabled: !!cycleId,
   });
 
-  // Fetch female planting dates (prioriza realizado; fallback para planejamento)
+  // Generic fetch planting dates by type
+  const fetchPlantingDates = async (type: string): Promise<string[]> => {
+    if (!cycleId) return [];
+    const [actualRes, planRes] = await Promise.all([
+      (supabase as any)
+        .from("planting_actual")
+        .select("planting_date")
+        .eq("cycle_id", cycleId)
+        .eq("type", type)
+        .is("deleted_at", null)
+        .order("planting_date"),
+      (supabase as any)
+        .from("planting_plan")
+        .select("planned_date")
+        .eq("cycle_id", cycleId)
+        .eq("type", type)
+        .is("deleted_at", null)
+        .order("planned_date"),
+    ]);
+    if (actualRes.error) throw actualRes.error;
+    if (planRes.error) throw planRes.error;
+    const actualDates = (actualRes.data || []).map((p: any) => normalizeDateKey(p.planting_date)).filter(Boolean) as string[];
+    const planDates = (planRes.data || []).map((p: any) => normalizeDateKey(p.planned_date)).filter(Boolean) as string[];
+    const sourceDates = actualDates.length > 0 ? actualDates : planDates;
+    return Array.from(new Set(sourceDates)).sort((a, b) => a.localeCompare(b));
+  };
+
   const { data: femalePlantingDates = [] } = useQuery({
     queryKey: ["female_planting_dates_for_gdu", cycleId],
-    queryFn: async () => {
-      if (!cycleId) return [] as string[];
+    queryFn: () => fetchPlantingDates("female"),
+    enabled: !!cycleId,
+  });
 
-      const [actualRes, planRes] = await Promise.all([
-        (supabase as any)
-          .from("planting_actual")
-          .select("planting_date")
-          .eq("cycle_id", cycleId)
-          .eq("type", "female")
-          .is("deleted_at", null)
-          .order("planting_date"),
-        (supabase as any)
-          .from("planting_plan")
-          .select("planned_date")
-          .eq("cycle_id", cycleId)
-          .eq("type", "female")
-          .is("deleted_at", null)
-          .order("planned_date"),
-      ]);
+  const { data: male1PlantingDates = [] } = useQuery({
+    queryKey: ["male1_planting_dates_for_gdu", cycleId],
+    queryFn: () => fetchPlantingDates("male_1"),
+    enabled: !!cycleId,
+  });
 
-      if (actualRes.error) throw actualRes.error;
-      if (planRes.error) throw planRes.error;
-
-      const actualDates = (actualRes.data || [])
-        .map((p: any) => normalizeDateKey(p.planting_date))
-        .filter(Boolean) as string[];
-
-      const planDates = (planRes.data || [])
-        .map((p: any) => normalizeDateKey(p.planned_date))
-        .filter(Boolean) as string[];
-
-      const sourceDates = actualDates.length > 0 ? actualDates : planDates;
-      return Array.from(new Set(sourceDates)).sort((a, b) => a.localeCompare(b));
-    },
+  const { data: male2PlantingDates = [] } = useQuery({
+    queryKey: ["male2_planting_dates_for_gdu", cycleId],
+    queryFn: () => fetchPlantingDates("male_2"),
     enabled: !!cycleId,
   });
 
@@ -271,73 +276,67 @@ export default function WeatherCharts({ records, cycleId }: Props) {
     "hsl(160 70% 40%)", "hsl(30 80% 50%)", "hsl(220 70% 55%)",
   ];
 
-  const uniqueFemalePlantingDates = useMemo(() => {
+  const MALE1_COLORS = [
+    "hsl(210 80% 50%)", "hsl(180 70% 40%)", "hsl(240 60% 55%)",
+    "hsl(150 70% 45%)", "hsl(270 60% 50%)", "hsl(195 80% 45%)",
+  ];
+
+  const MALE2_COLORS = [
+    "hsl(25 85% 50%)", "hsl(0 70% 50%)", "hsl(45 80% 45%)",
+    "hsl(350 65% 50%)", "hsl(15 75% 55%)", "hsl(40 70% 50%)",
+  ];
+
+  const dedup = (dates: string[]) => {
     const seen = new Set<string>();
-    return femalePlantingDates
-      .filter(Boolean)
-      .filter((d) => {
-        if (seen.has(d)) return false;
-        seen.add(d);
-        return true;
-      });
-  }, [femalePlantingDates]);
+    return dates.filter(Boolean).filter((d) => { if (seen.has(d)) return false; seen.add(d); return true; });
+  };
 
-  const gduByPlantingData = useMemo(() => {
-    if (uniqueFemalePlantingDates.length === 0 || sortedData.length === 0) return [];
+  const uniqueFemalePlantingDates = useMemo(() => dedup(femalePlantingDates), [femalePlantingDates]);
+  const uniqueMale1PlantingDates = useMemo(() => dedup(male1PlantingDates), [male1PlantingDates]);
+  const uniqueMale2PlantingDates = useMemo(() => dedup(male2PlantingDates), [male2PlantingDates]);
 
-    // Build a map of date -> daily GDU from weather records
-    const dailyGduMap = new Map<string, number>();
+  // Build daily GDU map once
+  const dailyGduMap = useMemo(() => {
+    const m = new Map<string, number>();
     sortedData.forEach(r => {
       const key = normalizeDateKey(r.record_date);
-      if (key) {
-        dailyGduMap.set(key, calcGDU(r.temp_max_c, r.temp_min_c));
-      }
+      if (key) m.set(key, calcGDU(r.temp_max_c, r.temp_min_c));
     });
+    return m;
+  }, [sortedData]);
 
-    // Determine full date range: from earliest planting date to last weather date
-    const earliestPlanting = uniqueFemalePlantingDates.reduce((a, b) => a < b ? a : b);
+  // Generic builder for GDU by planting data
+  const buildGduByPlanting = (plantingDates: string[], prefix: string) => {
+    if (plantingDates.length === 0 || sortedData.length === 0) return [];
+    const earliestPlanting = plantingDates.reduce((a, b) => a < b ? a : b);
     const lastWeatherDate = sortedData[sortedData.length - 1].record_date;
     const startTs = dateKeyToTimestamp(earliestPlanting);
     const endTs = dateKeyToTimestamp(lastWeatherDate);
-
-    // Generate all dates from earliest planting to last weather record
     const allDates: string[] = [];
     for (let ts = startTs; ts <= endTs; ts += 86400000) {
       const d = new Date(ts);
-      const yyyy = d.getUTCFullYear();
-      const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-      const dd = String(d.getUTCDate()).padStart(2, "0");
-      allDates.push(`${yyyy}-${mm}-${dd}`);
+      allDates.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`);
     }
-
-    // For each date in full range, compute accumulated GDU per planting date
-    // HU starts D+1 after planting (e.g. planted 03 -> count from 04)
     return allDates.map(dateStr => {
       const currentTs = dateKeyToTimestamp(dateStr);
-      const label = toDateLabel(dateStr);
-      const row: Record<string, any> = { dateLabel: label, record_date: dateStr };
-
-      uniqueFemalePlantingDates.forEach((plantDate) => {
-        const plantTs = dateKeyToTimestamp(plantDate);
-        // D+1: skip the planting day itself, start counting from the next day
-        const startTs = plantTs + 86400000;
-        if (currentTs < startTs) {
-          row[`gdu_${plantDate}`] = null;
-          return;
-        }
+      const row: Record<string, any> = { dateLabel: toDateLabel(dateStr), record_date: dateStr };
+      plantingDates.forEach((plantDate) => {
+        const plantStartTs = dateKeyToTimestamp(plantDate) + 86400000;
+        if (currentTs < plantStartTs) { row[`${prefix}_${plantDate}`] = null; return; }
         let acc = 0;
         for (const [dateKey, dailyGdu] of dailyGduMap.entries()) {
           const ts = dateKeyToTimestamp(dateKey);
-          if (ts >= startTs && ts <= currentTs) {
-            acc += dailyGdu;
-          }
+          if (ts >= plantStartTs && ts <= currentTs) acc += dailyGdu;
         }
-        row[`gdu_${plantDate}`] = Math.round(acc);
+        row[`${prefix}_${plantDate}`] = Math.round(acc);
       });
-
       return row;
     });
-  }, [sortedData, uniqueFemalePlantingDates]);
+  };
+
+  const gduByPlantingData = useMemo(() => buildGduByPlanting(uniqueFemalePlantingDates, "gdu"), [sortedData, uniqueFemalePlantingDates, dailyGduMap]);
+  const gduByMale1Data = useMemo(() => buildGduByPlanting(uniqueMale1PlantingDates, "gdu_m1"), [sortedData, uniqueMale1PlantingDates, dailyGduMap]);
+  const gduByMale2Data = useMemo(() => buildGduByPlanting(uniqueMale2PlantingDates, "gdu_m2"), [sortedData, uniqueMale2PlantingDates, dailyGduMap]);
 
   const stats = useMemo(() => {
     if (records.length === 0) return null;
@@ -441,116 +440,104 @@ export default function WeatherCharts({ records, cycleId }: Props) {
         </div>
       )}
 
-      {/* GDU chart */}
-      {hasGdu && (
-        <Card>
-          <CardContent className="p-4">
-            <h4 className="font-medium text-xs mb-2 flex items-center gap-1">
-              <Flame className="h-3.5 w-3.5 text-orange-500" />
-              Unidades de Calor — GDU/HU diário (Tbase={T_BASE}°C)
-            </h4>
-            <ResponsiveContainer width="100%" height={280}>
-              <ComposedChart data={gduData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis {...chartXAxisProps} />
-                <YAxis yAxisId="left" tick={{ fontSize: 9 }} label={{ value: "GDU/dia", angle: -90, position: "insideLeft", fontSize: 10 }} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 9 }} label={{ value: "GDU acum.", angle: 90, position: "insideRight", fontSize: 10 }} />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload?.length) return null;
-                    const data = payload[0]?.payload;
-                    return (
-                      <div className="bg-popover border rounded-md p-2 shadow-md text-xs space-y-1">
-                        <p className="font-medium">{label} {data?.stage && <span className="text-primary font-bold ml-1">[{data.stage}]</span>}</p>
-                        {payload.map((p: any) => (
-                          <p key={p.dataKey} style={{ color: p.color }}>
-                            {p.name}: {p.value}
-                          </p>
-                        ))}
-                      </div>
-                    );
-                  }}
-                />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                {renderStageReferenceLines("left")}
-                <Bar yAxisId="left" dataKey="dailyGdu" name="GDU diário" fill="hsl(25 85% 55%)" radius={[2, 2, 0, 0]} />
-                <Line yAxisId="right" type="monotone" dataKey="accGdu" name="GDU acumulado" stroke="hsl(0 70% 45%)" strokeWidth={2} dot={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* HU Accumulated per Female Planting Block — mini dashboard */}
+      {/* HU Accumulated per Female Planting Block — cards + chart */}
       {hasGdu && uniqueFemalePlantingDates.length > 0 && gduByPlantingData.length > 0 && (() => {
         const lastRow = gduByPlantingData[gduByPlantingData.length - 1];
         return (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {uniqueFemalePlantingDates.map((plantDate, i) => {
-              const accValue = lastRow?.[`gdu_${plantDate}`];
-              return (
-                <Card key={plantDate}>
-                  <CardContent className="p-3 flex items-center gap-2">
-                    <Flame className="h-6 w-6 shrink-0" style={{ color: PLANTING_COLORS[i % PLANTING_COLORS.length] }} />
-                    <div>
-                      <p className="text-[10px] text-muted-foreground">HU Fêmea {toDateLabel(plantDate)}</p>
-                      <p className="text-sm font-bold">{accValue ?? "—"}</p>
-                      <p className="text-[10px] text-muted-foreground">D+1 a partir de {toDateLabel(plantDate)}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {uniqueFemalePlantingDates.map((plantDate, i) => (
+                <Card key={plantDate}><CardContent className="p-3 flex items-center gap-2">
+                  <Flame className="h-6 w-6 shrink-0" style={{ color: PLANTING_COLORS[i % PLANTING_COLORS.length] }} />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">HU Fêmea {toDateLabel(plantDate)}</p>
+                    <p className="text-sm font-bold">{lastRow?.[`gdu_${plantDate}`] ?? "—"}</p>
+                    <p className="text-[10px] text-muted-foreground">D+1 a partir de {toDateLabel(plantDate)}</p>
+                  </div>
+                </CardContent></Card>
+              ))}
+            </div>
+            <Card><CardContent className="p-4">
+              <h4 className="font-medium text-xs mb-2 flex items-center gap-1"><Flame className="h-3.5 w-3.5 text-orange-500" /> GDU Acumulado por Data de Plantio — Fêmea (D+1)</h4>
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart data={gduByPlantingData}>
+                  <CartesianGrid strokeDasharray="3 3" /><XAxis {...chartXAxisProps} />
+                  <YAxis tick={{ fontSize: 9 }} label={{ value: "GDU acumulado", angle: -90, position: "insideLeft", fontSize: 10 }} />
+                  <Tooltip content={({ active, payload, label }) => { if (!active || !payload?.length) return null; return (<div className="bg-popover border rounded-md p-2 shadow-md text-xs space-y-1"><p className="font-medium">{label}</p>{payload.filter((p: any) => p.value != null).map((p: any) => (<p key={p.dataKey} style={{ color: p.color }}>{p.name}: {p.value}</p>))}</div>); }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  {uniqueFemalePlantingDates.map((plantDate, i) => (<Line key={plantDate} type="monotone" dataKey={`gdu_${plantDate}`} name={`Fêmea ${toDateLabel(plantDate)}`} stroke={PLANTING_COLORS[i % PLANTING_COLORS.length]} strokeWidth={2} dot={false} connectNulls={false} />))}
+                </ComposedChart>
+              </ResponsiveContainer>
+            </CardContent></Card>
+          </>
         );
       })()}
 
-      {/* GDU by Female Planting Date */}
-      {hasGdu && uniqueFemalePlantingDates.length > 0 && gduByPlantingData.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <h4 className="font-medium text-xs mb-2 flex items-center gap-1">
-              <Flame className="h-3.5 w-3.5 text-orange-500" />
-              GDU Acumulado por Data de Plantio — Fêmea (D+1)
-            </h4>
-            <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={gduByPlantingData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis {...chartXAxisProps} />
-                <YAxis tick={{ fontSize: 9 }} label={{ value: "GDU acumulado", angle: -90, position: "insideLeft", fontSize: 10 }} />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload?.length) return null;
-                    return (
-                      <div className="bg-popover border rounded-md p-2 shadow-md text-xs space-y-1">
-                        <p className="font-medium">{label}</p>
-                        {payload.filter((p: any) => p.value != null).map((p: any) => (
-                          <p key={p.dataKey} style={{ color: p.color }}>
-                            {p.name}: {p.value}
-                          </p>
-                        ))}
-                      </div>
-                    );
-                  }}
-                />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                {uniqueFemalePlantingDates.map((plantDate, i) => (
-                  <Line
-                    key={plantDate}
-                    type="monotone"
-                    dataKey={`gdu_${plantDate}`}
-                    name={`Fêmea ${toDateLabel(plantDate)}`}
-                    stroke={PLANTING_COLORS[i % PLANTING_COLORS.length]}
-                    strokeWidth={2}
-                    dot={false}
-                    connectNulls={false}
-                  />
-                ))}
-              </ComposedChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
+      {/* HU Accumulated per Male 1 Planting Block — cards + chart */}
+      {hasGdu && uniqueMale1PlantingDates.length > 0 && gduByMale1Data.length > 0 && (() => {
+        const lastRow = gduByMale1Data[gduByMale1Data.length - 1];
+        return (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {uniqueMale1PlantingDates.map((plantDate, i) => (
+                <Card key={plantDate}><CardContent className="p-3 flex items-center gap-2">
+                  <Flame className="h-6 w-6 shrink-0" style={{ color: MALE1_COLORS[i % MALE1_COLORS.length] }} />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">HU Macho 1 {toDateLabel(plantDate)}</p>
+                    <p className="text-sm font-bold">{lastRow?.[`gdu_m1_${plantDate}`] ?? "—"}</p>
+                    <p className="text-[10px] text-muted-foreground">D+1 a partir de {toDateLabel(plantDate)}</p>
+                  </div>
+                </CardContent></Card>
+              ))}
+            </div>
+            <Card><CardContent className="p-4">
+              <h4 className="font-medium text-xs mb-2 flex items-center gap-1"><Flame className="h-3.5 w-3.5 text-blue-500" /> GDU Acumulado por Data de Plantio — Macho 1 (D+1)</h4>
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart data={gduByMale1Data}>
+                  <CartesianGrid strokeDasharray="3 3" /><XAxis {...chartXAxisProps} />
+                  <YAxis tick={{ fontSize: 9 }} label={{ value: "GDU acumulado", angle: -90, position: "insideLeft", fontSize: 10 }} />
+                  <Tooltip content={({ active, payload, label }) => { if (!active || !payload?.length) return null; return (<div className="bg-popover border rounded-md p-2 shadow-md text-xs space-y-1"><p className="font-medium">{label}</p>{payload.filter((p: any) => p.value != null).map((p: any) => (<p key={p.dataKey} style={{ color: p.color }}>{p.name}: {p.value}</p>))}</div>); }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  {uniqueMale1PlantingDates.map((plantDate, i) => (<Line key={plantDate} type="monotone" dataKey={`gdu_m1_${plantDate}`} name={`Macho 1 ${toDateLabel(plantDate)}`} stroke={MALE1_COLORS[i % MALE1_COLORS.length]} strokeWidth={2} dot={false} connectNulls={false} />))}
+                </ComposedChart>
+              </ResponsiveContainer>
+            </CardContent></Card>
+          </>
+        );
+      })()}
+
+      {/* HU Accumulated per Male 2 Planting Block — cards + chart */}
+      {hasGdu && uniqueMale2PlantingDates.length > 0 && gduByMale2Data.length > 0 && (() => {
+        const lastRow = gduByMale2Data[gduByMale2Data.length - 1];
+        return (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {uniqueMale2PlantingDates.map((plantDate, i) => (
+                <Card key={plantDate}><CardContent className="p-3 flex items-center gap-2">
+                  <Flame className="h-6 w-6 shrink-0" style={{ color: MALE2_COLORS[i % MALE2_COLORS.length] }} />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">HU Macho 2 {toDateLabel(plantDate)}</p>
+                    <p className="text-sm font-bold">{lastRow?.[`gdu_m2_${plantDate}`] ?? "—"}</p>
+                    <p className="text-[10px] text-muted-foreground">D+1 a partir de {toDateLabel(plantDate)}</p>
+                  </div>
+                </CardContent></Card>
+              ))}
+            </div>
+            <Card><CardContent className="p-4">
+              <h4 className="font-medium text-xs mb-2 flex items-center gap-1"><Flame className="h-3.5 w-3.5 text-orange-500" /> GDU Acumulado por Data de Plantio — Macho 2 (D+1)</h4>
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart data={gduByMale2Data}>
+                  <CartesianGrid strokeDasharray="3 3" /><XAxis {...chartXAxisProps} />
+                  <YAxis tick={{ fontSize: 9 }} label={{ value: "GDU acumulado", angle: -90, position: "insideLeft", fontSize: 10 }} />
+                  <Tooltip content={({ active, payload, label }) => { if (!active || !payload?.length) return null; return (<div className="bg-popover border rounded-md p-2 shadow-md text-xs space-y-1"><p className="font-medium">{label}</p>{payload.filter((p: any) => p.value != null).map((p: any) => (<p key={p.dataKey} style={{ color: p.color }}>{p.name}: {p.value}</p>))}</div>); }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  {uniqueMale2PlantingDates.map((plantDate, i) => (<Line key={plantDate} type="monotone" dataKey={`gdu_m2_${plantDate}`} name={`Macho 2 ${toDateLabel(plantDate)}`} stroke={MALE2_COLORS[i % MALE2_COLORS.length]} strokeWidth={2} dot={false} connectNulls={false} />))}
+                </ComposedChart>
+              </ResponsiveContainer>
+            </CardContent></Card>
+          </>
+        );
+      })()}
 
       {/* Temperature chart */}
       {hasTemp && (
