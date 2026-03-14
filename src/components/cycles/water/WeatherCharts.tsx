@@ -162,6 +162,24 @@ export default function WeatherCharts({ records, cycleId }: Props) {
     enabled: !!cycleId,
   });
 
+  // Fetch female planting dates
+  const { data: femalePlantings = [] } = useQuery({
+    queryKey: ["female_plantings_for_gdu", cycleId],
+    queryFn: async () => {
+      if (!cycleId) return [];
+      const { data, error } = await (supabase as any)
+        .from("planting_actual")
+        .select("id, planting_date, type, actual_area")
+        .eq("cycle_id", cycleId)
+        .eq("type", "female")
+        .is("deleted_at", null)
+        .order("planting_date");
+      if (error) throw error;
+      return (data || []) as { id: string; planting_date: string; type: string; actual_area: number }[];
+    },
+    enabled: !!cycleId,
+  });
+
   const sortedData = useMemo(() => {
     return [...records]
       .map((r) => {
@@ -224,6 +242,59 @@ export default function WeatherCharts({ records, cycleId }: Props) {
       };
     });
   }, [sortedData, stageMap]);
+
+  // GDU per female planting date — each planting date gets its own accumulated GDU line
+  const PLANTING_COLORS = [
+    "hsl(280 70% 50%)", "hsl(200 80% 45%)", "hsl(340 70% 50%)",
+    "hsl(160 70% 40%)", "hsl(30 80% 50%)", "hsl(220 70% 55%)",
+  ];
+
+  const uniqueFemalePlantingDates = useMemo(() => {
+    const seen = new Set<string>();
+    return femalePlantings
+      .map(p => normalizeDateKey(p.planting_date))
+      .filter(Boolean)
+      .filter(d => { if (seen.has(d!)) return false; seen.add(d!); return true; }) as string[];
+  }, [femalePlantings]);
+
+  const gduByPlantingData = useMemo(() => {
+    if (uniqueFemalePlantingDates.length === 0 || sortedData.length === 0) return [];
+
+    // Build a map of date -> daily GDU
+    const dailyGduMap = new Map<string, number>();
+    sortedData.forEach(r => {
+      const key = normalizeDateKey(r.record_date);
+      if (key) {
+        dailyGduMap.set(key, calcGDU(r.temp_max_c, r.temp_min_c));
+      }
+    });
+
+    // For each weather date, compute accumulated GDU from each planting date
+    return sortedData.map(r => {
+      const currentDate = normalizeDateKey(r.record_date);
+      const currentTs = currentDate ? dateKeyToTimestamp(currentDate) : 0;
+      const row: Record<string, any> = { dateLabel: r.dateLabel, record_date: r.record_date };
+
+      uniqueFemalePlantingDates.forEach((plantDate) => {
+        const plantTs = dateKeyToTimestamp(plantDate);
+        if (currentTs < plantTs) {
+          row[`gdu_${plantDate}`] = null; // Before planting — no data
+          return;
+        }
+        // Accumulate GDU from planting date to current date
+        let acc = 0;
+        for (const [dateKey, dailyGdu] of dailyGduMap.entries()) {
+          const ts = dateKeyToTimestamp(dateKey);
+          if (ts >= plantTs && ts <= currentTs) {
+            acc += dailyGdu;
+          }
+        }
+        row[`gdu_${plantDate}`] = Math.round(acc);
+      });
+
+      return row;
+    });
+  }, [sortedData, uniqueFemalePlantingDates]);
 
   const stats = useMemo(() => {
     if (records.length === 0) return null;
@@ -352,6 +423,53 @@ export default function WeatherCharts({ records, cycleId }: Props) {
                 {renderStageReferenceLines("left")}
                 <Bar yAxisId="left" dataKey="dailyGdu" name="GDU diário" fill="hsl(25 85% 55%)" radius={[2, 2, 0, 0]} />
                 <Line yAxisId="right" type="monotone" dataKey="accGdu" name="GDU acumulado" stroke="hsl(0 70% 45%)" strokeWidth={2} dot={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* GDU by Female Planting Date */}
+      {hasGdu && uniqueFemalePlantingDates.length > 0 && gduByPlantingData.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <h4 className="font-medium text-xs mb-2 flex items-center gap-1">
+              <Flame className="h-3.5 w-3.5 text-orange-500" />
+              GDU Acumulado por Data de Plantio — Fêmea
+            </h4>
+            <ResponsiveContainer width="100%" height={300}>
+              <ComposedChart data={gduByPlantingData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis {...chartXAxisProps} />
+                <YAxis tick={{ fontSize: 9 }} label={{ value: "GDU acumulado", angle: -90, position: "insideLeft", fontSize: 10 }} />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    return (
+                      <div className="bg-popover border rounded-md p-2 shadow-md text-xs space-y-1">
+                        <p className="font-medium">{label}</p>
+                        {payload.filter((p: any) => p.value != null).map((p: any) => (
+                          <p key={p.dataKey} style={{ color: p.color }}>
+                            {p.name}: {p.value}
+                          </p>
+                        ))}
+                      </div>
+                    );
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                {uniqueFemalePlantingDates.map((plantDate, i) => (
+                  <Line
+                    key={plantDate}
+                    type="monotone"
+                    dataKey={`gdu_${plantDate}`}
+                    name={`Fêmea ${toDateLabel(plantDate)}`}
+                    stroke={PLANTING_COLORS[i % PLANTING_COLORS.length]}
+                    strokeWidth={2}
+                    dot={false}
+                    connectNulls={false}
+                  />
+                ))}
               </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
