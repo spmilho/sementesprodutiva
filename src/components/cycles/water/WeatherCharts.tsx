@@ -407,6 +407,12 @@ export default function WeatherCharts({ records, cycleId }: Props) {
             <Thermometer className="h-6 w-6 text-red-500 shrink-0" />
             <div><p className="text-[10px] text-muted-foreground">Temp. Média</p><p className="text-sm font-bold">{stats.avgTemp.toFixed(1)}°C</p><p className="text-[10px] text-muted-foreground">{stats.minTemp.toFixed(1)} — {stats.maxTemp.toFixed(1)}</p></div>
           </CardContent></Card>
+          {hasRadiation && stats.avgRadiation > 0 && (
+            <Card><CardContent className="p-3 flex items-center gap-2">
+              <Sun className="h-6 w-6 text-amber-500 shrink-0" />
+              <div><p className="text-[10px] text-muted-foreground">Rad. Solar Média</p><p className="text-sm font-bold">{stats.avgRadiation.toFixed(1)} MJ/m²</p></div>
+            </CardContent></Card>
+          )}
           <Card><CardContent className="p-3 flex items-center gap-2">
             <Droplets className="h-6 w-6 text-blue-500 shrink-0" />
             <div><p className="text-[10px] text-muted-foreground">UR Média</p><p className="text-sm font-bold">{stats.avgHumidity.toFixed(0)}%</p></div>
