@@ -122,6 +122,9 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
 
     const actualStart = chartStart < today ? chartStart : addDays(today, -2);
 
+    // Track which planting windows have already started (for cumulative unique area)
+    const windowStarted = new Set<number>();
+
     const data: any[] = [];
     let current = actualStart;
     let accHa = 0;
@@ -137,9 +140,14 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
         const key = `p${w.index}`;
         entry[key] = inWindow ? w.area_ha : 0;
         if (inWindow) totalHaDay += w.area_ha;
+
+        // Accumulate area only on the first day the window opens
+        if (inWindow && !windowStarted.has(w.index)) {
+          windowStarted.add(w.index);
+          accHa += w.area_ha;
+        }
       });
 
-      accHa += totalHaDay;
       entry.totalHa = totalHaDay;
       entry.accHa = Math.round(accHa * 10) / 10;
 
