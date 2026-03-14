@@ -601,28 +601,116 @@ export function openHtmlInNewTab(html: string) {
   newWindow.document.close();
 }
 
-export async function generateHtmlReport(
-  cycleId: string,
-  cycle: any,
-  onProgress?: ProgressCallback,
-): Promise<{ fileName: string; blob: Blob; html: string }> {
-  const totalSteps = 6;
-  const progress = (msg: string, step: number) => onProgress?.(msg, step, totalSteps);
+/**
+ * Selects relevant data keys for each report part to reduce payload size.
+ */
+function pickDataForPart(reportData: any, part: number): any {
+  const base = {
+    hibrido: reportData.hibrido,
+    linhagem_femea: reportData.linhagem_femea,
+    linhagem_macho: reportData.linhagem_macho,
+    safra: reportData.safra,
+    contrato: reportData.contrato,
+    cliente: reportData.cliente,
+    cooperado: reportData.cooperado,
+    fazenda: reportData.fazenda,
+    pivo: reportData.pivo,
+    status: reportData.status,
+    area_total: reportData.area_total,
+    area_femea: reportData.area_femea,
+    area_macho: reportData.area_macho,
+    proporcao_fm: reportData.proporcao_fm,
+    sistema_irrigacao: reportData.sistema_irrigacao,
+    split: reportData.split,
+    espacamento_ff: reportData.espacamento_ff,
+    espacamento_fm: reportData.espacamento_fm,
+    espacamento_mm: reportData.espacamento_mm,
+    ciclo_dias: reportData.ciclo_dias,
+    desp_dap: reportData.desp_dap,
+    umidade_alvo: reportData.umidade_alvo,
+    produtividade_esperada: reportData.produtividade_esperada,
+    producao_esperada: reportData.producao_esperada,
+    organizacao: reportData.organizacao,
+    slogan_org: reportData.slogan_org,
+    logo_url: reportData.logo_url,
+    rodape: reportData.rodape,
+  };
 
-  progress("Coletando todos os dados do ciclo...", 1);
-  const data = await fetchReportData(cycleId, cycle);
+  if (part === 1) {
+    return {
+      ...base,
+      glebas: reportData.glebas,
+      lotes_semente: reportData.lotes_semente,
+      tratamentos: reportData.tratamentos,
+      plano_plantio: reportData.plano_plantio,
+      plantio: reportData.plantio,
+      cv_pontos: reportData.cv_pontos,
+      emergencia: reportData.emergencia,
+      stand: reportData.stand,
+    };
+  }
 
-  progress("Resolvendo dados para geração do relatório...", 2);
-  const reportData = buildReportData(data);
+  if (part === 2) {
+    return {
+      ...base,
+      insumos: reportData.insumos,
+      nutricao: reportData.nutricao,
+      quimicos: reportData.quimicos,
+      fenologia: reportData.fenologia,
+      ndvi_imagens: reportData.ndvi_imagens,
+      ndvi_parecer: reportData.ndvi_parecer,
+      nicking_marcos: reportData.nicking_marcos,
+      nicking_observacoes: reportData.nicking_observacoes,
+      inspecoes: reportData.inspecoes,
+      despendoamento: reportData.despendoamento,
+      roguing: reportData.roguing,
+      pragas: reportData.pragas,
+    };
+  }
 
-  progress("Gerando relatório completo com IA...", 3);
+  // Part 3
+  return {
+    ...base,
+    clima_resumo: reportData.clima_resumo,
+    clima_diario: reportData.clima_diario,
+    irrigacao: reportData.irrigacao,
+    chuva: reportData.chuva,
+    umidade: reportData.umidade,
+    estimativa: reportData.estimativa,
+    plano_colheita: reportData.plano_colheita,
+    colheita: reportData.colheita,
+    visitas: reportData.visitas,
+    fotos: reportData.fotos,
+    // Summary for conclusion
+    resumo_geral: {
+      lotes: reportData.lotes_semente?.length || 0,
+      plantio_registros: reportData.plantio?.length || 0,
+      stand_registros: reportData.stand?.length || 0,
+      insumos_total: reportData.insumos?.length || 0,
+      nutricao_total: reportData.nutricao?.length || 0,
+      quimicos_total: reportData.quimicos?.length || 0,
+      fenologia_total: reportData.fenologia?.length || 0,
+      despendoamento_total: reportData.despendoamento?.length || 0,
+      pragas_total: reportData.pragas?.length || 0,
+      irrigacao_total: reportData.irrigacao?.length || 0,
+      colheita_total: reportData.colheita?.length || 0,
+      visitas_total: reportData.visitas?.length || 0,
+      fotos_total: reportData.fotos?.length || 0,
+    },
+  };
+}
+
+async function callPartGeneration(
+  partNumber: number,
+  partData: any,
+): Promise<string> {
   const { data: fnData, error: fnError } = await (supabase as any).functions.invoke("generate-report", {
-    body: { reportData },
+    body: { reportData: partData, part: partNumber },
   });
 
   if (fnError) throw fnError;
 
-  const responseHtml =
+  const html =
     typeof fnData === "string"
       ? (() => {
           try {
@@ -633,21 +721,66 @@ export async function generateHtmlReport(
         })()
       : fnData?.html;
 
-  if (!responseHtml) {
-    throw new Error("Resposta vazia da geração de relatório");
+  if (!html) {
+    throw new Error(`Parte ${partNumber} retornou vazia`);
   }
 
-  const cleanHtml = normalizeReturnedHtml(responseHtml);
-  if (!cleanHtml || hasUnresolvedTokens(cleanHtml)) {
-    throw new Error("O HTML retornado ainda contém placeholders não resolvidos.");
-  }
+  return html;
+}
 
-  progress("Abrindo relatório...", 4);
+async function callPartWithRetry(partNumber: number, partData: any): Promise<string> {
+  try {
+    return await callPartGeneration(partNumber, partData);
+  } catch (err: any) {
+    console.warn(`Part ${partNumber} failed, retrying once...`, err.message);
+    // Wait a bit before retry
+    await new Promise((r) => setTimeout(r, 2000));
+    return await callPartGeneration(partNumber, partData);
+  }
+}
+
+export async function generateHtmlReport(
+  cycleId: string,
+  cycle: any,
+  onProgress?: ProgressCallback,
+): Promise<{ fileName: string; blob: Blob; html: string }> {
+  const totalSteps = 8;
+  const progress = (msg: string, step: number) => onProgress?.(msg, step, totalSteps);
+
+  progress("📊 Coletando todos os dados do ciclo...", 1);
+  const data = await fetchReportData(cycleId, cycle);
+
+  progress("🔄 Resolvendo dados para o relatório...", 2);
+  const reportData = buildReportData(data);
+
+  // Part 1: Cover + Seed + Planting + Stand
+  progress("📄 Gerando capa, plantio e stand... (1/3)", 3);
+  const part1Data = pickDataForPart(reportData, 1);
+  const part1Html = await callPartWithRetry(1, part1Data);
+
+  // Part 2: Management + Phenology + Detasseling + Pests
+  progress("📄 Gerando manejo, fenologia e pragas... (2/3)", 4);
+  const part2Data = pickDataForPart(reportData, 2);
+  const part2Html = await callPartWithRetry(2, part2Data);
+
+  // Part 3: Water + Moisture + Yield + Harvest + Conclusion
+  progress("📄 Gerando clima, colheita e conclusão... (3/3)", 5);
+  const part3Data = pickDataForPart(reportData, 3);
+  const part3Html = await callPartWithRetry(3, part3Data);
+
+  // Combine
+  progress("🔗 Montando relatório final...", 6);
+  const combinedHtml = [part1Html, part2Html, part3Html].join("\n\n");
+  const cleanCombined = normalizeReturnedHtml(combinedHtml);
+
   const title = `Relatório — ${data.cycle.hybrid_name} — Safra ${data.cycle.season}`;
-  const fullHtml = wrapInDocument(cleanHtml, title);
+  const fullHtml = wrapInDocument(cleanCombined, title);
+
+  progress("👁️ Abrindo relatório...", 7);
   openHtmlInNewTab(fullHtml);
 
-  progress("Salvando cópia...", 5);
+  // Save
+  progress("💾 Salvando cópia...", 8);
   const blob = new Blob([fullHtml], { type: "text/html" });
   const now = new Date();
   const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
@@ -684,6 +817,6 @@ export async function generateHtmlReport(
     console.warn("Falha ao salvar cópia do relatório:", e);
   }
 
-  progress("Relatório gerado!", 6);
+  progress("✅ Relatório gerado com sucesso!", 8);
   return { fileName, blob, html: fullHtml };
 }
