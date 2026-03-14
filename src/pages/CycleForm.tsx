@@ -262,7 +262,7 @@ export default function CycleForm() {
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
       if (!profile?.org_id) throw new Error("Organização não encontrada");
-      const { error } = await (supabase as any).from("production_cycles").insert({
+      const payload = {
         contract_number: values.contract_number || null,
         client_id: values.client_id,
         cooperator_id: values.cooperator_id,
@@ -292,26 +292,44 @@ export default function CycleForm() {
         spacing_female_male_cm: values.spacing_female_male_cm || null,
         spacing_male_male_cm: values.spacing_male_male_cm || null,
         detasseling_dap: values.detasseling_dap || null,
-      });
-      if (error) throw error;
+      };
+
+      if (isEditing) {
+        const { error } = await (supabase as any).from("production_cycles").update(payload).eq("id", id!);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any).from("production_cycles").insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["production_cycles"] });
-      toast.success("Ciclo criado com sucesso!");
-      navigate("/ciclos");
+      if (isEditing) {
+        queryClient.invalidateQueries({ queryKey: ["cycle-detail", id] });
+        queryClient.invalidateQueries({ queryKey: ["cycle-edit", id] });
+        toast.success("Ciclo atualizado com sucesso!");
+        navigate(`/ciclos/${id}`);
+      } else {
+        toast.success("Ciclo criado com sucesso!");
+        navigate("/ciclos");
+      }
     },
-    onError: (err: any) => toast.error(err.message || "Erro ao criar ciclo"),
+    onError: (err: any) => toast.error(err.message || "Erro ao salvar ciclo"),
   });
 
   const onSubmit = (values: FormValues) => mutation.mutate(values);
 
+  if (isEditing && cycleLoading) {
+    return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-4xl">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/ciclos")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(isEditing ? `/ciclos/${id}` : "/ciclos")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-2xl font-bold text-foreground">Novo Ciclo de Produção</h1>
+        <h1 className="text-2xl font-bold text-foreground">{isEditing ? "Editar Ciclo de Produção" : "Novo Ciclo de Produção"}</h1>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
