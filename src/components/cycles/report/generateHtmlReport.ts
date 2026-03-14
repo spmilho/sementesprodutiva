@@ -118,6 +118,7 @@ function buildReportPayload(data: ReportData) {
       vento_max: r.wind_max_kmh,
       eto_mm: r.eto_mm,
       chuva_mm: r.precipitation_mm,
+      radiacao_mj: r.radiation_mj ?? null,
       gdu_diario: Math.round(dailyGdu * 10) / 10,
       gdu_acumulado: Math.round(accGdu),
       estadio: currentStage,
