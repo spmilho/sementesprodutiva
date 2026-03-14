@@ -6,12 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, Calendar, Flame, Target } from "lucide-react";
+import { Calendar, Target } from "lucide-react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ReferenceLine, ReferenceArea,
 } from "recharts";
-import { format, parseISO, differenceInDays, addDays, min as minDate, max as maxDate } from "date-fns";
+import { format, parseISO, differenceInDays, addDays } from "date-fns";
 
 interface Props {
   cycleId: string;
@@ -27,8 +27,7 @@ const COLORS = ["#1E88E5", "#4CAF50", "#FF9800", "#E91E63", "#9C27B0", "#00BCD4"
 
 export default function DetasselingForecast({ cycleId, detasselingDap: defaultDap }: Props) {
   const sb = supabase as any;
-  const [dap, setDap] = useState(defaultDap || 60);
-  const [margin, setMargin] = useState(5);
+  const [dap, setDap] = useState(defaultDap || 55);
 
   // Fetch female planting actuals
   const { data: plantingActuals = [] } = useQuery({
@@ -66,10 +65,9 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
     },
   });
 
-  // Use actual planting dates as the authoritative source
   const dataSource = plantingActuals.length > 0 ? "actual" : (plantingPlans.length > 0 ? "plan" : "none");
 
-  // Group plantings by date — prefer actuals, fallback to plan
+  // Group plantings by date
   const plantings = useMemo<PlantingEntry[]>(() => {
     const map = new Map<string, number>();
     if (plantingActuals.length > 0) {
@@ -90,122 +88,109 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
       .sort((a, b) => a.planting_date.localeCompare(b.planting_date));
   }, [plantingActuals, plantingPlans]);
 
-  // Compute windows for each planting date
-  const windows = useMemo(() => {
-    return plantings.map((p, i) => {
+  // Compute per-planting center dates AND unified window
+  const { windows, windowStart, windowEnd } = useMemo(() => {
+    if (!plantings.length) return { windows: [], windowStart: "", windowEnd: "" };
+
+    const wins = plantings.map((p, i) => {
       const center = addDays(parseISO(p.planting_date), dap);
-      const start = addDays(center, -margin);
-      const end = addDays(center, margin);
       return {
         ...p,
         index: i,
         label: `P${i + 1}`,
         centerDate: format(center, "yyyy-MM-dd"),
-        startDate: format(start, "yyyy-MM-dd"),
-        endDate: format(end, "yyyy-MM-dd"),
         color: COLORS[i % COLORS.length],
       };
     });
-  }, [plantings, dap, margin]);
+
+    // Window: DAP days after first planting → DAP days after last planting
+    const start = format(addDays(parseISO(plantings[0].planting_date), dap), "yyyy-MM-dd");
+    const end = format(addDays(parseISO(plantings[plantings.length - 1].planting_date), dap), "yyyy-MM-dd");
+
+    return { windows: wins, windowStart: start, windowEnd: end };
+  }, [plantings, dap]);
 
   // Build chart data
   const chartData = useMemo(() => {
-    if (!windows.length) return [];
+    if (!windows.length || !windowStart || !windowEnd) return [];
 
     const today = new Date();
     const todayStr = format(today, "yyyy-MM-dd");
 
-    const allStarts = windows.map(w => parseISO(w.startDate));
-    const allEnds = windows.map(w => parseISO(w.endDate));
-    const chartStart = addDays(minDate(allStarts), -3);
-    const chartEnd = addDays(maxDate(allEnds), 3);
+    const chartStartDate = addDays(parseISO(windowStart), -3);
+    const chartEndDate = addDays(parseISO(windowEnd), 3);
 
-    const actualStart = chartStart < today ? chartStart : addDays(today, -2);
-
-    // Track which planting windows have already started (for cumulative unique area)
-    const windowStarted = new Set<number>();
+    // Track which plantings have had their center date reached (for accumulation)
+    const windowCenterReached = new Set<number>();
 
     const data: any[] = [];
-    let current = actualStart;
+    let current = chartStartDate;
     let accHa = 0;
 
-    while (current <= chartEnd) {
+    while (current <= chartEndDate) {
       const dateStr = format(current, "yyyy-MM-dd");
       const dateLabel = format(current, "dd/MM");
+      const inWindow = dateStr >= windowStart && dateStr <= windowEnd;
       const entry: any = { date: dateStr, dateLabel, isToday: dateStr === todayStr };
 
       let totalHaDay = 0;
       windows.forEach((w) => {
-        const inWindow = dateStr >= w.startDate && dateStr <= w.endDate;
+        const isCenter = dateStr === w.centerDate;
         const key = `p${w.index}`;
-        entry[key] = inWindow ? w.area_ha : 0;
-        if (inWindow) totalHaDay += w.area_ha;
+        // Show bar only on the center date
+        entry[key] = isCenter ? w.area_ha : 0;
+        if (isCenter) totalHaDay += w.area_ha;
 
-        // Accumulate area only on the first day the window opens
-        if (inWindow && !windowStarted.has(w.index)) {
-          windowStarted.add(w.index);
+        // Accumulate area only at center date
+        if (isCenter && !windowCenterReached.has(w.index)) {
+          windowCenterReached.add(w.index);
           accHa += w.area_ha;
         }
       });
 
       entry.totalHa = totalHaDay;
       entry.accHa = Math.round(accHa * 10) / 10;
+      entry.inWindow = inWindow;
 
       data.push(entry);
       current = addDays(current, 1);
     }
 
     return data;
-  }, [windows]);
+  }, [windows, windowStart, windowEnd]);
 
   // KPI stats
   const kpis = useMemo(() => {
-    if (!windows.length) return null;
+    if (!windows.length || !windowStart || !windowEnd) return null;
 
     const today = new Date();
-    const todayStr = format(today, "yyyy-MM-dd");
-
-    const earliestStart = windows.reduce((min, w) => w.startDate < min ? w.startDate : min, windows[0].startDate);
-    const latestEnd = windows.reduce((max, w) => w.endDate > max ? w.endDate : max, windows[0].endDate);
-
-    const daysToStart = differenceInDays(parseISO(earliestStart), today);
-    const windowTotalDays = differenceInDays(parseISO(latestEnd), parseISO(earliestStart)) + 1;
-
-    // Peak day
-    let peakHa = 0;
-    let peakDate = "";
-    chartData.forEach(d => {
-      if (d.totalHa > peakHa) {
-        peakHa = d.totalHa;
-        peakDate = d.date;
-      }
-    });
-
+    const daysToStart = differenceInDays(parseISO(windowStart), today);
+    const windowTotalDays = differenceInDays(parseISO(windowEnd), parseISO(windowStart)) + 1;
     const totalFemaleArea = plantings.reduce((s, p) => s + p.area_ha, 0);
 
-    return { earliestStart, latestEnd, daysToStart, windowTotalDays, peakHa, peakDate, totalFemaleArea };
-  }, [windows, chartData, plantings]);
+    return { daysToStart, windowTotalDays, totalFemaleArea };
+  }, [windows, windowStart, windowEnd, plantings]);
 
-  // Has detasseling started?
   const hasDetStarted = detRecords.length > 0;
 
   // Table data with status
   const tableData = useMemo(() => {
     const today = new Date();
+    const todayStr = format(today, "yyyy-MM-dd");
     return windows.map(w => {
       const daysToCenter = differenceInDays(parseISO(w.centerDate), today);
-      const inWindow = format(today, "yyyy-MM-dd") >= w.startDate && format(today, "yyyy-MM-dd") <= w.endDate;
+      const inWindow = todayStr >= windowStart && todayStr <= windowEnd;
 
       let status: string;
       if (hasDetStarted) status = "em_andamento";
-      else if (daysToCenter < -margin) status = "atrasado";
+      else if (todayStr > windowEnd) status = "atrasado";
       else if (inWindow) status = "na_janela";
       else if (daysToCenter <= 10) status = "aproximando";
       else status = "aguardando";
 
       return { ...w, daysToCenter, inWindow, status };
     });
-  }, [windows, hasDetStarted, margin]);
+  }, [windows, hasDetStarted, windowStart, windowEnd]);
 
   if (!plantings.length) {
     return (
@@ -232,31 +217,23 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
       {/* Editable params */}
       <div className="flex gap-4 items-end flex-wrap">
         <div className="space-y-1">
-          <Label className="text-xs">Ciclo despendoamento (DAP)</Label>
+          <Label className="text-xs">DAP despendoamento</Label>
           <Input
             type="number" min={30} max={120} value={dap}
             onChange={e => setDap(Number(e.target.value) || 55)}
             className="w-24 h-8 text-sm"
           />
         </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Margem (±dias)</Label>
-          <Input
-            type="number" min={3} max={10} value={margin}
-            onChange={e => setMargin(Math.min(10, Math.max(3, Number(e.target.value) || 5)))}
-            className="w-20 h-8 text-sm"
-          />
-        </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — 2 cards only */}
       {kpis && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Card>
             <CardContent className="p-4 text-center">
               <Calendar className="h-5 w-5 mx-auto text-blue-500 mb-1" />
               <p className="text-xs text-muted-foreground">Início da Janela</p>
-              <p className="text-sm font-bold">{format(parseISO(kpis.earliestStart), "dd/MM/yyyy")}</p>
+              <p className="text-sm font-bold">{format(parseISO(windowStart), "dd/MM/yyyy")}</p>
               <p className="text-xs text-muted-foreground">
                 {kpis.daysToStart > 0
                   ? `Começa em ${kpis.daysToStart} dias`
@@ -268,19 +245,9 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <Flame className="h-5 w-5 mx-auto text-orange-500 mb-1" />
-              <p className="text-xs text-muted-foreground">Pico do Despendoamento</p>
-              <p className="text-sm font-bold">{kpis.peakHa.toFixed(0)} ha simultâneos</p>
-              <p className="text-xs text-muted-foreground">
-                {kpis.peakDate && format(parseISO(kpis.peakDate), "dd/MM/yyyy")}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
               <Target className="h-5 w-5 mx-auto text-green-500 mb-1" />
               <p className="text-xs text-muted-foreground">Fim da Janela</p>
-              <p className="text-sm font-bold">{format(parseISO(kpis.latestEnd), "dd/MM/yyyy")}</p>
+              <p className="text-sm font-bold">{format(parseISO(windowEnd), "dd/MM/yyyy")}</p>
               <p className="text-xs text-muted-foreground">
                 Janela total: {kpis.windowTotalDays} dias • {kpis.totalFemaleArea.toFixed(0)} ha
               </p>
@@ -292,54 +259,57 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
       {/* Chart */}
       <Card>
         <CardContent className="p-4">
-          <h4 className="font-medium text-xs mb-3">Janela de Despendoamento (±{margin} dias)</h4>
+          <h4 className="font-medium text-xs mb-3">Janela de Despendoamento (DAP {dap})</h4>
           <ResponsiveContainer width="100%" height={400}>
             <ComposedChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="dateLabel" tick={{ fontSize: 9 }} height={30} />
-              <YAxis yAxisId="left" tick={{ fontSize: 9 }} label={{ value: "ha/dia", angle: -90, position: "insideLeft", fontSize: 10 }} />
+              <YAxis yAxisId="left" tick={{ fontSize: 9 }} label={{ value: "ha", angle: -90, position: "insideLeft", fontSize: 10 }} />
               <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 9 }} label={{ value: "ha acum.", angle: 90, position: "insideRight", fontSize: 10 }} />
-              <Tooltip content={<ForecastTooltip windows={windows} margin={margin} />} />
+              <Tooltip content={<ForecastTooltip windows={windows} windowStart={windowStart} windowEnd={windowEnd} />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
 
-              {/* Window shading areas - mais visíveis */}
-              {windows.map((w) => {
-                const startLabel = chartData.find(d => d.date === w.startDate)?.dateLabel;
-                const centerLabel = chartData.find(d => d.date === w.centerDate)?.dateLabel;
-                const endLabel = chartData.find(d => d.date === w.endDate)?.dateLabel;
+              {/* Unified window shading */}
+              {(() => {
+                const startLabel = chartData.find(d => d.date === windowStart)?.dateLabel;
+                const endLabel = chartData.find(d => d.date === windowEnd)?.dateLabel;
                 if (!startLabel || !endLabel) return null;
                 return (
-                  <g key={`window-${w.index}`}>
-                    {/* Faixa da janela com borda */}
-                    <ReferenceArea
-                      yAxisId="left"
-                      x1={startLabel}
-                      x2={endLabel}
-                      fill={w.color}
-                      fillOpacity={0.12}
-                      stroke={w.color}
-                      strokeOpacity={0.4}
-                      strokeWidth={1}
-                    />
-                    {/* Destaque para centro */}
-                    <ReferenceLine
-                      yAxisId="left"
-                      x={centerLabel}
-                      stroke={w.color}
-                      strokeWidth={3}
-                      strokeDasharray="0"
-                    />
-                  </g>
+                  <ReferenceArea
+                    yAxisId="left"
+                    x1={startLabel}
+                    x2={endLabel}
+                    fill="#4CAF50"
+                    fillOpacity={0.08}
+                    stroke="#4CAF50"
+                    strokeOpacity={0.3}
+                    strokeWidth={1}
+                  />
+                );
+              })()}
+
+              {/* Center date lines for each planting */}
+              {windows.map((w) => {
+                const centerLabel = chartData.find(d => d.date === w.centerDate)?.dateLabel;
+                if (!centerLabel) return null;
+                return (
+                  <ReferenceLine
+                    key={`center-${w.index}`}
+                    yAxisId="left"
+                    x={centerLabel}
+                    stroke={w.color}
+                    strokeWidth={2}
+                  />
                 );
               })}
 
-              {/* Stacked bars per planting date */}
+              {/* Bars per planting at center date */}
               {windows.map((w) => (
                 <Bar
                   key={`bar-${w.index}`}
                   yAxisId="left"
                   dataKey={`p${w.index}`}
-                  name={`Plantio ${format(parseISO(w.planting_date), "dd/MM")} (${w.area_ha.toFixed(0)}ha)`}
+                  name={`${format(parseISO(w.planting_date), "dd/MM")} (${w.area_ha.toFixed(0)}ha)`}
                   fill={w.color}
                   fillOpacity={0.85}
                   stackId="ha"
@@ -350,7 +320,7 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
               {/* Accumulated line */}
               <Line
                 yAxisId="right"
-                type="monotone"
+                type="stepAfter"
                 dataKey="accHa"
                 name="ha acumulados"
                 stroke="hsl(var(--foreground))"
@@ -359,7 +329,7 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
                 dot={false}
               />
 
-              {/* TODAY reference line - mais destacado */}
+              {/* TODAY reference line */}
               {todayLabel && (
                 <ReferenceLine
                   yAxisId="left"
@@ -378,7 +348,7 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
                 />
               )}
 
-              {/* Center date labels - posicionados acima do gráfico */}
+              {/* Center date labels */}
               {windows.map((w) => {
                 const centerLabel = chartData.find(d => d.date === w.centerDate)?.dateLabel;
                 if (!centerLabel) return null;
@@ -389,12 +359,12 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
                     x={centerLabel}
                     stroke="transparent"
                     label={{
-                      value: `${w.label}\n${format(parseISO(w.centerDate), "dd/MM")}`,
+                      value: `${w.label} ${format(parseISO(w.centerDate), "dd/MM")}`,
                       position: "insideTop",
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: "bold",
                       fill: w.color,
-                      dy: -25,
+                      dy: -20,
                     }}
                   />
                 );
@@ -418,9 +388,7 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
                   <TableHead className="text-xs">Lote</TableHead>
                   <TableHead className="text-xs text-right">Área (ha)</TableHead>
                   <TableHead className="text-xs text-right">DAP</TableHead>
-                  <TableHead className="text-xs">Início (-{margin}d)</TableHead>
                   <TableHead className="text-xs">Data Central</TableHead>
-                  <TableHead className="text-xs">Fim (+{margin}d)</TableHead>
                   <TableHead className="text-xs">Dias restantes</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
                 </TableRow>
@@ -436,9 +404,7 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
                     </TableCell>
                     <TableCell className="text-xs text-right font-mono">{w.area_ha.toFixed(1)}</TableCell>
                     <TableCell className="text-xs text-right font-mono">{dap}</TableCell>
-                    <TableCell className="text-xs">{format(parseISO(w.startDate), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="text-xs font-semibold">{format(parseISO(w.centerDate), "dd/MM/yyyy")}</TableCell>
-                    <TableCell className="text-xs">{format(parseISO(w.endDate), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="text-xs">
                       <DaysCell days={w.daysToCenter} hasRecords={hasDetStarted} />
                     </TableCell>
@@ -450,14 +416,17 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
               </TableBody>
             </Table>
           </div>
+          <div className="p-3 border-t text-xs text-muted-foreground">
+            Janela unificada: {format(parseISO(windowStart), "dd/MM/yyyy")} → {format(parseISO(windowEnd), "dd/MM/yyyy")}
+          </div>
         </CardContent>
       </Card>
     </div>
   );
 }
 
-// Custom tooltip - destaca a data central e dias ±
-function ForecastTooltip({ active, payload, label, windows, margin }: any) {
+// Custom tooltip
+function ForecastTooltip({ active, payload, windows, windowStart, windowEnd }: any) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -465,7 +434,7 @@ function ForecastTooltip({ active, payload, label, windows, margin }: any) {
   const today = new Date();
   const recordDate = parseISO(data.date);
   const daysDiff = differenceInDays(recordDate, today);
-  const totalWindowDays = margin * 2 + 1;
+  const inWindow = data.date >= windowStart && data.date <= windowEnd;
 
   return (
     <div className="bg-popover border rounded-lg p-4 shadow-lg text-xs space-y-2 max-w-[320px]">
@@ -476,20 +445,17 @@ function ForecastTooltip({ active, payload, label, windows, margin }: any) {
         </span>
       </div>
 
+      {inWindow && <p className="text-green-600 text-xs font-medium">✅ Dentro da janela de despendoamento</p>}
+
       {data.totalHa > 0 && (
         <p className="font-semibold text-sm">
-          Hectares na janela: <span className="text-primary">{data.totalHa.toFixed(1)} ha</span>
+          Hectares no centro: <span className="text-primary">{data.totalHa.toFixed(1)} ha</span>
         </p>
       )}
 
       <div className="space-y-1.5 pt-1">
-        <p className="text-xs font-medium text-muted-foreground">Detalhamento por plantio:</p>
         {windows.map((w: any) => {
-          const inWindow = data.date >= w.startDate && data.date <= w.endDate;
-          const windowDay = differenceInDays(parseISO(data.date), parseISO(w.startDate)) + 1;
           const isCenter = data.date === w.centerDate;
-          const daysFromCenter = differenceInDays(parseISO(data.date), parseISO(w.centerDate));
-
           return (
             <div key={w.index} className={`flex items-center gap-2 p-1.5 rounded ${isCenter ? "bg-primary/10 border border-primary/20" : ""}`}>
               <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: w.color }} />
@@ -497,16 +463,7 @@ function ForecastTooltip({ active, payload, label, windows, margin }: any) {
                 <span className="font-medium">{w.label}</span> ({w.area_ha.toFixed(0)}ha)
               </span>
               <span className={isCenter ? "font-bold text-primary" : "text-muted-foreground"}>
-                {isCenter ? (
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    CENTRO
-                  </span>
-                ) : inWindow ? (
-                  `${daysFromCenter > 0 ? "+" : ""}${daysFromCenter}d (${windowDay}/${totalWindowDays})`
-                ) : (
-                  "fora da janela"
-                )}
+                {isCenter ? "CENTRO (DAP)" : "—"}
               </span>
             </div>
           );
