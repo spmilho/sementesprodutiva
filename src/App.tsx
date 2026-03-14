@@ -26,6 +26,7 @@ import Contratos from "./pages/Contratos";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
+import CycleReportPage from "./pages/CycleReportPage";
 
 const queryClient = new QueryClient();
 
