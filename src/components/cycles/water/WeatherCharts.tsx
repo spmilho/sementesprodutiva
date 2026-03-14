@@ -569,7 +569,28 @@ export default function WeatherCharts({ records, cycleId }: Props) {
         </Card>
       )}
 
-      {/* Wind + ETo + Precipitation chart */}
+      {/* Radiação Solar chart */}
+      {hasRadiation && (
+        <Card>
+          <CardContent className="p-4">
+            <h4 className="font-medium text-xs mb-2 flex items-center gap-1">
+              <Sun className="h-3.5 w-3.5 text-amber-500" />
+              Radiação Solar (MJ/m²)
+            </h4>
+            <ResponsiveContainer width="100%" height={230}>
+              <ComposedChart data={sortedData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis {...chartXAxisProps} />
+                <YAxis tick={{ fontSize: 9 }} />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                {renderStageReferenceLines()}
+                <Area type="monotone" dataKey="radiation_mj" name="Rad. Solar" fill="hsl(45 90% 80%)" stroke="hsl(35 90% 50%)" fillOpacity={0.4} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
       {(hasWind || hasEto) && (
         <Card>
           <CardContent className="p-4">
