@@ -1,12 +1,18 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area, ReferenceLine,
 } from "recharts";
-import { Thermometer, Droplets, Wind, Sun, Flame } from "lucide-react";
+import { Thermometer, Droplets, Wind, Sun, Flame, RefreshCw, Loader2, ClipboardCopy, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
 
 interface WeatherRecord {
   id: string;
