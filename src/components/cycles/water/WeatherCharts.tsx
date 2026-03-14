@@ -342,6 +342,7 @@ export default function WeatherCharts({ records, cycleId }: Props) {
     const humids = records.filter(r => r.humidity_avg_pct != null).map(r => r.humidity_avg_pct!);
     const winds = records.filter(r => r.wind_avg_kmh != null).map(r => r.wind_avg_kmh!);
     const etos = records.filter(r => r.eto_mm != null).map(r => r.eto_mm!);
+    const radiations = records.filter(r => r.radiation_mj != null).map(r => r.radiation_mj!);
     const avg = (arr: number[]) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
     const totalGdu = gduData.length > 0 ? gduData[gduData.length - 1].accGdu : 0;
     return {
@@ -350,6 +351,7 @@ export default function WeatherCharts({ records, cycleId }: Props) {
       minTemp: temps.length > 0 ? Math.min(...records.filter(r => r.temp_min_c != null).map(r => r.temp_min_c!)) : 0,
       avgHumidity: avg(humids),
       avgWind: avg(winds),
+      avgRadiation: avg(radiations),
       totalEto: etos.reduce((a, b) => a + b, 0),
       totalPrecip: records.filter(r => r.precipitation_mm != null).reduce((a, r) => a + r.precipitation_mm!, 0),
       totalGdu,
@@ -364,6 +366,7 @@ export default function WeatherCharts({ records, cycleId }: Props) {
   const hasWind = sortedData.some(r => r.wind_avg_kmh != null);
   const hasEto = sortedData.some(r => r.eto_mm != null);
   const hasGdu = gduData.some(r => r.dailyGdu > 0);
+  const hasRadiation = sortedData.some(r => r.radiation_mj != null);
 
   const renderStageReferenceLines = (yAxisId?: string) =>
     stageTransitions.map((t, i) => (
@@ -404,6 +407,12 @@ export default function WeatherCharts({ records, cycleId }: Props) {
             <Thermometer className="h-6 w-6 text-red-500 shrink-0" />
             <div><p className="text-[10px] text-muted-foreground">Temp. Média</p><p className="text-sm font-bold">{stats.avgTemp.toFixed(1)}°C</p><p className="text-[10px] text-muted-foreground">{stats.minTemp.toFixed(1)} — {stats.maxTemp.toFixed(1)}</p></div>
           </CardContent></Card>
+          {hasRadiation && stats.avgRadiation > 0 && (
+            <Card><CardContent className="p-3 flex items-center gap-2">
+              <Sun className="h-6 w-6 text-amber-500 shrink-0" />
+              <div><p className="text-[10px] text-muted-foreground">Rad. Solar Média</p><p className="text-sm font-bold">{stats.avgRadiation.toFixed(1)} MJ/m²</p></div>
+            </CardContent></Card>
+          )}
           <Card><CardContent className="p-3 flex items-center gap-2">
             <Droplets className="h-6 w-6 text-blue-500 shrink-0" />
             <div><p className="text-[10px] text-muted-foreground">UR Média</p><p className="text-sm font-bold">{stats.avgHumidity.toFixed(0)}%</p></div>
@@ -560,7 +569,28 @@ export default function WeatherCharts({ records, cycleId }: Props) {
         </Card>
       )}
 
-      {/* Wind + ETo + Precipitation chart */}
+      {/* Radiação Solar chart */}
+      {hasRadiation && (
+        <Card>
+          <CardContent className="p-4">
+            <h4 className="font-medium text-xs mb-2 flex items-center gap-1">
+              <Sun className="h-3.5 w-3.5 text-amber-500" />
+              Radiação Solar (MJ/m²)
+            </h4>
+            <ResponsiveContainer width="100%" height={230}>
+              <ComposedChart data={sortedData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis {...chartXAxisProps} />
+                <YAxis tick={{ fontSize: 9 }} />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                {renderStageReferenceLines()}
+                <Area type="monotone" dataKey="radiation_mj" name="Rad. Solar" fill="hsl(45 90% 80%)" stroke="hsl(35 90% 50%)" fillOpacity={0.4} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
       {(hasWind || hasEto) && (
         <Card>
           <CardContent className="p-4">
