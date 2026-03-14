@@ -273,11 +273,14 @@ export default function WeatherCharts({ records, cycleId }: Props) {
 
   const uniqueFemalePlantingDates = useMemo(() => {
     const seen = new Set<string>();
-    return femalePlantings
-      .map(p => normalizeDateKey(p.planting_date))
+    return femalePlantingDates
       .filter(Boolean)
-      .filter(d => { if (seen.has(d!)) return false; seen.add(d!); return true; }) as string[];
-  }, [femalePlantings]);
+      .filter((d) => {
+        if (seen.has(d)) return false;
+        seen.add(d);
+        return true;
+      });
+  }, [femalePlantingDates]);
 
   const gduByPlantingData = useMemo(() => {
     if (uniqueFemalePlantingDates.length === 0 || sortedData.length === 0) return [];
