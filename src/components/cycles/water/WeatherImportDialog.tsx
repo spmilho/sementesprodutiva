@@ -101,6 +101,18 @@ function parseDate(val: any): string | null {
     return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
   }
 
+  // dd/mm (without year) — common in transposed Excel headers
+  const shortBr = str.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
+  if (shortBr) {
+    const [, d, m] = shortBr;
+    const dayNum = Number(d);
+    const monthNum = Number(m);
+    if (dayNum >= 1 && dayNum <= 31 && monthNum >= 1 && monthNum <= 12) {
+      const year = new Date().getFullYear();
+      return `${year}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+    }
+  }
+
   // yyyy-mm-dd or yyyy-m-d(+time)
   const iso = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
   if (iso) {
@@ -108,10 +120,12 @@ function parseDate(val: any): string | null {
     return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
   }
 
-  // Fallback for textual formats (e.g. "Sat Jan 03 2026")
-  const parsed = new Date(str);
-  if (!Number.isNaN(parsed.getTime())) {
-    return formatDateString(parsed);
+  // Fallback — avoid new Date(str) for ambiguous short strings to prevent MM/DD misinterpretation
+  if (str.length >= 8) {
+    const parsed = new Date(str);
+    if (!Number.isNaN(parsed.getTime())) {
+      return formatDateString(parsed);
+    }
   }
 
   return null;
