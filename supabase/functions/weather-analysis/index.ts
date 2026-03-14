@@ -1,23 +1,36 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+type ChatMessage = { role: "system" | "user"; content: string };
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-async function callLovableAI(messages: any[], apiKey: string) {
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
+
+class HttpError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function callLovableAI(messages: ChatMessage[], apiKey: string) {
+  return await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ model: "google/gemini-2.5-flash", messages }),
   });
-  return response;
 }
 
-async function callClaude(messages: any[], apiKey: string) {
-  const systemMsg = messages.find((m: any) => m.role === "system");
-  const userMsg = messages.find((m: any) => m.role === "user");
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+async function callClaude(messages: ChatMessage[], apiKey: string) {
+  const systemMsg = messages.find((m) => m.role === "system");
+  const userMsg = messages.find((m) => m.role === "user");
+
+  return await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "x-api-key": apiKey,
@@ -31,7 +44,15 @@ async function callClaude(messages: any[], apiKey: string) {
       messages: [{ role: "user", content: userMsg?.content || "" }],
     }),
   });
-  return response;
+}
+
+function parseProviderMessage(raw: string, fallback: string) {
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed?.error?.message || parsed?.message || fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 serve(async (req) => {
@@ -113,60 +134,78 @@ GDU/HU:
 
 Redija o parecer técnico de monitoramento climático e impacto na produtividade.`;
 
-    const messages = [
+    const messages: ChatMessage[] = [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ];
 
     let analysisText = "";
+    let lovableFailureStatus: number | null = null;
 
-    // Try Lovable AI first
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    let usedFallback = false;
+    let shouldUseClaude = false;
 
     if (LOVABLE_API_KEY) {
       const response = await callLovableAI(messages, LOVABLE_API_KEY);
       if (response.ok) {
         const data = await response.json();
         analysisText = data.choices?.[0]?.message?.content || "";
-      } else if (response.status === 402 || response.status === 429) {
-        await response.text(); // consume body
-        usedFallback = true;
       } else {
-        const t = await response.text();
-        console.error("Lovable AI error:", response.status, t);
-        usedFallback = true;
+        const raw = await response.text();
+        console.error("Lovable AI error:", response.status, raw);
+        lovableFailureStatus = response.status;
+        shouldUseClaude = true;
       }
     } else {
-      usedFallback = true;
+      shouldUseClaude = true;
     }
 
-    // Fallback to Claude (Anthropic)
-    if (usedFallback || !analysisText) {
+    if (!analysisText && shouldUseClaude) {
       const CLAUDE_API_KEY = Deno.env.get("emiliocloude");
-      if (!CLAUDE_API_KEY) throw new Error("Nenhuma chave de IA disponível");
+
+      if (!CLAUDE_API_KEY || !CLAUDE_API_KEY.startsWith("sk-ant-")) {
+        throw new HttpError(
+          lovableFailureStatus === 402 || lovableFailureStatus === 429 ? lovableFailureStatus : 401,
+          "A chave do Claude no secret 'emiliocloude' está inválida.",
+        );
+      }
 
       const claudeResp = await callClaude(messages, CLAUDE_API_KEY);
       if (!claudeResp.ok) {
-        const t = await claudeResp.text();
-        console.error("Claude error:", claudeResp.status, t);
-        throw new Error("Erro ao gerar análise climática via Claude");
+        const raw = await claudeResp.text();
+        console.error("Claude error:", claudeResp.status, raw);
+        const providerMessage = parseProviderMessage(raw, "Erro ao gerar análise climática via Claude");
+
+        if (claudeResp.status === 401) {
+          throw new HttpError(401, "A chave do Claude no secret 'emiliocloude' é inválida (authentication_error).");
+        }
+        if (claudeResp.status === 429) {
+          throw new HttpError(429, "Limite de requisições da API Claude atingido. Tente novamente em instantes.");
+        }
+        throw new HttpError(502, providerMessage);
       }
+
       const claudeData = await claudeResp.json();
-      analysisText = claudeData.content?.[0]?.text || "Não foi possível gerar a análise.";
+      analysisText = claudeData.content?.[0]?.text || "";
+    }
+
+    if (!analysisText) {
+      throw new HttpError(502, "Não foi possível gerar a análise climática no momento.");
     }
 
     return new Response(JSON.stringify({
       analysis: analysisText,
       growthStage: phenologyStage,
       dap,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    }), { headers: jsonHeaders });
   } catch (e) {
+    const status = e instanceof HttpError ? e.status : 500;
+    const message = e instanceof Error ? e.message : "Erro desconhecido";
+
     console.error("weather-analysis error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ error: message }), {
+      status,
+      headers: jsonHeaders,
     });
   }
 });
