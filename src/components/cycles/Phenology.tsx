@@ -256,6 +256,7 @@ export default function Phenology({
           <PhenologyTimeline
             records={records}
             plantingDate={plantingDate}
+            maleTypes={maleTypes}
             onClickFuture={(stage) => {
               setEditingId(null);
               setPhotoFile(null);
