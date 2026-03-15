@@ -137,8 +137,8 @@ export default function CycleReportPage() {
           </span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={handleDownloadHtml} className="toolbar-btn">
-            <Download size={16} /> Baixar HTML
+          <button onClick={handleDownloadHtml} className="toolbar-btn" disabled={exportingHtml}>
+            {exportingHtml ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <Download size={16} />} {exportingHtml ? "Gerando..." : "Baixar HTML"}
           </button>
           <button onClick={() => window.print()} className="toolbar-btn toolbar-btn-primary">
             <Printer size={16} /> Imprimir / Salvar PDF
