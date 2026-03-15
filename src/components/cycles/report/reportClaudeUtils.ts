@@ -96,31 +96,26 @@ export function buildReportPayload(data: ReportData, cycle: any): ReportPayload 
 
     ts: (() => {
       const seen = new Set<string>();
-      return data.seedLotTreatments.flatMap((t: any) => {
+      const items: any[] = [];
+      let origem = "";
+      data.seedLotTreatments.forEach((t: any) => {
+        if (!origem && t.treatment_location) origem = t.treatment_location;
         const prods = data.seedLotTreatmentProducts.filter((p: any) => p.seed_lot_treatment_id === t.id);
-        return prods
-          .filter((p: any) => {
-            const key = [
-              (t.treatment_location || "").toString().trim().toLowerCase(),
-              (p.product_name || "").toString().trim().toLowerCase(),
-              (p.active_ingredient || "").toString().trim().toLowerCase(),
-              (p.product_type || "").toString().trim().toLowerCase(),
-              (p.dose_per_unit || p.dose || "").toString().trim().toLowerCase(),
-              (p.dose_unit || "").toString().trim().toLowerCase(),
-            ].join("|");
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          })
-          .map((p: any) => ({
-            origem: t.treatment_location || "",
+        prods.forEach((p: any) => {
+          const key = (p.product_name || "").trim().toLowerCase();
+          if (seen.has(key)) return;
+          seen.add(key);
+          items.push({
+            origem: t.treatment_location || origem || "",
             produto: p.product_name,
             ia: p.active_ingredient || "",
             tipo: p.product_type || "",
             dose: p.dose_per_unit || p.dose || "",
             unidade: p.dose_unit || "",
-          }));
+          });
+        });
       });
+      return items;
     })(),
 
     plantio: data.plantingActual.map((p: any) => ({
