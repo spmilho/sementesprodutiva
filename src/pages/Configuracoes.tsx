@@ -67,6 +67,11 @@ export default function Configuracoes() {
               <FileSignature className="h-3.5 w-3.5" /> Acesso Contratos
             </TabsTrigger>
           )}
+          {isAdmin && (
+            <TabsTrigger value="trash" className="gap-1.5 text-xs">
+              <Trash2 className="h-3.5 w-3.5" /> 🗑️ Lixeira
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="organization">
