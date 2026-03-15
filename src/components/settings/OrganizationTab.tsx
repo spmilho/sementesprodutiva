@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Save, Upload, Building2, Eye, EyeOff, Key, Loader2, CheckCircle2, XCircle, MinusCircle } from "lucide-react";
 import { toast } from "sonner";
-import { callClaude } from "@/services/anthropicApi";
+
 
 export default function OrganizationTab() {
   const { user } = useAuth();
