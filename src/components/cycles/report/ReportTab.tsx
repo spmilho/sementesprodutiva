@@ -381,6 +381,9 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
           <Button variant="outline" size="sm" onClick={loadData}>
             <Loader2 className={cn("h-3 w-3 mr-1", loading && "animate-spin")} /> Atualizar
           </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadHtml}>
+            <Download className="h-3 w-3 mr-1" /> Baixar HTML
+          </Button>
           <Button size="sm" onClick={handlePrint}>
             <Printer className="h-3 w-3 mr-1" /> Imprimir / PDF
           </Button>
