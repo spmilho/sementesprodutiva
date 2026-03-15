@@ -31,6 +31,7 @@ export default function CycleReportPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportingHtml, setExportingHtml] = useState(false);
 
   useEffect(() => {
     if (!cycleId) return;
