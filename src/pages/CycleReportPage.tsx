@@ -4,6 +4,7 @@ import { Printer, ArrowLeft, FileText, Loader2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchReportData } from "@/components/cycles/report/useReportData";
 import { transformReportData } from "@/components/cycles/report/transformReportData";
+import { exportStandaloneHtmlFile } from "@/components/cycles/report/exportStandaloneHtml";
 
 import ReportCover from "@/components/cycles/report/sections/ReportCover";
 import ReportResumo from "@/components/cycles/report/sections/ReportResumo";
@@ -91,61 +92,26 @@ export default function CycleReportPage() {
   }
 
   const handleDownloadHtml = async () => {
-    const reportContainer = document.querySelector(".report-container");
+    const reportContainer = document.querySelector(".report-container") as HTMLElement | null;
     if (!reportContainer) return;
 
     const clientName = data.cliente || "Cliente";
     const fileName = `Relatorio de Campo - ${clientName}.html`;
 
-    // Clone to convert images to base64 without affecting DOM
-    const clone = reportContainer.cloneNode(true) as HTMLElement;
-    const images = clone.querySelectorAll("img");
-    await Promise.all(
-      Array.from(images).map(async (img) => {
-        try {
-          const src = img.getAttribute("src");
-          if (!src || src.startsWith("data:")) return;
-          const response = await fetch(src);
-          if (!response.ok) return;
-          const blob = await response.blob();
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
-          img.setAttribute("src", base64);
-        } catch {
-          // keep original src
-        }
-      })
-    );
-
-    const htmlContent = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Relatório de Campo - ${clientName}</title>
-  <style>${reportStyles}
+    try {
+      await exportStandaloneHtmlFile({
+        sourceElement: reportContainer,
+        fileName,
+        title: `Relatório de Campo - ${clientName}`,
+        styles: `${reportStyles}
     body { background: #f5f5f5; }
-    .report-container { max-width: 210mm; margin: 20px auto; background: white; box-shadow: 0 4px 24px rgba(0,0,0,0.12); border-radius: 8px; overflow: hidden; }
-  </style>
-</head>
-<body>
-  <div class="report-container">${clone.innerHTML}</div>
-</body>
-</html>`;
-
-    const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    .report-container { max-width: 210mm; margin: 20px auto; background: white; box-shadow: 0 4px 24px rgba(0,0,0,0.12); border-radius: 8px; overflow: hidden; }`,
+        wrapperClassName: "report-container",
+      });
+    } catch (err) {
+      console.error("Falha ao gerar HTML compartilhável:", err);
+      alert("Não foi possível gerar um HTML 100% compartilhável. Tente novamente.");
+    }
   };
 
   return (
