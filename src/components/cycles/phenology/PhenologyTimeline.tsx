@@ -93,7 +93,6 @@ function buildStageInfos(records: any[], filter: string, plantingDate?: string |
 
 const TYPE_LABELS: Record<string, string> = {
   female: "🟣 Fêmea",
-  male: "🔵 Macho",
   male_1: "🔵 Macho 1",
   male_2: "🔵 Macho 2",
   male_3: "🔵 Macho 3",
