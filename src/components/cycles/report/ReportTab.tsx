@@ -398,6 +398,10 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
             {exportingHtml ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
             {exportingHtml ? "Gerando..." : "Baixar HTML"}
           </Button>
+          <Button variant="default" size="sm" onClick={handleShareLink} disabled={sharingLink}>
+            {sharingLink ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Share2 className="h-3 w-3 mr-1" />}
+            {sharingLink ? "Gerando link..." : "Compartilhar"}
+          </Button>
           <Button size="sm" onClick={handlePrint}>
             <Printer className="h-3 w-3 mr-1" /> Imprimir / PDF
           </Button>
