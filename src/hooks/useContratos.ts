@@ -201,8 +201,8 @@ export async function parseContratoPdf(file: File, tipo: string): Promise<any> {
 
   const userPrompt = `Analise este contrato de ${tipo === 'beneficiamento' ? 'beneficiamento de sementes' : 'produção de campo de milho híbrido'}:\n\n${text}`;
 
-  const { callAnthropic } = await import("@/lib/anthropic");
-  const content = await callAnthropic(systemPrompt, userPrompt, 2048);
+  const { callClaude } = await import("@/services/anthropicApi");
+  const content = await callClaude(systemPrompt, userPrompt, 2048);
 
   let parsed;
   try {
