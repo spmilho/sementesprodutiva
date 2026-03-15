@@ -93,18 +93,26 @@ export function transformReportData(data: ReportData, cycle: any): any {
       ? [{ lote: "Todos", parental: "Todos", data: null, local: tratamentos[0]?.origem || "", produtos: tratamentos }]
       : [],
 
-    // ── Plantio ──
+    // ── Plantio Realizado ──
     plantio: data.plantingActual.map((p: any) => ({
       data: fmtD(p.planting_date),
       data_iso: p.planting_date,
       tipo: parent(p.type),
       gleba: p.pivot_glebas?.name || "Geral",
       lote: p.seed_lot_number || "",
-      area: p.area_ha,
-      espacamento: p.row_spacing_cm,
+      area: p.actual_area,
+      espacamento: p.row_spacing,
       sem_metro: p.seeds_per_meter,
       cv_plantio: p.cv_percent,
       solo: p.soil_condition || "",
+    })),
+
+    // ── Plantio Planejado ──
+    plantio_planejado: data.plantingPlan.map((p: any) => ({
+      data: fmtD(p.planned_date),
+      data_iso: p.planned_date,
+      tipo: parent(p.type),
+      area: p.planned_area,
     })),
 
     // ── Stand ──
