@@ -851,10 +851,27 @@ Seja específico com números. Não invente dados que não foram fornecidos.`;
                   <ReactMarkdown>{latestAnalysis.analysis_text}</ReactMarkdown>
                 </div>
 
-                {/* Timestamp */}
-                <p className="text-[10px] text-muted-foreground">
-                  🕐 Atualizado em {format(new Date(latestAnalysis.created_at), "dd/MM/yyyy HH:mm")}
-                </p>
+                {/* Timestamp + Delete */}
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] text-muted-foreground">
+                    🕐 Atualizado em {format(new Date(latestAnalysis.created_at), "dd/MM/yyyy HH:mm")}
+                  </p>
+                  {isAdmin && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs gap-1 text-destructive hover:text-destructive"
+                      onClick={async () => {
+                        if (!confirm("Excluir este parecer?")) return;
+                        await (supabase as any).from("ndvi_analyses").delete().eq("id", latestAnalysis.id);
+                        refetchAnalyses();
+                        toast.success("Parecer excluído!");
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" /> Excluir
+                    </Button>
+                  )}
+                </div>
               </>
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -906,11 +923,28 @@ Seja específico com números. Não invente dados que não foram fornecidos.`;
                 <CollapsibleContent className="space-y-3 mt-2">
                   {previousAnalyses.slice(1).map((a: any) => (
                     <div key={a.id} className="border rounded-lg p-3 bg-muted/30">
-                      <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
-                        {a.growth_stage && <Badge variant="outline" className="text-[10px]">{a.growth_stage}</Badge>}
-                        {a.dap != null && <span>{a.dap} DAP</span>}
-                        {a.ndvi_value != null && <span className="font-mono">NDVI: {Number(a.ndvi_value).toFixed(3)}</span>}
-                        <span>{format(new Date(a.created_at), "dd/MM/yyyy HH:mm")}</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {a.growth_stage && <Badge variant="outline" className="text-[10px]">{a.growth_stage}</Badge>}
+                          {a.dap != null && <span>{a.dap} DAP</span>}
+                          {a.ndvi_value != null && <span className="font-mono">NDVI: {Number(a.ndvi_value).toFixed(3)}</span>}
+                          <span>{format(new Date(a.created_at), "dd/MM/yyyy HH:mm")}</span>
+                        </div>
+                        {isAdmin && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                            onClick={async () => {
+                              if (!confirm("Excluir este parecer?")) return;
+                              await (supabase as any).from("ndvi_analyses").delete().eq("id", a.id);
+                              refetchAnalyses();
+                              toast.success("Parecer excluído!");
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                       <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed">
                         <ReactMarkdown>{a.analysis_text}</ReactMarkdown>
