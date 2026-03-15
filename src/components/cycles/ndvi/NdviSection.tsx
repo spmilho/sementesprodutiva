@@ -224,15 +224,21 @@ export default function NdviSection({
     queryKey: ["ndvi-images", polygon?.agro_polygon_id, dateFilterMode === "all" ? "all" : undefined],
     queryFn: async () => {
       if (!polygon?.agro_polygon_id) return [];
-      const end = getUnixTime(new Date());
-      // Always fetch from 180 days ago to have all data for filtering
-      const start = getUnixTime(subDays(new Date(), 180));
-      const data: SatImage[] = await ndviProxy("search_images", {
-        polyid: polygon.agro_polygon_id,
-        start,
-        end,
-      });
-      return data.sort((a, b) => b.dt - a.dt);
+      // Cap end to current time minus a small buffer to avoid "end after now" API errors
+      const nowTs = getUnixTime(new Date());
+      const safeEnd = Math.min(nowTs, Math.floor(Date.now() / 1000));
+      const start = safeEnd - (180 * 24 * 60 * 60); // 180 days before end
+      try {
+        const data: SatImage[] = await ndviProxy("search_images", {
+          polyid: polygon.agro_polygon_id,
+          start,
+          end: safeEnd,
+        });
+        return data.sort((a, b) => b.dt - a.dt);
+      } catch (err: any) {
+        console.warn("NDVI image search failed:", err.message);
+        return [];
+      }
     },
     enabled: !!polygon?.agro_polygon_id,
     staleTime: 1000 * 60 * 30,
