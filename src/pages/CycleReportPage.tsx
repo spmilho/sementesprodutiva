@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Printer, ArrowLeft, FileText, Loader2, Download } from "lucide-react";
+import { Printer, ArrowLeft, FileText, Loader2, Download, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { fetchReportData } from "@/components/cycles/report/useReportData";
 import { transformReportData } from "@/components/cycles/report/transformReportData";
-import { exportStandaloneHtmlFile } from "@/components/cycles/report/exportStandaloneHtml";
+import { exportStandaloneHtmlFile, uploadHtmlAndGetShareLink } from "@/components/cycles/report/exportStandaloneHtml";
 
 import ReportCover from "@/components/cycles/report/sections/ReportCover";
 import ReportResumo from "@/components/cycles/report/sections/ReportResumo";
