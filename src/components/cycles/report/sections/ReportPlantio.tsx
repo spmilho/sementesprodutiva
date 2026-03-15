@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 function getCvBadge(cv: number | null) {
   if (cv == null) return "badge-gray";
@@ -21,12 +21,18 @@ function normalizeType(tipo: string | null | undefined): "Fêmea" | "Macho 1" | 
   return "N/A";
 }
 
-function parseBrDate(value: string | null | undefined): Date | null {
+function parseIsoDate(value: string | null | undefined): string | null {
   if (!value) return null;
+  // Accept both ISO (2026-02-27) and BR (27/02/2026) formats, return ISO
+  if (value.includes("-")) return value;
   const [d, m, y] = value.split("/").map(Number);
   if (!d || !m || !y) return null;
-  const dt = new Date(y, m - 1, d, 12, 0, 0);
-  return Number.isNaN(dt.getTime()) ? null : dt;
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+function fmtShort(iso: string) {
+  const [, m, d] = iso.split("-");
+  return `${d}/${m}`;
 }
 
 export default function ReportPlantio({ data }: { data: any }) {
@@ -38,17 +44,23 @@ export default function ReportPlantio({ data }: { data: any }) {
       cv_plantio: toNumber(p.cv_plantio),
       sem_metro: toNumber(p.sem_metro),
       espacamento: toNumber(p.espacamento),
+      iso: parseIsoDate(p.data_iso || p.data),
     }))
-    .sort((a: any, b: any) => {
-      const da = parseBrDate(a.data)?.getTime() || 0;
-      const db = parseBrDate(b.data)?.getTime() || 0;
-      return da - db;
-    });
+    .sort((a: any, b: any) => (a.iso || "").localeCompare(b.iso || ""));
 
-  const hasMale2 = plantio.some((p: any) => p.tipo === "Macho 2");
+  const planejado = (data.plantio_planejado || [])
+    .map((p: any) => ({
+      ...p,
+      tipo: normalizeType(p.tipo),
+      area: toNumber(p.area),
+      iso: parseIsoDate(p.data_iso || p.data),
+    }))
+    .sort((a: any, b: any) => (a.iso || "").localeCompare(b.iso || ""));
 
-  const sumByType = (type: string) =>
-    plantio.filter((p: any) => p.tipo === type).reduce((sum: number, p: any) => sum + (p.area || 0), 0);
+  const hasMale2 = plantio.some((p: any) => p.tipo === "Macho 2") || planejado.some((p: any) => p.tipo === "Macho 2");
+
+  const sumByType = (arr: any[], type: string) =>
+    arr.filter((p: any) => p.tipo === type).reduce((sum: number, p: any) => sum + (p.area || 0), 0);
 
   const avgCvByType = (type: string) => {
     const values = plantio
@@ -57,46 +69,55 @@ export default function ReportPlantio({ data }: { data: any }) {
     return values.length > 0 ? values.reduce((a: number, b: number) => a + b, 0) / values.length : null;
   };
 
-  const totalF = sumByType("Fêmea");
-  const totalM1 = sumByType("Macho 1");
-  const totalM2 = hasMale2 ? sumByType("Macho 2") : null;
+  const totalF = sumByType(plantio, "Fêmea");
+  const totalM1 = sumByType(plantio, "Macho 1");
+  const totalM2 = hasMale2 ? sumByType(plantio, "Macho 2") : null;
   const totalGeral = toNumber(data.area_total) ?? (totalF + totalM1 + (totalM2 || 0));
 
   const avgCvF = avgCvByType("Fêmea");
   const avgCvM1 = avgCvByType("Macho 1");
   const avgCvM2 = hasMale2 ? avgCvByType("Macho 2") : null;
 
-  // Build cumulative chart data by date
-  const dailyMap: Record<string, { date: string; f: number; m1: number; m2: number }> = {};
+  // Build accumulated chart: Planned x Realized per parental
+  const dateMap = new Map<string, Record<string, number>>();
+
+  const addToMap = (iso: string, key: string, area: number) => {
+    const entry = dateMap.get(iso) || {};
+    entry[key] = (entry[key] || 0) + area;
+    dateMap.set(iso, entry);
+  };
+
+  planejado.forEach((p: any) => {
+    if (!p.iso || !p.area) return;
+    if (p.tipo === "Fêmea") addToMap(p.iso, "planF", p.area);
+    else if (p.tipo === "Macho 1") addToMap(p.iso, "planM1", p.area);
+    else if (p.tipo === "Macho 2") addToMap(p.iso, "planM2", p.area);
+  });
+
   plantio.forEach((p: any) => {
-    const key = p.data || "N/A";
-    if (!dailyMap[key]) dailyMap[key] = { date: key, f: 0, m1: 0, m2: 0 };
-    if (p.tipo === "Fêmea") dailyMap[key].f += p.area || 0;
-    else if (p.tipo === "Macho 2") dailyMap[key].m2 += p.area || 0;
-    else if (p.tipo === "Macho 1") dailyMap[key].m1 += p.area || 0;
+    if (!p.iso || !p.area) return;
+    if (p.tipo === "Fêmea") addToMap(p.iso, "realF", p.area);
+    else if (p.tipo === "Macho 1") addToMap(p.iso, "realM1", p.area);
+    else if (p.tipo === "Macho 2") addToMap(p.iso, "realM2", p.area);
   });
 
-  const sortedDates = Object.values(dailyMap).sort((a, b) => {
-    const da = parseBrDate(a.date)?.getTime() || 0;
-    const db = parseBrDate(b.date)?.getTime() || 0;
-    return da - db;
-  });
+  const sorted = [...dateMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const acc = { planF: 0, realF: 0, planM1: 0, realM1: 0, planM2: 0, realM2: 0 };
 
-  let cumF = 0;
-  let cumM1 = 0;
-  let cumM2 = 0;
-
-  const chartData = sortedDates.map((d) => {
-    cumF += d.f;
-    cumM1 += d.m1;
-    cumM2 += d.m2;
-
+  const chartData = sorted.map(([iso, v]) => {
+    for (const k of Object.keys(acc) as (keyof typeof acc)[]) acc[k] += v[k] || 0;
     return {
-      date: d.date,
-      "Fêmea (ha)": +cumF.toFixed(1),
-      "Macho 1 (ha)": +cumM1.toFixed(1),
-      ...(hasMale2 ? { "Macho 2 (ha)": +cumM2.toFixed(1) } : {}),
-      "Total (ha)": +(cumF + cumM1 + (hasMale2 ? cumM2 : 0)).toFixed(1),
+      date: fmtShort(iso),
+      "Plan. Fêmea": Math.round(acc.planF * 10) / 10,
+      "Real Fêmea": Math.round(acc.realF * 10) / 10,
+      "Plan. M1": Math.round(acc.planM1 * 10) / 10,
+      "Real M1": Math.round(acc.realM1 * 10) / 10,
+      ...(hasMale2
+        ? {
+            "Plan. M2": Math.round(acc.planM2 * 10) / 10,
+            "Real M2": Math.round(acc.realM2 * 10) / 10,
+          }
+        : {}),
     };
   });
 
@@ -133,19 +154,21 @@ export default function ReportPlantio({ data }: { data: any }) {
 
       {chartData.length > 1 && (
         <div className="chart-container">
-          <div className="chart-title">Evolução Acumulada do Plantio</div>
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={chartData}>
+          <div className="chart-title">Plantio Acumulado: Planejado × Realizado</div>
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
               <XAxis dataKey="date" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 10 }} />
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Line type="monotone" dataKey="Fêmea (ha)" stroke="#2E7D32" strokeWidth={2} dot={{ r: 4 }} />
-              <Line type="monotone" dataKey="Macho 1 (ha)" stroke="#1565C0" strokeWidth={2} dot={{ r: 4 }} />
-              {hasMale2 && <Line type="monotone" dataKey="Macho 2 (ha)" stroke="#EF6C00" strokeWidth={2} dot={{ r: 4 }} />}
-              <Line type="monotone" dataKey="Total (ha)" stroke="#333" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-            </LineChart>
+              <Line type="monotone" dataKey="Plan. Fêmea" stroke="#1E88E5" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+              <Line type="monotone" dataKey="Real Fêmea" stroke="#1E88E5" strokeWidth={2.5} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="Plan. M1" stroke="#4CAF50" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+              <Line type="monotone" dataKey="Real M1" stroke="#4CAF50" strokeWidth={2.5} dot={{ r: 3 }} />
+              {hasMale2 && <Line type="monotone" dataKey="Plan. M2" stroke="#FF9800" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />}
+              {hasMale2 && <Line type="monotone" dataKey="Real M2" stroke="#FF9800" strokeWidth={2.5} dot={{ r: 3 }} />}
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       )}
