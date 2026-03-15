@@ -103,9 +103,14 @@ export default function CycleReportPage() {
             📄 {data.hibrido} — Safra {data.safra}
           </span>
         </div>
-        <button onClick={() => window.print()} className="toolbar-btn toolbar-btn-primary">
-          <Printer size={16} /> Imprimir / Salvar PDF
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={handleDownloadHtml} className="toolbar-btn">
+            <Download size={16} /> Baixar HTML
+          </button>
+          <button onClick={() => window.print()} className="toolbar-btn toolbar-btn-primary">
+            <Printer size={16} /> Imprimir / Salvar PDF
+          </button>
+        </div>
       </div>
 
       <div className="report-container">
