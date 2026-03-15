@@ -99,6 +99,23 @@ function calcGDU(tmax: number | null, tmin: number | null): number {
   return Math.max(0, gdu);
 }
 
+function normalizeTemperatureTriplet(
+  tempMax: number | null,
+  tempMin: number | null,
+  tempAvg: number | null,
+): { tempMax: number | null; tempMin: number | null; tempAvg: number | null } {
+  // Handles known imported rotation pattern: [avg, max, min]
+  if (tempMax != null && tempMin != null && tempAvg != null && tempMax < tempMin) {
+    return {
+      tempMax: tempMin,
+      tempMin: tempAvg,
+      tempAvg: tempMax,
+    };
+  }
+
+  return { tempMax, tempMin, tempAvg };
+}
+
 function buildPhenologyMap(records: PhenologyRecord[]): Map<string, string> {
   const sorted = [...records]
     .map((r) => ({ ...r, normalizedDate: normalizeDateKey(r.observation_date) }))
