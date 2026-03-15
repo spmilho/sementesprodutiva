@@ -124,7 +124,7 @@ export function transformReportData(data: ReportData, cycle: any): any {
     // ── Plantio Realizado ──
     plantio: data.plantingActual.map((p: any) => ({
       data: fmtD(p.planting_date),
-      data_iso: p.planting_date,
+      data_iso: fmtIso(p.planting_date),
       tipo: parent(p.type),
       gleba: p.pivot_glebas?.name || "Geral",
       lote: p.seed_lot_number || "",
