@@ -272,7 +272,9 @@ const collectExternalDependencies = (cloneRoot: HTMLElement): string[] => {
   return Array.from(unresolved);
 };
 
-export async function exportStandaloneHtmlFile(options: ExportStandaloneHtmlOptions): Promise<void> {
+export async function exportStandaloneHtmlFile(
+  options: ExportStandaloneHtmlOptions,
+): Promise<{ objectUrl: string; fileName: string }> {
   const { sourceElement, fileName, title, styles, wrapperClassName = "report-container" } = options;
 
   const clone = sourceElement.cloneNode(true) as HTMLElement;
@@ -319,9 +321,10 @@ export async function exportStandaloneHtmlFile(options: ExportStandaloneHtmlOpti
 
   const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
   const url = URL.createObjectURL(blob);
+  const safeFileName = sanitizeFileName(fileName);
   const link = document.createElement("a");
   link.href = url;
-  link.download = sanitizeFileName(fileName);
+  link.download = safeFileName;
   link.rel = "noopener";
   link.style.display = "none";
 
@@ -334,8 +337,10 @@ export async function exportStandaloneHtmlFile(options: ExportStandaloneHtmlOpti
     }
   }, 0);
 
-  // Keep Blob URL alive long enough for slower browsers/iframes to start download
+  // Keep Blob URL alive for manual fallback opening from toast action.
   window.setTimeout(() => {
     URL.revokeObjectURL(url);
-  }, 60_000);
+  }, 300_000);
+
+  return { objectUrl: url, fileName: safeFileName };
 }
