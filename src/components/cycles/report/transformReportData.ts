@@ -1,6 +1,34 @@
 import type { ReportData } from "./reportTypes";
 
-const fmtD = (d: any) => (d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR") : null);
+const normalizeDateKey = (value: any): string | null => {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    const [, y, m, d] = iso;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  const br = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (br) {
+    const [, d, m, y] = br;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  return null;
+};
+
+const fmtD = (d: any) => {
+  const key = normalizeDateKey(d);
+  if (!key) return null;
+  const [y, m, day] = key.split("-");
+  return `${day}/${m}/${y}`;
+};
+
+const fmtIso = (d: any) => normalizeDateKey(d);
+
 const parent = (t: any) => {
   if (!t) return "N/A";
   if (t.includes("female") || t === "Fêmea") return "Fêmea";

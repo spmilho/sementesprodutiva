@@ -23,20 +23,40 @@ function calcGDU(tmax: number | null, tmin: number | null): number {
   return Math.max(0, gdu);
 }
 
-function parseDateForSort(dataStr: string | null | undefined, isoStr: string | null | undefined): number {
-  if (isoStr) {
-    const [y, m, d] = isoStr.split("-").map(Number);
-    return new Date(y, m - 1, d, 12, 0, 0).getTime();
+function normalizeDateKey(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    const [, y, m, d] = iso;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
   }
-  if (!dataStr) return 0;
-  const [d, m, y] = dataStr.split("/").map(Number);
-  if (!d || !m || !y) return 0;
-  return new Date(y, m - 1, d, 12, 0, 0).getTime();
+
+  const br = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (br) {
+    const [, d, m, y] = br;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  return null;
+}
+
+function dateKeyToTs(dateKey: string): number {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1, 12, 0, 0).getTime();
+}
+
+function parseDateForSort(dataStr: string | null | undefined, isoStr: string | null | undefined): number {
+  const key = normalizeDateKey(isoStr) || normalizeDateKey(dataStr);
+  return key ? dateKeyToTs(key) : 0;
 }
 
 function fmtDateFromIso(iso: string | null | undefined): string {
-  if (!iso) return "N/A";
-  const [y, m, d] = iso.split("-");
+  const key = normalizeDateKey(iso);
+  if (!key) return "N/A";
+  const [, m, d] = key.split("-");
   return `${d}/${m}`;
 }
 
