@@ -72,14 +72,27 @@ export default function ReportAgua({ data }: { data: any }) {
   const irrigacao = data.irrigacao || [];
   const chuva = data.chuva || [];
 
-  const clima = (data.clima || []).slice().sort((a: any, b: any) => {
-    return parseDateForSort(a.data, a.data_iso) - parseDateForSort(b.data, b.data_iso);
+  const clima = (data.clima || [])
+    .slice()
+    .sort((a: any, b: any) => parseDateForSort(a.data, a.data_iso) - parseDateForSort(b.data, b.data_iso));
+
+  const climaByDate = new Map<string, any>();
+  clima.forEach((r: any) => {
+    const key = normalizeDateKey(r.data_iso) || normalizeDateKey(r.data);
+    if (!key) return;
+    const prev = climaByDate.get(key);
+    if (!prev || String(r.created_at || "") >= String(prev.created_at || "")) {
+      climaByDate.set(key, {
+        ...r,
+        data_iso: key,
+        data: fmtDateFromIso(key),
+      });
+    }
   });
 
-  const climaFixed = clima.map((r: any) => ({
-    ...r,
-    data: r.data_iso ? fmtDateFromIso(r.data_iso) : r.data,
-  }));
+  const climaFixed = Array.from(climaByDate.values()).sort(
+    (a: any, b: any) => parseDateForSort(a.data, a.data_iso) - parseDateForSort(b.data, b.data_iso),
+  );
 
   const totalIrr = irrigacao.reduce((s: number, r: any) => s + (Number(r.lamina_mm) || 0), 0);
   const totalChuva = chuva.reduce((s: number, r: any) => s + (Number(r.mm) || 0), 0);
