@@ -85,11 +85,18 @@ function getSeedsPerMeterActual(actuals: any[], type: ParentGroup): number {
   return getWeightedActualAverage(filtered, (a) => toPositiveNumber(a.seeds_per_meter_actual) || toPositiveNumber(a.seeds_per_meter));
 }
 
-function getAvgSpacing(actuals: any[], type: ParentGroup): number {
-  const matchType = getTypeMatcher(type);
-  const filtered = actuals.filter((a: any) => matchType(String(a.type || "")));
-
-  return getWeightedActualAverage(filtered, (a) => a.row_spacing);
+/**
+ * Get the base row spacing (female-female) from female actuals.
+ * Population is ALWAYS calculated with ff spacing, even for males,
+ * because in seed corn the population refers to density per planted area
+ * using the base inter-row spacing of the field.
+ */
+function getBaseSpacing(actuals: any[]): number {
+  const femaleActuals = actuals.filter((a: any) => isFemaleType(String(a.type || "")));
+  const ffSpacing = getWeightedActualAverage(femaleActuals, (a) => a.row_spacing);
+  if (ffSpacing > 0) return ffSpacing;
+  // Fallback: try any actual
+  return getWeightedActualAverage(actuals, (a) => a.row_spacing);
 }
 
 export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords, standCounts, standPoints, glebas, femaleArea, maleArea }: Props) {
@@ -148,9 +155,9 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
         continue;
       }
 
-      // PRIORITY 2: Estimated from seeds_per_meter_actual + spacing + germination
+      // PRIORITY 2: Estimated from seeds_per_meter_actual + base spacing (ff) + germination
       const spm = getSeedsPerMeterActual(actuals, type);
-      const spacingCm = getAvgSpacing(actuals, type);
+      const spacingCm = getBaseSpacing(actuals);
       const germPct = getGermination(plans, actuals, type);
 
       if (spm > 0 && spacingCm > 0) {
@@ -342,10 +349,10 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
           cvPlanting = calcStats(pts).cv;
         }
 
-        const avgSpacing = getWeightedActualAverage(filteredActuals, (a) => a.row_spacing);
+        const baseSpacing = getBaseSpacing(actuals);
         const germPct = getGermination(plans, actuals, config.key);
-        const popEstimated = (seedsPerMeter > 0 && avgSpacing > 0)
-          ? Math.round((seedsPerMeter / (avgSpacing / 100)) * 10000 * (germPct / 100))
+        const popEstimated = (seedsPerMeter > 0 && baseSpacing > 0)
+          ? Math.round((seedsPerMeter / (baseSpacing / 100)) * 10000 * (germPct / 100))
           : 0;
 
         const sc = standCounts.filter((s: any) => (s.gleba_id || "none") === gid && s.parent_type === config.standType);
