@@ -96,7 +96,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
   // CV% planting per type — prefer manual cvRecords, fallback to cvPoints
   const cvPlantingStats = useMemo(() => {
     const result: Record<string, { cv: number; mean: number; n: number }> = {};
-    for (const type of ["female", "male"]) {
+    for (const type of ["female", "male"] as const) {
       const manualRecords = cvRecords.filter((r: any) =>
         type === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
       );
