@@ -145,14 +145,37 @@ export default function OrganizationTab() {
   });
 
   const handleTestApi = async () => {
+    if (!apiKey || !apiKey.startsWith("sk-ant-")) {
+      toast.error("Cole uma API key válida (começa com sk-ant-)");
+      return;
+    }
     setTestingApi(true);
     try {
-      await callClaude("Responda apenas: OK", "teste", 10);
-      setApiStatus("connected");
-      toast.success("✅ Conexão OK!");
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 50,
+          messages: [{ role: "user", content: "Responda apenas: OK" }],
+        }),
+      });
+      if (response.ok) {
+        setApiStatus("connected");
+        toast.success("✅ Conexão OK!");
+      } else {
+        const err = await response.json().catch(() => ({}));
+        setApiStatus("error");
+        toast.error("❌ " + (err?.error?.message || "Erro " + response.status));
+      }
     } catch (err: any) {
       setApiStatus("error");
-      toast.error(err.message || "Erro na conexão");
+      toast.error("❌ Erro de conexão");
     } finally {
       setTestingApi(false);
     }

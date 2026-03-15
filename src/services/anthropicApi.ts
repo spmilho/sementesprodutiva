@@ -2,36 +2,72 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const getAnthropicKey = async (): Promise<string | null> => {
-  // 1. Try from database (organization_settings)
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("org_id")
-        .eq("id", user.id)
-        .single();
-
-      if (profile?.org_id) {
-        const { data: settings } = await (supabase as any)
-          .from("organization_settings")
-          .select("anthropic_api_key")
-          .eq("org_id", profile.org_id)
-          .single();
-
-        if (settings?.anthropic_api_key) {
-          return settings.anthropic_api_key;
-        }
-      }
-    }
-  } catch (e) {
-    console.log("Key não encontrada no banco, tentando env var...");
+  // 1. Try env var first
+  const envKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  if (envKey && envKey.startsWith('sk-ant-')) {
+    console.log("Key encontrada via env var");
+    return envKey;
   }
 
-  // 2. Try VITE env var (available at build time in frontend)
-  const envKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-  if (envKey && envKey.startsWith("sk-ant-")) return envKey;
+  // 2. Try from database
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log("User:", user?.id);
 
+    if (!user) {
+      console.log("Sem usuário logado");
+      return null;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('org_id')
+      .eq('id', user.id)
+      .single();
+    console.log("Profile org_id:", profile?.org_id);
+
+    if (!profile?.org_id) {
+      const { data: anySettings } = await (supabase as any)
+        .from('organization_settings')
+        .select('anthropic_api_key')
+        .not('anthropic_api_key', 'is', null)
+        .limit(1)
+        .single();
+      console.log("Settings sem filtro:", anySettings);
+      if (anySettings?.anthropic_api_key) {
+        return anySettings.anthropic_api_key;
+      }
+      return null;
+    }
+
+    const { data: settings, error } = await (supabase as any)
+      .from('organization_settings')
+      .select('anthropic_api_key')
+      .eq('org_id', profile.org_id)
+      .single();
+    console.log("Settings:", settings, "Error:", error);
+
+    if (settings?.anthropic_api_key) {
+      return settings.anthropic_api_key;
+    }
+
+    // Fallback: any record with a key
+    const { data: fallbackSettings } = await (supabase as any)
+      .from('organization_settings')
+      .select('anthropic_api_key')
+      .not('anthropic_api_key', 'is', null)
+      .limit(1)
+      .single();
+    console.log("Fallback settings:", fallbackSettings);
+
+    if (fallbackSettings?.anthropic_api_key) {
+      return fallbackSettings.anthropic_api_key;
+    }
+  } catch (e) {
+    console.error("Erro buscando key:", e);
+  }
+
+  console.log("Nenhuma key encontrada");
   return null;
 };
 
