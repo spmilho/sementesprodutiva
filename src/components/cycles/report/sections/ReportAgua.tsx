@@ -12,6 +12,17 @@ import {
   ReferenceLine,
 } from "recharts";
 
+const T_BASE = 10;
+const T_MAX_CAP = 30;
+
+function calcGDU(tmax: number | null, tmin: number | null): number {
+  if (tmax == null || tmin == null) return 0;
+  const adjMax = Math.min(tmax, T_MAX_CAP);
+  const adjMin = Math.max(tmin, T_BASE);
+  const gdu = (adjMax + adjMin) / 2 - T_BASE;
+  return Math.max(0, gdu);
+}
+
 function parseDateForSort(dataStr: string | null | undefined, isoStr: string | null | undefined): number {
   if (isoStr) {
     const [y, m, d] = isoStr.split("-").map(Number);
@@ -26,19 +37,25 @@ function parseDateForSort(dataStr: string | null | undefined, isoStr: string | n
 function fmtDateFromIso(iso: string | null | undefined): string {
   if (!iso) return "N/A";
   const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
+  return `${d}/${m}`;
+}
+
+function normalizeParent(tipo: string): "Fêmea" | "Macho 1" | "Macho 2" | "other" {
+  const t = tipo.toLowerCase();
+  if (t.includes("fêmea") || t.includes("femea")) return "Fêmea";
+  if (t.includes("macho 2")) return "Macho 2";
+  if (t.includes("macho")) return "Macho 1";
+  return "other";
 }
 
 export default function ReportAgua({ data }: { data: any }) {
   const irrigacao = data.irrigacao || [];
   const chuva = data.chuva || [];
 
-  // Sort clima using iso date to avoid timezone issues
   const clima = (data.clima || []).slice().sort((a: any, b: any) => {
     return parseDateForSort(a.data, a.data_iso) - parseDateForSort(b.data, b.data_iso);
   });
 
-  // Rebuild display dates from iso to guarantee consistency
   const climaFixed = clima.map((r: any) => ({
     ...r,
     data: r.data_iso ? fmtDateFromIso(r.data_iso) : r.data,
@@ -65,21 +82,14 @@ export default function ReportAgua({ data }: { data: any }) {
 
   const waterData = Object.values(waterByDateMap)
     .sort((a, b) => a._sortTs - b._sortTs)
-    .map((d) => ({
-      ...d,
-      total: d.irrigacao + d.chuva,
-    }));
+    .map((d) => ({ ...d, total: d.irrigacao + d.chuva }));
 
   let accWater = 0;
   const waterDataWithAcc = waterData.map((d) => {
     accWater += d.total;
-    return {
-      ...d,
-      acumulado: Number(accWater.toFixed(1)),
-    };
+    return { ...d, acumulado: Number(accWater.toFixed(1)) };
   });
 
-  // Phenology transitions for reference lines
   const stageTransitions = climaFixed
     .filter((r: any) => !!r.estadio)
     .filter((r: any, idx: number, arr: any[]) => idx === 0 || arr[idx - 1].estadio !== r.estadio)
@@ -88,7 +98,6 @@ export default function ReportAgua({ data }: { data: any }) {
   const hasTemp = climaFixed.some((r: any) => r.temp_max != null || r.temp_min != null || r.temp_media != null);
   const hasHumidity = climaFixed.some((r: any) => r.ur_max != null || r.ur_min != null || r.ur_media != null);
   const hasGdu = climaFixed.some((r: any) => r.gdu_diario != null || r.gdu_acumulado != null);
-  const hasWindEto = climaFixed.some((r: any) => r.vento_media != null || r.eto_mm != null || r.chuva_mm != null);
   const hasRadiation = climaFixed.some((r: any) => r.radiacao_mj != null);
 
   const avgTemp = climaFixed.length > 0
@@ -102,6 +111,96 @@ export default function ReportAgua({ data }: { data: any }) {
     : null;
 
   const totalGdu = climaFixed.length > 0 ? climaFixed[climaFixed.length - 1]?.gdu_acumulado || null : null;
+
+  // ── GDU per parental ──
+  // Build daily GDU map from weather data
+  const dailyGduMap = new Map<string, number>();
+  climaFixed.forEach((r: any) => {
+    const key = r.data_iso;
+    if (key) dailyGduMap.set(key, calcGDU(Number(r.temp_max), Number(r.temp_min)));
+  });
+
+  // Extract unique planting dates per parental from plantio data
+  const plantio = data.plantio || [];
+  const getPlantingDates = (parentType: string): string[] => {
+    const dates = new Set<string>();
+    plantio.forEach((p: any) => {
+      if (normalizeParent(p.tipo) === parentType && p.data_iso) dates.add(p.data_iso);
+    });
+    return Array.from(dates).sort();
+  };
+
+  const femaleDates = getPlantingDates("Fêmea");
+  const male1Dates = getPlantingDates("Macho 1");
+  const male2Dates = getPlantingDates("Macho 2");
+
+  const buildGduByPlanting = (plantingDates: string[], prefix: string) => {
+    if (plantingDates.length === 0 || climaFixed.length === 0) return [];
+    const earliestPlanting = plantingDates[0];
+    const lastWeatherDate = climaFixed[climaFixed.length - 1]?.data_iso;
+    if (!earliestPlanting || !lastWeatherDate) return [];
+
+    const startTs = parseDateForSort(null, earliestPlanting);
+    const endTs = parseDateForSort(null, lastWeatherDate);
+    const allDates: string[] = [];
+    for (let ts = startTs; ts <= endTs; ts += 86400000) {
+      const d = new Date(ts);
+      allDates.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+    }
+    return allDates.map(dateStr => {
+      const currentTs = parseDateForSort(null, dateStr);
+      const row: Record<string, any> = { dateLabel: fmtDateFromIso(dateStr) };
+      plantingDates.forEach((plantDate) => {
+        const plantStartTs = parseDateForSort(null, plantDate) + 86400000; // D+1 rule
+        if (currentTs < plantStartTs) { row[`${prefix}_${plantDate}`] = null; return; }
+        let acc = 0;
+        for (const [dKey, dailyGdu] of dailyGduMap.entries()) {
+          const ts = parseDateForSort(null, dKey);
+          if (ts >= plantStartTs && ts <= currentTs) acc += dailyGdu;
+        }
+        row[`${prefix}_${plantDate}`] = Math.round(acc);
+      });
+      return row;
+    });
+  };
+
+  const gduFemaleData = buildGduByPlanting(femaleDates, "gdu_f");
+  const gduMale1Data = buildGduByPlanting(male1Dates, "gdu_m1");
+  const gduMale2Data = buildGduByPlanting(male2Dates, "gdu_m2");
+
+  const FEMALE_COLORS = ["#7B1FA2", "#AB47BC", "#CE93D8", "#4A148C", "#9C27B0", "#E1BEE7"];
+  const MALE1_COLORS = ["#1565C0", "#42A5F5", "#90CAF9", "#0D47A1", "#1976D2", "#BBDEFB"];
+  const MALE2_COLORS = ["#E65100", "#FB8C00", "#FFCC80", "#BF360C", "#EF6C00", "#FFE0B2"];
+
+  const renderGduChart = (title: string, chartData: any[], plantingDates: string[], prefix: string, colors: string[]) => {
+    if (chartData.length === 0) return null;
+    return (
+      <div className="chart-container">
+        <div className="chart-title">{title}</div>
+        <ResponsiveContainer width="100%" height={280}>
+          <ComposedChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
+            <XAxis dataKey="dateLabel" tick={{ fontSize: 9 }} angle={-25} textAnchor="end" height={50} />
+            <YAxis tick={{ fontSize: 10 }} />
+            <Tooltip />
+            <Legend wrapperStyle={{ fontSize: 10 }} />
+            {plantingDates.map((d, i) => (
+              <Line
+                key={d}
+                type="monotone"
+                dataKey={`${prefix}_${d}`}
+                name={`Plantio ${fmtDateFromIso(d)}`}
+                stroke={colors[i % colors.length]}
+                strokeWidth={2}
+                dot={false}
+                connectNulls
+              />
+            ))}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
 
   return (
     <div className="report-section">
@@ -191,28 +290,6 @@ export default function ReportAgua({ data }: { data: any }) {
         </div>
       )}
 
-      {hasWindEto && (
-        <div className="chart-container">
-          <div className="chart-title">Vento, ETo e Chuva</div>
-          <ResponsiveContainer width="100%" height={280}>
-            <ComposedChart data={climaFixed}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
-              <XAxis dataKey="data" tick={{ fontSize: 9 }} angle={-25} textAnchor="end" height={50} />
-              <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
-              {stageTransitions.map((t: any, i: number) => (
-                <ReferenceLine key={`vento-stage-${i}`} x={t.data} yAxisId="left" stroke="#2E7D32" strokeDasharray="4 4" label={{ value: t.estadio, position: "top", fontSize: 8, fill: "#2E7D32" }} />
-              ))}
-              <Bar yAxisId="left" dataKey="eto_mm" name="ETo (mm)" fill="#FBC02D" radius={[2, 2, 0, 0]} />
-              <Bar yAxisId="left" dataKey="chuva_mm" name="Chuva (mm)" fill="#1E88E5" radius={[2, 2, 0, 0]} />
-              <Line yAxisId="right" type="monotone" dataKey="vento_media" name="Vento (km/h)" stroke="#757575" strokeWidth={2} dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
       {hasGdu && (
         <div className="chart-container">
           <div className="chart-title">GDU Diário e Acumulado</div>
@@ -233,6 +310,11 @@ export default function ReportAgua({ data }: { data: any }) {
           </ResponsiveContainer>
         </div>
       )}
+
+      {/* GDU per parental */}
+      {renderGduChart("GDU Acumulado — Fêmea", gduFemaleData, femaleDates, "gdu_f", FEMALE_COLORS)}
+      {renderGduChart("GDU Acumulado — Macho 1", gduMale1Data, male1Dates, "gdu_m1", MALE1_COLORS)}
+      {renderGduChart("GDU Acumulado — Macho 2", gduMale2Data, male2Dates, "gdu_m2", MALE2_COLORS)}
 
       {hasRadiation && (
         <div className="chart-container">

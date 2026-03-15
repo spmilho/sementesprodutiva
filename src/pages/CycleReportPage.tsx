@@ -20,8 +20,6 @@ import ReportAgua from "@/components/cycles/report/sections/ReportAgua";
 import ReportUmidade from "@/components/cycles/report/sections/ReportUmidade";
 import ReportEstimativa from "@/components/cycles/report/sections/ReportEstimativa";
 import ReportColheita from "@/components/cycles/report/sections/ReportColheita";
-import ReportVisitas from "@/components/cycles/report/sections/ReportVisitas";
-import ReportConclusao from "@/components/cycles/report/sections/ReportConclusao";
 
 const sb = supabase as any;
 
@@ -119,15 +117,12 @@ export default function CycleReportPage() {
         {data.fenologia?.length > 0 && <ReportFenologia data={data} />}
         {data.ndvi_imagens?.length > 0 && <ReportNDVI data={data} />}
         {(data.nicking_marcos?.length > 0 || data.nicking_observacoes?.length > 0) && <ReportNicking data={data} />}
-        {data.despendoamento?.length > 0 && <ReportDespendoamento data={data} />}
+        {(data.despendoamento?.length > 0 || data.plantio?.length > 0) && <ReportDespendoamento data={data} />}
         {data.pragas?.length > 0 && <ReportPragas data={data} />}
         {(data.irrigacao?.length > 0 || data.chuva?.length > 0 || data.clima?.length > 0) && <ReportAgua data={data} />}
         {data.umidade?.length > 0 && <ReportUmidade data={data} />}
         {data.estimativa && <ReportEstimativa data={data} />}
         {data.colheita?.length > 0 && <ReportColheita data={data} />}
-        {data.visitas?.length > 0 && <ReportVisitas data={data} />}
-
-        <ReportConclusao data={data} />
       </div>
     </>
   );

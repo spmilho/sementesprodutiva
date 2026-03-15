@@ -1,4 +1,4 @@
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 function getCvBadge(cv: number | null) {
   if (cv == null) return "badge-gray";
@@ -13,11 +13,10 @@ function toNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function normalizeType(tipo: string | null | undefined): "Fêmea" | "Macho 1" | "Macho 2" | "Macho 3" | "N/A" {
+function normalizeType(tipo: string | null | undefined): "Fêmea" | "Macho 1" | "Macho 2" | "N/A" {
   const t = String(tipo || "").toLowerCase();
   if (t.includes("fêmea") || t.includes("femea") || t === "female") return "Fêmea";
   if (t.includes("macho 2") || t === "male_2") return "Macho 2";
-  if (t.includes("macho 3") || t === "male_3") return "Macho 3";
   if (t.includes("macho") || t === "male" || t === "male_1") return "Macho 1";
   return "N/A";
 }
@@ -58,19 +57,16 @@ export default function ReportPlantio({ data }: { data: any }) {
     return values.length > 0 ? values.reduce((a: number, b: number) => a + b, 0) / values.length : null;
   };
 
-  const cfgTotal = toNumber(data.area_total);
-  const cfgFemale = toNumber(data.area_femea);
-  const cfgMale = toNumber(data.area_macho);
-
-  const totalF = cfgFemale ?? sumByType("Fêmea");
-  const totalM1 = cfgMale ?? sumByType("Macho 1");
-  const totalM2 = hasMale2 ? (cfgMale ?? sumByType("Macho 2")) : null;
-  const totalGeral = cfgTotal ?? (totalF + totalM1 + (totalM2 || 0));
+  const totalF = sumByType("Fêmea");
+  const totalM1 = sumByType("Macho 1");
+  const totalM2 = hasMale2 ? sumByType("Macho 2") : null;
+  const totalGeral = toNumber(data.area_total) ?? (totalF + totalM1 + (totalM2 || 0));
 
   const avgCvF = avgCvByType("Fêmea");
   const avgCvM1 = avgCvByType("Macho 1");
   const avgCvM2 = hasMale2 ? avgCvByType("Macho 2") : null;
 
+  // Build cumulative chart data by date
   const dailyMap: Record<string, { date: string; f: number; m1: number; m2: number }> = {};
   plantio.forEach((p: any) => {
     const key = p.data || "N/A";
@@ -90,14 +86,10 @@ export default function ReportPlantio({ data }: { data: any }) {
   let cumM1 = 0;
   let cumM2 = 0;
 
-  const capF = totalF || Infinity;
-  const capM1 = totalM1 || Infinity;
-  const capM2 = (totalM2 || 0) > 0 ? (totalM2 as number) : Infinity;
-
   const chartData = sortedDates.map((d) => {
-    cumF = Math.min(capF, cumF + d.f);
-    cumM1 = Math.min(capM1, cumM1 + d.m1);
-    cumM2 = Math.min(capM2, cumM2 + d.m2);
+    cumF += d.f;
+    cumM1 += d.m1;
+    cumM2 += d.m2;
 
     return {
       date: d.date,
@@ -115,20 +107,20 @@ export default function ReportPlantio({ data }: { data: any }) {
       <div className="kpi-grid">
         <div className="kpi-card">
           <div className="kpi-value">{totalF.toFixed(1)} ha</div>
-          <div className="kpi-label">Fêmea (área de referência)</div>
+          <div className="kpi-label">Fêmea plantada</div>
           {avgCvF != null && <div className="kpi-sub">CV% médio: {avgCvF.toFixed(1)}%</div>}
         </div>
 
         <div className="kpi-card blue">
           <div className="kpi-value">{totalM1.toFixed(1)} ha</div>
-          <div className="kpi-label">Macho 1 (área de referência)</div>
+          <div className="kpi-label">Macho 1 plantado</div>
           {avgCvM1 != null && <div className="kpi-sub">CV% médio: {avgCvM1.toFixed(1)}%</div>}
         </div>
 
         {hasMale2 && totalM2 != null && (
           <div className="kpi-card blue">
             <div className="kpi-value">{totalM2.toFixed(1)} ha</div>
-            <div className="kpi-label">Macho 2 (área de referência)</div>
+            <div className="kpi-label">Macho 2 plantado</div>
             {avgCvM2 != null && <div className="kpi-sub">CV% médio: {avgCvM2.toFixed(1)}%</div>}
           </div>
         )}
@@ -143,16 +135,17 @@ export default function ReportPlantio({ data }: { data: any }) {
         <div className="chart-container">
           <div className="chart-title">Evolução Acumulada do Plantio</div>
           <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={chartData}>
+            <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
               <XAxis dataKey="date" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 10 }} />
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Area type="monotone" dataKey="Fêmea (ha)" stackId="1" stroke="#2E7D32" fill="#A5D6A7" />
-              <Area type="monotone" dataKey="Macho 1 (ha)" stackId="1" stroke="#1565C0" fill="#90CAF9" />
-              {hasMale2 && <Area type="monotone" dataKey="Macho 2 (ha)" stackId="1" stroke="#EF6C00" fill="#FFCC80" />}
-            </AreaChart>
+              <Line type="monotone" dataKey="Fêmea (ha)" stroke="#2E7D32" strokeWidth={2} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="Macho 1 (ha)" stroke="#1565C0" strokeWidth={2} dot={{ r: 4 }} />
+              {hasMale2 && <Line type="monotone" dataKey="Macho 2 (ha)" stroke="#EF6C00" strokeWidth={2} dot={{ r: 4 }} />}
+              <Line type="monotone" dataKey="Total (ha)" stroke="#333" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+            </LineChart>
           </ResponsiveContainer>
         </div>
       )}

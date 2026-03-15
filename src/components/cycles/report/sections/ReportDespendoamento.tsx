@@ -10,6 +10,7 @@ import {
   Bar,
   Legend,
   ReferenceLine,
+  ReferenceArea,
 } from "recharts";
 
 function parseBrDate(value: string | null | undefined): Date | null {
@@ -20,7 +21,20 @@ function parseBrDate(value: string | null | undefined): Date | null {
   return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
+function parseIsoDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const [y, m, d] = value.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d, 12, 0, 0);
+}
+
 function formatDateBr(date: Date) {
+  const d = String(date.getDate()).padStart(2, "0");
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  return `${d}/${m}`;
+}
+
+function formatDateBrFull(date: Date) {
   const d = String(date.getDate()).padStart(2, "0");
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const y = date.getFullYear();
@@ -44,77 +58,88 @@ export default function ReportDespendoamento({ data }: { data: any }) {
 
   const totalArea = records.reduce((s: number, d: any) => s + (Number(d.area) || 0), 0);
 
-  const dap = Number(data.desp_dap) > 0 ? Number(data.desp_dap) : 60;
-  const margin = 5;
+  const dap = Number(data.desp_dap) > 0 ? Number(data.desp_dap) : 55;
 
-  const femalePlantingByDate = (data.plantio || [])
-    .filter((p: any) => String(p.tipo || "").toLowerCase().includes("fême") || String(p.tipo || "").toLowerCase().includes("feme"))
-    .reduce((acc: Record<string, number>, p: any) => {
-      const key = p.data;
-      if (!key) return acc;
-      acc[key] = (acc[key] || 0) + (Number(p.area) || 0);
-      return acc;
-    }, {});
+  // Extract female plantings grouped by date (use ISO dates when available)
+  const femalePlantings: { date: Date; area: number }[] = [];
+  const plantio = data.plantio || [];
+  const seenDates = new Set<string>();
 
-  const windows = Object.entries(femalePlantingByDate)
-    .map(([dateBr, area], idx) => {
-      const plantingDate = parseBrDate(dateBr);
-      if (!plantingDate || !area) return null;
-      const center = addDays(plantingDate, dap);
-      const start = addDays(center, -margin);
-      const end = addDays(center, margin);
-      return {
-        idx,
-        label: `Plantio ${dateBr} (${Number(area).toFixed(0)}ha)`,
-        area: Number(area),
-        center,
-        start,
-        end,
-        startBr: formatDateBr(start),
-        centerBr: formatDateBr(center),
-        endBr: formatDateBr(end),
-      };
+  plantio
+    .filter((p: any) => {
+      const t = String(p.tipo || "").toLowerCase();
+      return t.includes("fême") || t.includes("feme") || t.includes("female");
     })
-    .filter(Boolean) as Array<any>;
+    .forEach((p: any) => {
+      const dt = p.data_iso ? parseIsoDate(p.data_iso) : parseBrDate(p.data);
+      if (!dt) return;
+      const key = dt.toISOString().slice(0, 10);
+      if (seenDates.has(key)) {
+        const existing = femalePlantings.find(f => f.date.toISOString().slice(0, 10) === key);
+        if (existing) existing.area += Number(p.area) || 0;
+      } else {
+        seenDates.add(key);
+        femalePlantings.push({ date: dt, area: Number(p.area) || 0 });
+      }
+    });
 
-  const colors = ["#1E88E5", "#4CAF50", "#FF9800", "#E91E63", "#9C27B0", "#00BCD4", "#795548"];
+  femalePlantings.sort((a, b) => a.date.getTime() - b.date.getTime());
 
+  // Compute windows: each planting date + DAP = center date
+  const windows = femalePlantings.map((p, i) => {
+    const center = addDays(p.date, dap);
+    return {
+      idx: i,
+      label: `P${i + 1}`,
+      plantingDate: p.date,
+      area: p.area,
+      centerDate: center,
+      color: ["#1E88E5", "#4CAF50", "#FF9800", "#E91E63", "#9C27B0", "#00BCD4", "#795548"][i % 7],
+    };
+  });
+
+  // Unified window: DAP after first planting → DAP after last planting
+  const windowStart = windows.length > 0 ? windows[0].centerDate : null;
+  const windowEnd = windows.length > 0 ? windows[windows.length - 1].centerDate : null;
+
+  // Build forecast chart data
   const forecastData = (() => {
-    if (windows.length === 0) return [];
-
-    const minStart = new Date(Math.min(...windows.map((w) => w.start.getTime())));
-    const maxEnd = new Date(Math.max(...windows.map((w) => w.end.getTime())));
-    const start = addDays(minStart, -2);
-    const end = addDays(maxEnd, 2);
+    if (!windowStart || !windowEnd) return [];
+    const chartStart = addDays(windowStart, -3);
+    const chartEnd = addDays(windowEnd, 3);
 
     const rows: any[] = [];
-    let cursor = new Date(start);
+    let cursor = new Date(chartStart);
     let accHa = 0;
+    const centerReached = new Set<number>();
 
-    while (cursor <= end) {
-      const row: any = {
-        dateBr: formatDateBr(cursor),
-        totalHaDia: 0,
-      };
+    while (cursor <= chartEnd) {
+      const cursorKey = cursor.toISOString().slice(0, 10);
+      const row: any = { dateBr: formatDateBr(cursor), totalHaDia: 0 };
 
       windows.forEach((w) => {
-        const key = `w${w.idx}`;
-        const active = cursor >= w.start && cursor <= w.end;
-        row[key] = active ? w.area : 0;
-        if (active) row.totalHaDia += w.area;
+        const centerKey = w.centerDate.toISOString().slice(0, 10);
+        const isCenter = cursorKey === centerKey;
+        const key = `p${w.idx}`;
+        row[key] = isCenter ? w.area : 0;
+        if (isCenter) row.totalHaDia += w.area;
+        if (isCenter && !centerReached.has(w.idx)) {
+          centerReached.add(w.idx);
+          accHa += w.area;
+        }
       });
 
-      accHa += row.totalHaDia;
-      row.haAcumulados = Number(accHa.toFixed(1));
+      row.haAcumulados = Math.round(accHa * 10) / 10;
+      row.inWindow = cursor >= windowStart && cursor <= windowEnd;
       rows.push(row);
-
       cursor = addDays(cursor, 1);
     }
-
     return rows;
   })();
 
   const todayBr = formatDateBr(new Date());
+  const windowStartLabel = windowStart ? formatDateBrFull(windowStart) : "";
+  const windowEndLabel = windowEnd ? formatDateBrFull(windowEnd) : "";
 
   return (
     <div className="report-section">
@@ -135,42 +160,65 @@ export default function ReportDespendoamento({ data }: { data: any }) {
             <div className="kpi-label">% Remanescente (última)</div>
           </div>
         )}
+        {windowStart && windowEnd && (
+          <div className="kpi-card purple">
+            <div className="kpi-value" style={{ fontSize: 16 }}>{windowStartLabel} → {windowEndLabel}</div>
+            <div className="kpi-label">Janela de Despendoamento (DAP {dap})</div>
+          </div>
+        )}
       </div>
 
       {forecastData.length > 0 && (
         <div className="chart-container">
-          <div className="chart-title">Janela de Despendoamento (±{margin} dias)</div>
+          <div className="chart-title">Previsão de Despendoamento (DAP {dap})</div>
           <ResponsiveContainer width="100%" height={340}>
             <ComposedChart data={forecastData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
               <XAxis dataKey="dateBr" tick={{ fontSize: 9 }} angle={-25} textAnchor="end" height={50} />
-              <YAxis yAxisId="left" tick={{ fontSize: 10 }} label={{ value: "ha/dia", angle: -90, position: "insideLeft" }} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} label={{ value: "ha acum", angle: 90, position: "insideRight" }} />
+              <YAxis yAxisId="left" tick={{ fontSize: 10 }} label={{ value: "ha", angle: -90, position: "insideLeft", fontSize: 10 }} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} label={{ value: "ha acum.", angle: 90, position: "insideRight", fontSize: 10 }} />
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: 10 }} />
 
-              {windows.map((w, i) => (
-                <Bar
-                  key={w.idx}
+              {/* Window shading */}
+              {(() => {
+                const startLbl = windowStart ? formatDateBr(windowStart) : null;
+                const endLbl = windowEnd ? formatDateBr(windowEnd) : null;
+                if (!startLbl || !endLbl) return null;
+                return (
+                  <ReferenceArea yAxisId="left" x1={startLbl} x2={endLbl} fill="#4CAF50" fillOpacity={0.08} stroke="#4CAF50" strokeOpacity={0.3} strokeWidth={1} />
+                );
+              })()}
+
+              {/* Center date lines */}
+              {windows.map((w) => (
+                <ReferenceLine
+                  key={`center-${w.idx}`}
                   yAxisId="left"
-                  dataKey={`w${w.idx}`}
-                  name={w.label}
-                  fill={colors[i % colors.length]}
-                  stackId="window"
+                  x={formatDateBr(w.centerDate)}
+                  stroke={w.color}
+                  strokeWidth={2}
+                  label={{ value: `${w.label} ${formatDateBr(w.centerDate)}`, position: "insideTop", fontSize: 9, fontWeight: "bold", fill: w.color, dy: -20 }}
+                />
+              ))}
+
+              {/* Bars per planting */}
+              {windows.map((w) => (
+                <Bar
+                  key={`bar-${w.idx}`}
+                  yAxisId="left"
+                  dataKey={`p${w.idx}`}
+                  name={`${formatDateBrFull(w.plantingDate)} (${w.area.toFixed(0)}ha)`}
+                  fill={w.color}
+                  fillOpacity={0.85}
+                  stackId="ha"
                   radius={[2, 2, 0, 0]}
                 />
               ))}
 
-              <Line yAxisId="right" type="monotone" dataKey="haAcumulados" name="ha acumulados" stroke="#263238" strokeWidth={2.5} dot={false} />
+              <Line yAxisId="right" type="stepAfter" dataKey="haAcumulados" name="ha acumulados" stroke="#263238" strokeWidth={2.5} dot={false} />
 
-              <ReferenceLine
-                yAxisId="left"
-                x={todayBr}
-                stroke="#D32F2F"
-                strokeDasharray="6 4"
-                strokeWidth={2}
-                label={{ value: "HOJE", position: "top", fontSize: 10, fill: "#D32F2F", fontWeight: 700 }}
-              />
+              <ReferenceLine yAxisId="left" x={todayBr} stroke="#D32F2F" strokeDasharray="6 4" strokeWidth={2} label={{ value: "HOJE", position: "top", fontSize: 10, fill: "#D32F2F", fontWeight: 700 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
