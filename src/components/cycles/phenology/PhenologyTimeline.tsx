@@ -273,15 +273,9 @@ export default function PhenologyTimeline({ records, onClickFuture, onClickPast,
       {showBoth ? (
         <div className="space-y-4">
           {renderTimeline(femaleInfos, "Fêmea", TYPE_BADGE_STYLES.female)}
-          {hasSpecificMales ? (
-            <>
-              {maleTypes.includes("male_1") && renderTimeline(male1Infos, "Macho 1", TYPE_BADGE_STYLES.male_1)}
-              {maleTypes.includes("male_2") && renderTimeline(male2Infos, "Macho 2", TYPE_BADGE_STYLES.male_2)}
-              {maleTypes.includes("male_3") && renderTimeline(male3Infos, "Macho 3", TYPE_BADGE_STYLES.male_3)}
-            </>
-          ) : (
-            renderTimeline(genericMaleInfos, "Macho", TYPE_BADGE_STYLES.male)
-          )}
+          {availableMales.includes("male_1") && renderTimeline(male1Infos, "Macho 1", TYPE_BADGE_STYLES.male_1)}
+          {availableMales.includes("male_2") && renderTimeline(male2Infos, "Macho 2", TYPE_BADGE_STYLES.male_2)}
+          {availableMales.includes("male_3") && renderTimeline(male3Infos, "Macho 3", TYPE_BADGE_STYLES.male_3)}
         </div>
       ) : (
         renderTimeline(getInfosForType(filter))

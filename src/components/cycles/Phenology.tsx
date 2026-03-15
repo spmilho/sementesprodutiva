@@ -190,7 +190,7 @@ export default function Phenology({
       }
 
       const types = values.type === "both"
-        ? ["female", ...(maleTypes.length > 0 ? maleTypes : ["male"])]
+        ? ["female", ...(maleTypes.length > 0 ? maleTypes : ["male_1", "male_2"])]
         : [values.type];
 
       for (const t of types) {
