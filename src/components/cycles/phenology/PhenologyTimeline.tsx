@@ -109,10 +109,9 @@ const TYPE_BADGE_STYLES: Record<string, string> = {
 
 export default function PhenologyTimeline({ records, onClickFuture, onClickPast, plantingDate, maleTypes = [] }: PhenologyTimelineProps) {
   // Determine available filters
-  const hasSpecificMales = maleTypes.length > 0;
-  const filterOptions: string[] = hasSpecificMales
-    ? ["female", ...maleTypes, "both"]
-    : ["female", "male", "both"];
+  // Determine available filters — always use male_1/male_2, never generic "male"
+  const availableMales = hasSpecificMales ? maleTypes : ["male_1", "male_2"];
+  const filterOptions: string[] = ["female", ...availableMales, "both"];
 
   const [filter, setFilter] = useState<string>("female");
 
