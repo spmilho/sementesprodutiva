@@ -91,16 +91,21 @@ function TimelineBlock({ title, records, accent }: { title: string; records: any
 
 export default function ReportFenologia({ data }: { data: any }) {
   const femaleRecords = (data.fenologia || []).filter((f: any) => String(f.parental || "").toLowerCase().includes("fême") || String(f.parental || "").toLowerCase().includes("feme"));
-  const maleRecords = (data.fenologia || []).filter((f: any) => {
+  const male1Records = (data.fenologia || []).filter((f: any) => {
     const p = String(f.parental || "").toLowerCase();
-    return p.includes("macho") || p.includes("male");
+    return p.includes("macho 1") || p === "male_1";
+  });
+  const male2Records = (data.fenologia || []).filter((f: any) => {
+    const p = String(f.parental || "").toLowerCase();
+    return p.includes("macho 2") || p === "male_2";
   });
 
   return (
     <div className="report-section">
       <div className="section-title">🌾 Fenologia</div>
       <TimelineBlock title="Parental Fêmea" records={femaleRecords} accent="#7E57C2" />
-      <TimelineBlock title="Parental Macho" records={maleRecords} accent="#2E7D32" />
+      <TimelineBlock title="Parental Macho 1" records={male1Records} accent="#1565C0" />
+      <TimelineBlock title="Parental Macho 2" records={male2Records} accent="#00838F" />
     </div>
   );
 }
