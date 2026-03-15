@@ -138,13 +138,27 @@ export default function ReportAgua({ data }: { data: any }) {
   const irrigacao = data.irrigacao || [];
   const chuva = data.chuva || [];
 
-  const clima = (data.clima || [])
+  const climaRaw = (data.clima || []).map((r: any) => {
+    const temps = normalizeTemperatureTriplet(
+      toNullableNumber(r.temp_max),
+      toNullableNumber(r.temp_min),
+      toNullableNumber(r.temp_media),
+    );
+    return {
+      ...r,
+      temp_max: temps.tempMax,
+      temp_min: temps.tempMin,
+      temp_media: temps.tempAvg,
+    };
+  });
+
+  const clima = fixLikelySwappedMonthDay(climaRaw)
     .slice()
-    .sort((a: any, b: any) => parseDateForSort(a.data, a.data_iso) - parseDateForSort(b.data, b.data_iso));
+    .sort((a: any, b: any) => parseDateForSort(a.data, a._dateKey || a.data_iso) - parseDateForSort(b.data, b._dateKey || b.data_iso));
 
   const climaByDate = new Map<string, any>();
   clima.forEach((r: any) => {
-    const key = normalizeDateKey(r.data_iso) || normalizeDateKey(r.data);
+    const key = normalizeDateKey(r._dateKey) || normalizeDateKey(r.data_iso) || normalizeDateKey(r.data);
     if (!key) return;
     const prev = climaByDate.get(key);
     if (!prev || String(r.created_at || "") >= String(prev.created_at || "")) {
