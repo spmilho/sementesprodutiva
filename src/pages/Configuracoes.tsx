@@ -119,6 +119,10 @@ export default function Configuracoes() {
             </div>
           </TabsContent>
         )}
+        {isAdmin && (
+          <TabsContent value="trash">
+            <TrashTab />
+          </TabsContent>
       </Tabs>
     </div>
   );
