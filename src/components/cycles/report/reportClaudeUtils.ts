@@ -341,7 +341,8 @@ DADOS CICLO: ${JSON.stringify({
   })}
 
 LOTES (${rd.lotes.length}): ${rd.lotes.length > 0 ? JSON.stringify(rd.lotes) : "VAZIO-PULAR"}
-TS (${rd.ts.length}): ${rd.ts.length > 0 ? JSON.stringify(rd.ts) : "VAZIO-PULAR"}
+TS CONSOLIDADO DO CICLO (${rd.ts.length}): ${rd.ts.length > 0 ? JSON.stringify(rd.ts) : "VAZIO-PULAR"}
+IMPORTANTE TS: não separar por lote, parental ou safra. Mostrar apenas origem, produto, ia, tipo, dose e unidade.
 PLANTIO (${rd.plantio.length}): ${rd.plantio.length > 0 ? JSON.stringify(rd.plantio) : "VAZIO-PULAR"}
 ${charts.plantio ? 'GRÁFICO PLANTIO: <img src="' + charts.plantio + '">' : "Sem gráfico disponível — gere SVG simples de barras se houver dados."}
 STAND (${rd.stand.length}): ${rd.stand.length > 0 ? JSON.stringify(rd.stand) : "VAZIO-PULAR"}`;
