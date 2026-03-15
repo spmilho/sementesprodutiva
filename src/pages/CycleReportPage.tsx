@@ -90,12 +90,36 @@ export default function CycleReportPage() {
     );
   }
 
-  const handleDownloadHtml = () => {
+  const handleDownloadHtml = async () => {
     const reportContainer = document.querySelector(".report-container");
     if (!reportContainer) return;
 
     const clientName = data.cliente || "Cliente";
     const fileName = `Relatorio de Campo - ${clientName}.html`;
+
+    // Clone to convert images to base64 without affecting DOM
+    const clone = reportContainer.cloneNode(true) as HTMLElement;
+    const images = clone.querySelectorAll("img");
+    await Promise.all(
+      Array.from(images).map(async (img) => {
+        try {
+          const src = img.getAttribute("src");
+          if (!src || src.startsWith("data:")) return;
+          const response = await fetch(src);
+          if (!response.ok) return;
+          const blob = await response.blob();
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          img.setAttribute("src", base64);
+        } catch {
+          // keep original src
+        }
+      })
+    );
 
     const htmlContent = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -109,7 +133,7 @@ export default function CycleReportPage() {
   </style>
 </head>
 <body>
-  <div class="report-container">${reportContainer.innerHTML}</div>
+  <div class="report-container">${clone.innerHTML}</div>
 </body>
 </html>`;
 
@@ -118,7 +142,9 @@ export default function CycleReportPage() {
     const a = document.createElement("a");
     a.href = url;
     a.download = fileName;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
