@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 interface ExportStandaloneHtmlOptions {
   sourceElement: HTMLElement;
   fileName: string;
@@ -6,6 +8,7 @@ interface ExportStandaloneHtmlOptions {
   wrapperClassName?: string;
 }
 
+const sb = supabase as any;
 const RESOURCE_ATTRS = ["src", "poster", "srcset"] as const;
 const URL_IN_STYLE_REGEX = /url\((['"]?)(.*?)\1\)/g;
 
@@ -38,13 +41,67 @@ const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
-const fetchAsDataUrl = async (url: string): Promise<string> => {
-  const response = await fetch(url, { credentials: "include" });
+const parseStorageObjectUrl = (url: string): { bucket: string; path: string } | null => {
+  try {
+    const { pathname } = new URL(url, window.location.href);
+    const match = pathname.match(/\/storage\/v1\/object\/(?:sign|public|authenticated)\/([^/]+)\/(.+)$/);
+    if (!match) return null;
+
+    const bucket = decodeURIComponent(match[1]);
+    const path = decodeURIComponent(match[2]);
+    if (!bucket || !path) return null;
+
+    return { bucket, path };
+  } catch {
+    return null;
+  }
+};
+
+const tryFetchBlob = async (url: string, credentials: RequestCredentials): Promise<Blob> => {
+  const response = await fetch(url, {
+    credentials,
+    mode: "cors",
+    cache: "no-store",
+  });
+
   if (!response.ok) {
     throw new Error(`Falha ao buscar recurso (${response.status}): ${url}`);
   }
-  const blob = await response.blob();
-  return blobToDataUrl(blob);
+
+  return response.blob();
+};
+
+const tryStorageDownload = async (url: string): Promise<Blob | null> => {
+  const parsed = parseStorageObjectUrl(url);
+  if (!parsed) return null;
+
+  try {
+    const { data, error } = await sb.storage.from(parsed.bucket).download(parsed.path);
+    if (error || !data) return null;
+    return data;
+  } catch {
+    return null;
+  }
+};
+
+const fetchAsDataUrl = async (url: string): Promise<string> => {
+  try {
+    const blob = await tryFetchBlob(url, "omit");
+    return blobToDataUrl(blob);
+  } catch {
+    try {
+      const blob = await tryFetchBlob(url, "include");
+      return blobToDataUrl(blob);
+    } catch (includeError) {
+      const storageBlob = await tryStorageDownload(url);
+      if (storageBlob) {
+        return blobToDataUrl(storageBlob);
+      }
+
+      if (includeError instanceof Error) throw includeError;
+      throw new Error(`Falha ao buscar recurso: ${url}`);
+    }
+  }
 };
 
 const sanitizeFileName = (value: string): string => {
