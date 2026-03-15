@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Printer, ArrowLeft, FileText, Loader2, Download } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchReportData } from "@/components/cycles/report/useReportData";
 import { transformReportData } from "@/components/cycles/report/transformReportData";
@@ -30,6 +31,7 @@ export default function CycleReportPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportingHtml, setExportingHtml] = useState(false);
 
   useEffect(() => {
     if (!cycleId) return;
@@ -93,13 +95,16 @@ export default function CycleReportPage() {
 
   const handleDownloadHtml = async () => {
     const reportContainer = document.querySelector(".report-container") as HTMLElement | null;
-    if (!reportContainer) return;
+    if (!reportContainer || exportingHtml) return;
 
     const clientName = data.cliente || "Cliente";
     const fileName = `Relatorio de Campo - ${clientName}.html`;
 
+    setExportingHtml(true);
+    const loadingToastId = toast.loading("Gerando HTML compartilhável...");
+
     try {
-      await exportStandaloneHtmlFile({
+      const exportResult = await exportStandaloneHtmlFile({
         sourceElement: reportContainer,
         fileName,
         title: `Relatório de Campo - ${clientName}`,
@@ -108,9 +113,19 @@ export default function CycleReportPage() {
     .report-container { max-width: 210mm; margin: 20px auto; background: white; box-shadow: 0 4px 24px rgba(0,0,0,0.12); border-radius: 8px; overflow: hidden; }`,
         wrapperClassName: "report-container",
       });
+
+      toast.success("Download iniciado com sucesso.", {
+        id: loadingToastId,
+        action: {
+          label: "Abrir HTML",
+          onClick: () => window.open(exportResult.objectUrl, "_blank", "noopener,noreferrer"),
+        },
+      });
     } catch (err) {
       console.error("Falha ao gerar HTML compartilhável:", err);
-      alert("Não foi possível gerar um HTML 100% compartilhável. Tente novamente.");
+      toast.error("Não foi possível gerar o HTML compartilhável.", { id: loadingToastId });
+    } finally {
+      setExportingHtml(false);
     }
   };
 
@@ -128,8 +143,8 @@ export default function CycleReportPage() {
           </span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={handleDownloadHtml} className="toolbar-btn">
-            <Download size={16} /> Baixar HTML
+          <button onClick={handleDownloadHtml} className="toolbar-btn" disabled={exportingHtml}>
+            {exportingHtml ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <Download size={16} />} {exportingHtml ? "Gerando..." : "Baixar HTML"}
           </button>
           <button onClick={() => window.print()} className="toolbar-btn toolbar-btn-primary">
             <Printer size={16} /> Imprimir / Salvar PDF

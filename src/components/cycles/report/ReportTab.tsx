@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 
 import { fetchReportData } from "./useReportData";
 import { transformReportData } from "./transformReportData";
@@ -42,6 +43,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+  const [exportingHtml, setExportingHtml] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -268,22 +270,35 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
 
   const handleDownloadHtml = async () => {
     const reportEl = reportRef.current;
-    if (!reportEl || !data) return;
+    if (!reportEl || !data || exportingHtml) return;
 
     const clientName = data.cliente || "Cliente";
     const fileName = `Relatorio de Campo - ${clientName}.html`;
 
+    setExportingHtml(true);
+    const loadingToastId = toast.loading("Gerando HTML compartilhável...");
+
     try {
-      await exportStandaloneHtmlFile({
+      const exportResult = await exportStandaloneHtmlFile({
         sourceElement: reportEl,
         fileName,
         title: `Relatório de Campo - ${clientName}`,
         styles: standaloneReportStyles,
         wrapperClassName: "report-container",
       });
+
+      toast.success("Download iniciado com sucesso.", {
+        id: loadingToastId,
+        action: {
+          label: "Abrir HTML",
+          onClick: () => window.open(exportResult.objectUrl, "_blank", "noopener,noreferrer"),
+        },
+      });
     } catch (err) {
       console.error("Falha ao gerar HTML compartilhável:", err);
-      alert("Não foi possível gerar um HTML 100% compartilhável. Tente novamente.");
+      toast.error("Não foi possível gerar o HTML compartilhável.", { id: loadingToastId });
+    } finally {
+      setExportingHtml(false);
     }
   };
 
@@ -335,8 +350,9 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
           <Button variant="outline" size="sm" onClick={loadData}>
             <Loader2 className={cn("h-3 w-3 mr-1", loading && "animate-spin")} /> Atualizar
           </Button>
-          <Button variant="outline" size="sm" onClick={handleDownloadHtml}>
-            <Download className="h-3 w-3 mr-1" /> Baixar HTML
+          <Button variant="outline" size="sm" onClick={handleDownloadHtml} disabled={exportingHtml}>
+            {exportingHtml ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+            {exportingHtml ? "Gerando..." : "Baixar HTML"}
           </Button>
           <Button size="sm" onClick={handlePrint}>
             <Printer className="h-3 w-3 mr-1" /> Imprimir / PDF
