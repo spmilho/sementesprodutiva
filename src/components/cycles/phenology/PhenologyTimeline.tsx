@@ -116,10 +116,9 @@ export default function PhenologyTimeline({ records, onClickFuture, onClickPast,
   const [filter, setFilter] = useState<string>("female");
 
   const femaleInfos = useMemo(() => buildStageInfos(records, "female", plantingDate), [records, plantingDate]);
-  const male1Infos = useMemo(() => buildStageInfos(records, hasSpecificMales ? "male_1" : "male", plantingDate), [records, plantingDate, hasSpecificMales]);
+  const male1Infos = useMemo(() => buildStageInfos(records, "male_1", plantingDate), [records, plantingDate]);
   const male2Infos = useMemo(() => buildStageInfos(records, "male_2", plantingDate), [records, plantingDate]);
   const male3Infos = useMemo(() => buildStageInfos(records, "male_3", plantingDate), [records, plantingDate]);
-  const genericMaleInfos = useMemo(() => buildStageInfos(records, "male", plantingDate), [records, plantingDate]);
 
   const renderTimeline = (infos: StageInfo[], label?: string, labelColor?: string) => {
     const lastRegistered = infos.reduce((acc, s, i) => s.isPast ? i : acc, -1);
