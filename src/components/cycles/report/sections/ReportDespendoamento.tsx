@@ -125,7 +125,7 @@ export default function ReportDespendoamento({ data }: { data: any }) {
       const row: any = { dateBr: formatDateBr(cursor), totalHaDia: 0 };
 
       windows.forEach((w) => {
-        const centerKey = w.centerDate.toISOString().slice(0, 10);
+        const centerKey = toLocalIsoKey(w.centerDate);
         const isCenter = cursorKey === centerKey;
         const key = `p${w.idx}`;
         row[key] = isCenter ? w.area : 0;
