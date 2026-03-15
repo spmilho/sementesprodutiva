@@ -229,9 +229,21 @@ async function resolvePhotoUrls(...recordArrays: any[][]): Promise<Record<string
           storagePaths.add(p);
         }
       }
+      // Single photo_url field (phenology, field_visit_photos)
+      if (record?.photo_url && typeof record.photo_url === "string" && !record.photo_url.startsWith("http")) {
+        storagePaths.add(record.photo_url);
+      }
       // Also check file_url for attachments
       if (record?.file_url && typeof record.file_url === "string" && !record.file_url.startsWith("http")) {
         storagePaths.add(record.file_url);
+      }
+      // Nested field_visit_photos
+      if (Array.isArray(record?.field_visit_photos)) {
+        for (const fp of record.field_visit_photos) {
+          if (fp?.photo_url && typeof fp.photo_url === "string" && !fp.photo_url.startsWith("http")) {
+            storagePaths.add(fp.photo_url);
+          }
+        }
       }
     }
   }
