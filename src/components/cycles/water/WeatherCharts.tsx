@@ -428,9 +428,9 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
   // Build weather summary for AI
   const weatherSummary = useMemo(() => {
     if (!stats) return null;
-    const temps = records.filter(r => r.temp_max_c != null);
-    const rads = records.filter(r => r.radiation_mj != null);
-    const hums = records.filter(r => r.humidity_max_pct != null);
+    const temps = sortedData.filter(r => r.temp_max_c != null);
+    const rads = sortedData.filter(r => r.radiation_mj != null);
+    const hums = sortedData.filter(r => r.humidity_max_pct != null);
     return {
       totalDays: stats.days,
       avgTemp: stats.avgTemp,
@@ -444,13 +444,13 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
       daysLowRadiation: rads.filter(r => (r.radiation_mj ?? 99) < 14).length,
       avgHumidity: stats.avgHumidity,
       maxHumidity: hums.length > 0 ? Math.max(...hums.map(r => r.humidity_max_pct!)) : null,
-      minHumidity: records.filter(r => r.humidity_min_pct != null).length > 0 ? Math.min(...records.filter(r => r.humidity_min_pct != null).map(r => r.humidity_min_pct!)) : null,
+      minHumidity: sortedData.filter(r => r.humidity_min_pct != null).length > 0 ? Math.min(...sortedData.filter(r => r.humidity_min_pct != null).map(r => r.humidity_min_pct!)) : null,
       daysHighHumidity: hums.filter(r => (r.humidity_max_pct ?? 0) > 90).length,
       totalGdu: stats.totalGdu,
       totalPrecip: stats.totalPrecip,
       totalEto: stats.totalEto,
     };
-  }, [stats, records]);
+  }, [stats, sortedData]);
 
   // Generate analysis mutation
   const generateWeatherAnalysisMut = useMutation({
