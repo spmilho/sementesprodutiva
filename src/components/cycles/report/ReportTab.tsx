@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FileText, Trash2, Loader2, CheckCircle, Eye, Printer, Download } from "lucide-react";
+import { FileText, Trash2, Loader2, CheckCircle, Eye, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,7 +8,9 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { generateReportData } from "./generateHtmlReport";
+import { callClaude } from "@/services/anthropicApi";
+import { fetchReportData } from "./useReportData";
+import { buildReportPayload, SYSTEM_PROMPT, buildPrompt1, buildPrompt2, buildPrompt3, openReportWindow, cleanHtml } from "./reportClaudeUtils";
 
 interface ReportTabProps {
   cycleId: string;
@@ -37,59 +39,114 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
     },
   });
 
+  const callWithRetry = async (system: string, msg: string, tokens: number): Promise<string | null> => {
+    try {
+      return await callClaude(system, msg, tokens);
+    } catch {
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+        return await callClaude(system, msg, tokens);
+      } catch {
+        return null;
+      }
+    }
+  };
+
   const handleGenerate = useCallback(async () => {
     setGenerating(true);
-    setProgressMsg("Iniciando...");
     setProgressPct(0);
+    setProgressMsg("Coletando dados do ciclo...");
 
     try {
-      const reportData = await generateReportData(cycleId, cycle, (msg, current, total) => {
-        setProgressMsg(msg);
-        setProgressPct(Math.round((current / total) * 100));
-      });
+      // Step 1: Fetch data
+      setProgressPct(10);
+      const rawData = await fetchReportData(cycleId, cycle);
+      const reportData = buildReportPayload(rawData, cycle);
 
-      const serialized = JSON.stringify(reportData);
-      const reportKey = `reportData:item:${cycleId}:${Date.now()}`;
+      // Step 2: Charts placeholder (skip html2canvas for now)
+      setProgressPct(30);
+      setProgressMsg("Renderizando gráficos...");
+      const charts: Record<string, string | null> = {};
 
-      // Salva por chave curta + ponteiros de fallback (local + sessão)
-      localStorage.setItem(reportKey, serialized);
-      sessionStorage.setItem(reportKey, serialized);
-      localStorage.setItem("reportData", serialized); // fallback legado
-      sessionStorage.setItem("reportData", serialized);
-      localStorage.setItem("reportData:lastKey", reportKey);
-      sessionStorage.setItem("reportData:lastKey", reportKey);
+      // Step 3: Call Claude - Part 1
+      setProgressPct(50);
+      setProgressMsg("Gerando capa e plantio... (1/3)");
+      const prompt1 = buildPrompt1(reportData, charts);
+      const part1 = await callWithRetry(SYSTEM_PROMPT, prompt1, 16000);
 
-      // Limpeza segura: somente chaves de payload, preservando a chave recém-gerada
-      const parseKeyTimestamp = (k: string) => {
-        const ts = Number(k.split(":").pop());
-        return Number.isFinite(ts) ? ts : 0;
-      };
+      // Step 4: Call Claude - Part 2
+      setProgressPct(70);
+      setProgressMsg("Gerando manejo e monitoramento... (2/3)");
+      const prompt2 = buildPrompt2(reportData, charts);
+      const part2 = await callWithRetry(SYSTEM_PROMPT, prompt2, 16000);
 
-      const payloadKeys = Object.keys(localStorage)
-        .filter((k) => k.startsWith("reportData:item:") || (/^reportData:[^:]+:\d+$/.test(k) && k !== "reportData:lastKey"))
-        .sort((a, b) => parseKeyTimestamp(b) - parseKeyTimestamp(a));
+      // Step 5: Call Claude - Part 3
+      setProgressPct(90);
+      setProgressMsg("Gerando conclusão técnica... (3/3)");
+      const prompt3 = buildPrompt3(reportData);
+      const part3 = await callWithRetry(SYSTEM_PROMPT, prompt3, 16000);
 
-      payloadKeys.slice(15).forEach((k) => {
-        if (k !== reportKey) {
-          localStorage.removeItem(k);
-          sessionStorage.removeItem(k);
-        }
-      });
-
-      const reportUrl = `/report?key=${encodeURIComponent(reportKey)}`;
-
-      // Fluxo robusto: abre aba em branco, injeta fallback completo em window.name e então navega
-      const reportWindow = window.open("about:blank", "_blank");
-      if (!reportWindow) {
-        throw new Error("Popup bloqueado pelo navegador");
+      // Check results
+      if (!part1 && !part2 && !part3) {
+        toast.error("❌ Erro ao gerar. Verifique a API key em Configurações → Organização.");
+        return;
       }
 
-      reportWindow.name = serialized;
-      reportWindow.location.href = reportUrl;
+      if (!part1 || !part2 || !part3) {
+        toast.warning("⚠️ Relatório parcial gerado.");
+      }
 
-      setProgressMsg("✅ Relatório aberto em nova aba!");
+      // Assemble
+      let fullHtml = "";
+      if (part1) fullHtml += part1;
+      if (part2) fullHtml += "\n" + part2;
+      if (part3) fullHtml += "\n" + part3;
+
+      fullHtml = cleanHtml(fullHtml);
+
+      if (!fullHtml.trim()) {
+        toast.error("Não foi possível gerar o relatório. Verifique a API key.");
+        return;
+      }
+
+      // Open in new tab
+      openReportWindow(fullHtml, reportData.hibrido, reportData.safra);
+
       setProgressPct(100);
-      toast.success("Relatório aberto em nova aba!");
+      setProgressMsg("✅ Relatório pronto!");
+      toast.success("✅ Relatório gerado!");
+
+      // Save to storage
+      try {
+        const blob = new Blob([fullHtml], { type: "text/html" });
+        const fileName = `Relatorio_${reportData.hibrido.replace(/[/\\]/g, "_")}_${new Date().toISOString().slice(0, 10)}.html`;
+        const storagePath = `${orgId}/${cycleId}/reports/${fileName}`;
+
+        await supabase.storage.from("cycle-documents").upload(storagePath, blob, {
+          contentType: "text/html",
+          upsert: true,
+        });
+
+        const { data: urlData } = supabase.storage.from("cycle-documents").getPublicUrl(storagePath);
+
+        // Save as attachment
+        const { data: user } = await supabase.auth.getUser();
+        await (supabase as any).from("attachments").insert({
+          entity_id: cycleId,
+          entity_type: "cycle",
+          document_category: "relatorio",
+          file_name: fileName,
+          file_type: "html",
+          file_url: urlData?.publicUrl || storagePath,
+          file_size: blob.size,
+          org_id: orgId,
+          created_by: user.user?.id,
+        });
+
+        queryClient.invalidateQueries({ queryKey: ["report-attachments", cycleId] });
+      } catch (e) {
+        console.error("Erro salvando relatório:", e);
+      }
 
       setTimeout(() => {
         setGenerating(false);
@@ -103,7 +160,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
       setProgressMsg("");
       setProgressPct(0);
     }
-  }, [cycleId, cycle]);
+  }, [cycleId, orgId, cycle, queryClient]);
 
   const handleViewReport = useCallback(async (fileUrl: string) => {
     try {
@@ -145,9 +202,9 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
                 <FileText className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-foreground">📄 Gerar Relatório Completo</h2>
+                <h2 className="text-xl font-bold text-foreground">📄 Gerar Relatório Profissional</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Relatório profissional com gráficos Recharts, tabelas e fotos — 100% client-side.
+                  Relatório executivo com gráficos e análises gerado por IA
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Abre em nova aba. Use "Imprimir / Salvar PDF" para gerar o PDF.
@@ -155,7 +212,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
               </div>
               <Button size="lg" className="px-8" onClick={handleGenerate}>
                 <FileText className="h-5 w-5 mr-2" />
-                Gerar Relatório
+                Gerar Relatório Profissional
               </Button>
             </>
           ) : (
