@@ -80,9 +80,9 @@ export default function ReportDespendoamento({ data }: { data: any }) {
     .forEach((p: any) => {
       const dt = p.data_iso ? parseIsoDate(p.data_iso) : parseBrDate(p.data);
       if (!dt) return;
-      const key = dt.toISOString().slice(0, 10);
+      const key = toLocalIsoKey(dt);
       if (seenDates.has(key)) {
-        const existing = femalePlantings.find(f => f.date.toISOString().slice(0, 10) === key);
+        const existing = femalePlantings.find(f => toLocalIsoKey(f.date) === key);
         if (existing) existing.area += Number(p.area) || 0;
       } else {
         seenDates.add(key);
