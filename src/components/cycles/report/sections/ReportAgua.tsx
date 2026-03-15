@@ -23,6 +23,28 @@ function calcGDU(tmax: number | null, tmin: number | null): number {
   return Math.max(0, gdu);
 }
 
+function toNullableNumber(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeTemperatureTriplet(
+  tempMax: number | null,
+  tempMin: number | null,
+  tempAvg: number | null,
+): { tempMax: number | null; tempMin: number | null; tempAvg: number | null } {
+  // Corrige padrão de rotação conhecido do import: [média, máx, mín]
+  if (tempMax != null && tempMin != null && tempAvg != null && tempMax < tempMin) {
+    return {
+      tempMax: tempMin,
+      tempMin: tempAvg,
+      tempAvg: tempMax,
+    };
+  }
+  return { tempMax, tempMin, tempAvg };
+}
+
 function normalizeDateKey(value: string | null | undefined): string | null {
   if (!value) return null;
   const raw = String(value).trim();
@@ -41,6 +63,50 @@ function normalizeDateKey(value: string | null | undefined): string | null {
   }
 
   return null;
+}
+
+function parseDateParts(dateKey: string): { year: number; month: number; day: number } {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  return { year: y, month: m, day: d };
+}
+
+function fixLikelySwappedMonthDay<T extends { data_iso?: string; data?: string }>(records: T[]): (T & { _dateKey: string | null })[] {
+  const withKey = records.map((r) => ({
+    ...r,
+    _dateKey: normalizeDateKey(r.data_iso) || normalizeDateKey(r.data),
+  }));
+
+  const ambiguous = withKey
+    .filter((r) => !!r._dateKey)
+    .map((r) => ({ ...r, ...parseDateParts(r._dateKey as string) }))
+    .filter((r) => r.month <= 12 && r.day <= 12);
+
+  if (ambiguous.length < 6) return withKey;
+
+  const dayFreq = new Map<number, number>();
+  ambiguous.forEach((r) => dayFreq.set(r.day, (dayFreq.get(r.day) || 0) + 1));
+
+  let dominantDay = 0;
+  let dominantCount = 0;
+  dayFreq.forEach((count, day) => {
+    if (count > dominantCount) {
+      dominantDay = day;
+      dominantCount = count;
+    }
+  });
+
+  const shouldSwap = dominantCount >= 5 && dominantCount >= Math.ceil(ambiguous.length * 0.5);
+  if (!shouldSwap || dominantDay <= 0 || dominantDay > 12) return withKey;
+
+  return withKey.map((r) => {
+    if (!r._dateKey) return r;
+    const { year, month, day } = parseDateParts(r._dateKey);
+    if (month <= 12 && day <= 12 && day === dominantDay && month !== dominantDay) {
+      const swapped = `${year}-${String(day).padStart(2, "0")}-${String(month).padStart(2, "0")}`;
+      return { ...r, _dateKey: swapped };
+    }
+    return r;
+  });
 }
 
 function dateKeyToTs(dateKey: string): number {
@@ -72,13 +138,27 @@ export default function ReportAgua({ data }: { data: any }) {
   const irrigacao = data.irrigacao || [];
   const chuva = data.chuva || [];
 
-  const clima = (data.clima || [])
+  const climaRaw = (data.clima || []).map((r: any) => {
+    const temps = normalizeTemperatureTriplet(
+      toNullableNumber(r.temp_max),
+      toNullableNumber(r.temp_min),
+      toNullableNumber(r.temp_media),
+    );
+    return {
+      ...r,
+      temp_max: temps.tempMax,
+      temp_min: temps.tempMin,
+      temp_media: temps.tempAvg,
+    };
+  });
+
+  const clima = fixLikelySwappedMonthDay(climaRaw)
     .slice()
-    .sort((a: any, b: any) => parseDateForSort(a.data, a.data_iso) - parseDateForSort(b.data, b.data_iso));
+    .sort((a: any, b: any) => parseDateForSort(a.data, a._dateKey || a.data_iso) - parseDateForSort(b.data, b._dateKey || b.data_iso));
 
   const climaByDate = new Map<string, any>();
   clima.forEach((r: any) => {
-    const key = normalizeDateKey(r.data_iso) || normalizeDateKey(r.data);
+    const key = normalizeDateKey(r._dateKey) || normalizeDateKey(r.data_iso) || normalizeDateKey(r.data);
     if (!key) return;
     const prev = climaByDate.get(key);
     if (!prev || String(r.created_at || "") >= String(prev.created_at || "")) {
@@ -147,9 +227,16 @@ export default function ReportAgua({ data }: { data: any }) {
   const hasGdu = climaFixed.some((r: any) => r.gdu_diario != null || r.gdu_acumulado != null);
   const hasRadiation = climaFixed.some((r: any) => r.radiacao_mj != null);
 
-  const avgTemp = climaFixed.length > 0
-    ? climaFixed.filter((r: any) => r.temp_media != null).reduce((s: number, r: any) => s + Number(r.temp_media), 0) /
-      Math.max(1, climaFixed.filter((r: any) => r.temp_media != null).length)
+  const tempValues = climaFixed
+    .map((r: any) => {
+      if (r.temp_media != null) return Number(r.temp_media);
+      if (r.temp_max != null && r.temp_min != null) return (Number(r.temp_max) + Number(r.temp_min)) / 2;
+      return null;
+    })
+    .filter((v: number | null): v is number => v != null);
+
+  const avgTemp = tempValues.length > 0
+    ? tempValues.reduce((s: number, v: number) => s + v, 0) / tempValues.length
     : null;
 
   const avgUr = climaFixed.length > 0
