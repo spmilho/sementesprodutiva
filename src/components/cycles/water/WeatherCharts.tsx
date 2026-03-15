@@ -362,27 +362,27 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
   const gduByMale2Data = useMemo(() => buildGduByPlanting(uniqueMale2PlantingDates, "gdu_m2"), [sortedData, uniqueMale2PlantingDates, dailyGduMap]);
 
   const stats = useMemo(() => {
-    if (records.length === 0) return null;
-    const temps = records.filter(r => r.temp_avg_c != null).map(r => r.temp_avg_c!);
-    const humids = records.filter(r => r.humidity_avg_pct != null).map(r => r.humidity_avg_pct!);
-    const winds = records.filter(r => r.wind_avg_kmh != null).map(r => r.wind_avg_kmh!);
-    const etos = records.filter(r => r.eto_mm != null).map(r => r.eto_mm!);
-    const radiations = records.filter(r => r.radiation_mj != null).map(r => r.radiation_mj!);
+    if (sortedData.length === 0) return null;
+    const temps = sortedData.filter(r => r.temp_avg_c != null).map(r => r.temp_avg_c!);
+    const humids = sortedData.filter(r => r.humidity_avg_pct != null).map(r => r.humidity_avg_pct!);
+    const winds = sortedData.filter(r => r.wind_avg_kmh != null).map(r => r.wind_avg_kmh!);
+    const etos = sortedData.filter(r => r.eto_mm != null).map(r => r.eto_mm!);
+    const radiations = sortedData.filter(r => r.radiation_mj != null).map(r => r.radiation_mj!);
     const avg = (arr: number[]) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
     const totalGdu = gduData.length > 0 ? gduData[gduData.length - 1].accGdu : 0;
     return {
       avgTemp: avg(temps),
-      maxTemp: temps.length > 0 ? Math.max(...records.filter(r => r.temp_max_c != null).map(r => r.temp_max_c!)) : 0,
-      minTemp: temps.length > 0 ? Math.min(...records.filter(r => r.temp_min_c != null).map(r => r.temp_min_c!)) : 0,
+      maxTemp: sortedData.filter(r => r.temp_max_c != null).length > 0 ? Math.max(...sortedData.filter(r => r.temp_max_c != null).map(r => r.temp_max_c!)) : 0,
+      minTemp: sortedData.filter(r => r.temp_min_c != null).length > 0 ? Math.min(...sortedData.filter(r => r.temp_min_c != null).map(r => r.temp_min_c!)) : 0,
       avgHumidity: avg(humids),
       avgWind: avg(winds),
       avgRadiation: avg(radiations),
       totalEto: etos.reduce((a, b) => a + b, 0),
-      totalPrecip: records.filter(r => r.precipitation_mm != null).reduce((a, r) => a + r.precipitation_mm!, 0),
+      totalPrecip: sortedData.filter(r => r.precipitation_mm != null).reduce((a, r) => a + r.precipitation_mm!, 0),
       totalGdu,
-      days: records.length,
+      days: sortedData.length,
     };
-  }, [records, gduData]);
+  }, [sortedData, gduData]);
 
   // Fetch latest phenology stage
   const latestStage = useMemo(() => {
