@@ -129,7 +129,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
       standN?: number;
       standCv?: number;
     }> = {};
-    for (const type of ["female", "male"]) {
+    for (const type of ["female", "male"] as const) {
       // PRIORITY 1: Stand counts
       const sc = standCounts.filter((s: any) => s.parent_type === type);
       if (sc.length > 0) {
