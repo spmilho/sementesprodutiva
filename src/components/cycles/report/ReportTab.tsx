@@ -11,7 +11,8 @@ import { toast } from "sonner";
 
 import { fetchReportData } from "./useReportData";
 import { transformReportData } from "./transformReportData";
-import { exportStandaloneHtmlFile } from "./exportStandaloneHtml";
+import { exportStandaloneHtmlFile, uploadHtmlAndGetShareLink } from "./exportStandaloneHtml";
+import { useAuth } from "@/hooks/useAuth";
 
 import ReportCover from "./sections/ReportCover";
 import ReportResumo from "./sections/ReportResumo";
