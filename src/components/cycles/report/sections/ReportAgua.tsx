@@ -305,6 +305,18 @@ export default function ReportAgua({ data }: { data: any }) {
   const gduMale1Data = buildGduByPlanting(male1Dates, "gdu_m1");
   const gduMale2Data = buildGduByPlanting(male2Dates, "gdu_m2");
 
+  // Get last accumulated GDU for each parental (latest value from the last row)
+  const getLastGdu = (chartData: any[], plantingDates: string[], prefix: string): number | null => {
+    if (chartData.length === 0 || plantingDates.length === 0) return null;
+    const lastRow = chartData[chartData.length - 1];
+    // Use earliest planting date for the summary value
+    const key = `${prefix}_${plantingDates[0]}`;
+    return lastRow?.[key] ?? null;
+  };
+  const gduFemaleTotal = getLastGdu(gduFemaleData, femaleDates, "gdu_f");
+  const gduMale1Total = getLastGdu(gduMale1Data, male1Dates, "gdu_m1");
+  const gduMale2Total = getLastGdu(gduMale2Data, male2Dates, "gdu_m2");
+
   const FEMALE_COLORS = ["#7B1FA2", "#AB47BC", "#CE93D8", "#4A148C", "#9C27B0", "#E1BEE7"];
   const MALE1_COLORS = ["#1565C0", "#42A5F5", "#90CAF9", "#0D47A1", "#1976D2", "#BBDEFB"];
   const MALE2_COLORS = ["#E65100", "#FB8C00", "#FFCC80", "#BF360C", "#EF6C00", "#FFE0B2"];
