@@ -93,7 +93,6 @@ function buildStageInfos(records: any[], filter: string, plantingDate?: string |
 
 const TYPE_LABELS: Record<string, string> = {
   female: "🟣 Fêmea",
-  male: "🔵 Macho",
   male_1: "🔵 Macho 1",
   male_2: "🔵 Macho 2",
   male_3: "🔵 Macho 3",
@@ -102,26 +101,22 @@ const TYPE_LABELS: Record<string, string> = {
 
 const TYPE_BADGE_STYLES: Record<string, string> = {
   female: "bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-400 dark:border-pink-800",
-  male: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
   male_1: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
   male_2: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400 dark:border-cyan-800",
   male_3: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800",
 };
 
 export default function PhenologyTimeline({ records, onClickFuture, onClickPast, plantingDate, maleTypes = [] }: PhenologyTimelineProps) {
-  // Determine available filters
-  const hasSpecificMales = maleTypes.length > 0;
-  const filterOptions: string[] = hasSpecificMales
-    ? ["female", ...maleTypes, "both"]
-    : ["female", "male", "both"];
+  // Determine available filters — always use male_1/male_2, never generic "male"
+  const availableMales = maleTypes.length > 0 ? maleTypes : ["male_1", "male_2"];
+  const filterOptions: string[] = ["female", ...availableMales, "both"];
 
   const [filter, setFilter] = useState<string>("female");
 
   const femaleInfos = useMemo(() => buildStageInfos(records, "female", plantingDate), [records, plantingDate]);
-  const male1Infos = useMemo(() => buildStageInfos(records, hasSpecificMales ? "male_1" : "male", plantingDate), [records, plantingDate, hasSpecificMales]);
+  const male1Infos = useMemo(() => buildStageInfos(records, "male_1", plantingDate), [records, plantingDate]);
   const male2Infos = useMemo(() => buildStageInfos(records, "male_2", plantingDate), [records, plantingDate]);
   const male3Infos = useMemo(() => buildStageInfos(records, "male_3", plantingDate), [records, plantingDate]);
-  const genericMaleInfos = useMemo(() => buildStageInfos(records, "male", plantingDate), [records, plantingDate]);
 
   const renderTimeline = (infos: StageInfo[], label?: string, labelColor?: string) => {
     const lastRegistered = infos.reduce((acc, s, i) => s.isPast ? i : acc, -1);
@@ -244,7 +239,7 @@ export default function PhenologyTimeline({ records, onClickFuture, onClickPast,
     if (type === "male_1") return male1Infos;
     if (type === "male_2") return male2Infos;
     if (type === "male_3") return male3Infos;
-    return genericMaleInfos;
+    return male1Infos;
   };
 
   const showBoth = filter === "both";
@@ -276,15 +271,9 @@ export default function PhenologyTimeline({ records, onClickFuture, onClickPast,
       {showBoth ? (
         <div className="space-y-4">
           {renderTimeline(femaleInfos, "Fêmea", TYPE_BADGE_STYLES.female)}
-          {hasSpecificMales ? (
-            <>
-              {maleTypes.includes("male_1") && renderTimeline(male1Infos, "Macho 1", TYPE_BADGE_STYLES.male_1)}
-              {maleTypes.includes("male_2") && renderTimeline(male2Infos, "Macho 2", TYPE_BADGE_STYLES.male_2)}
-              {maleTypes.includes("male_3") && renderTimeline(male3Infos, "Macho 3", TYPE_BADGE_STYLES.male_3)}
-            </>
-          ) : (
-            renderTimeline(genericMaleInfos, "Macho", TYPE_BADGE_STYLES.male)
-          )}
+          {availableMales.includes("male_1") && renderTimeline(male1Infos, "Macho 1", TYPE_BADGE_STYLES.male_1)}
+          {availableMales.includes("male_2") && renderTimeline(male2Infos, "Macho 2", TYPE_BADGE_STYLES.male_2)}
+          {availableMales.includes("male_3") && renderTimeline(male3Infos, "Macho 3", TYPE_BADGE_STYLES.male_3)}
         </div>
       ) : (
         renderTimeline(getInfosForType(filter))

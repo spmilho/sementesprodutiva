@@ -190,7 +190,7 @@ export default function Phenology({
       }
 
       const types = values.type === "both"
-        ? ["female", ...(maleTypes.length > 0 ? maleTypes : ["male"])]
+        ? ["female", ...(maleTypes.length > 0 ? maleTypes : ["male_1", "male_2"])]
         : [values.type];
 
       for (const t of types) {
@@ -300,7 +300,7 @@ export default function Phenology({
                       </span>
                       <Badge className={cn(
                         "text-xs",
-                        r.stage.startsWith("R")
+                        r.stage === "VT" || r.stage.startsWith("R")
                           ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
                           : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
                       )}>
@@ -380,15 +380,9 @@ export default function Phenology({
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="female">🟣 Fêmea</SelectItem>
-                      {maleTypes.length > 0 ? (
-                        <>
-                          {maleTypes.includes("male_1") && <SelectItem value="male_1">🔵 Macho 1</SelectItem>}
-                          {maleTypes.includes("male_2") && <SelectItem value="male_2">🔵 Macho 2</SelectItem>}
-                          {maleTypes.includes("male_3") && <SelectItem value="male_3">🔵 Macho 3</SelectItem>}
-                        </>
-                      ) : (
-                        <SelectItem value="male">🔵 Macho</SelectItem>
-                      )}
+                      <SelectItem value="male_1">🔵 Macho 1</SelectItem>
+                      <SelectItem value="male_2">🔵 Macho 2</SelectItem>
+                      {maleTypes.includes("male_3") && <SelectItem value="male_3">🔵 Macho 3</SelectItem>}
                       <SelectItem value="both">🔵🟣 Todos</SelectItem>
                     </SelectContent>
                   </Select>
