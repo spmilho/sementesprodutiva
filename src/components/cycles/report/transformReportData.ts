@@ -104,17 +104,22 @@ export function transformReportData(data: ReportData, cycle: any): any {
     })),
 
     // ── Semente ──
-    lotes_semente: data.seedLots.map((l: any) => ({
-      lote: l.lot_number,
-      parental: parent(l.parent_type),
-      origem: l.supplier_origin,
-      peneira: l.sieve_classification,
-      pms: l.thousand_seed_weight_g,
-      germinacao: l.germination_pct,
-      vigor: l.vigor_pct,
-      pureza: l.purity_pct,
-      tem_ts: lotsWithTs.has(l.id) ? "Sim" : "Não",
-    })),
+    lotes_semente: data.seedLots.map((l: any) => {
+      const rawParent = parent(l.parent_type);
+      // Seed lots: any male sub-type should show just "Macho" since it's a single lineage
+      const parentLabel = rawParent.startsWith("Macho") ? "Macho" : rawParent;
+      return {
+        lote: l.lot_number,
+        parental: parentLabel,
+        origem: l.supplier_origin,
+        peneira: l.sieve_classification,
+        pms: l.thousand_seed_weight_g,
+        germinacao: l.germination_pct,
+        vigor: l.vigor_pct,
+        pureza: l.purity_pct,
+        tem_ts: lotsWithTs.has(l.id) ? "Sim" : "Não",
+      };
+    }),
 
     // ── TS consolidado ──
     tratamentos: tratamentos.length > 0
