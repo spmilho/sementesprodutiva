@@ -155,9 +155,9 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
         continue;
       }
 
-      // PRIORITY 2: Estimated from seeds_per_meter_actual + spacing + germination
+      // PRIORITY 2: Estimated from seeds_per_meter_actual + base spacing (ff) + germination
       const spm = getSeedsPerMeterActual(actuals, type);
-      const spacingCm = getAvgSpacing(actuals, type);
+      const spacingCm = getBaseSpacing(actuals);
       const germPct = getGermination(plans, actuals, type);
 
       if (spm > 0 && spacingCm > 0) {
