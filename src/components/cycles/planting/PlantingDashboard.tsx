@@ -349,10 +349,10 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
           cvPlanting = calcStats(pts).cv;
         }
 
-        const avgSpacing = getWeightedActualAverage(filteredActuals, (a) => a.row_spacing);
+        const baseSpacing = getBaseSpacing(actuals);
         const germPct = getGermination(plans, actuals, config.key);
-        const popEstimated = (seedsPerMeter > 0 && avgSpacing > 0)
-          ? Math.round((seedsPerMeter / (avgSpacing / 100)) * 10000 * (germPct / 100))
+        const popEstimated = (seedsPerMeter > 0 && baseSpacing > 0)
+          ? Math.round((seedsPerMeter / (baseSpacing / 100)) * 10000 * (germPct / 100))
           : 0;
 
         const sc = standCounts.filter((s: any) => (s.gleba_id || "none") === gid && s.parent_type === config.standType);
