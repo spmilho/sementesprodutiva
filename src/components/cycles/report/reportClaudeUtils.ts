@@ -94,19 +94,25 @@ export function buildReportPayload(data: ReportData, cycle: any): ReportPayload 
       umid: fmt(l.moisture_pct, 0),
     })),
 
-    ts: data.seedLotTreatments.flatMap((t: any) => {
-      const lot = data.seedLots.find((l: any) => l.id === t.seed_lot_id);
-      const prods = data.seedLotTreatmentProducts.filter((p: any) => p.seed_lot_treatment_id === t.id);
-      return prods.map((p: any) => ({
-        origem: t.treatment_location || "",
-        produto: p.product_name,
-        ia: p.active_ingredient || "",
-        tipo: p.product_type || "",
-        dose: p.dose_per_unit || p.dose || "",
-        unidade: p.dose_unit || "",
-        parental: parent(lot?.parent_type),
-      }));
-    }),
+    ts: (() => {
+      const seen = new Set<string>();
+      return data.seedLotTreatments.flatMap((t: any) => {
+        const prods = data.seedLotTreatmentProducts.filter((p: any) => p.seed_lot_treatment_id === t.id);
+        return prods.filter((p: any) => {
+          const key = `${p.product_name}|${p.active_ingredient}|${p.product_type}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).map((p: any) => ({
+          origem: t.treatment_location || "",
+          produto: p.product_name,
+          ia: p.active_ingredient || "",
+          tipo: p.product_type || "",
+          dose: p.dose_per_unit || p.dose || "",
+          unidade: p.dose_unit || "",
+        }));
+      });
+    })(),
 
     plantio: data.plantingActual.map((p: any) => ({
       data: fmtD(p.planting_date),
