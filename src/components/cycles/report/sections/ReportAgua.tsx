@@ -150,7 +150,7 @@ export default function ReportAgua({ data }: { data: any }) {
   // Build daily GDU map from weather data
   const dailyGduMap = new Map<string, number>();
   climaFixed.forEach((r: any) => {
-    const key = r.data_iso;
+    const key = normalizeDateKey(r.data_iso);
     if (key) dailyGduMap.set(key, calcGDU(Number(r.temp_max), Number(r.temp_min)));
   });
 
@@ -159,9 +159,10 @@ export default function ReportAgua({ data }: { data: any }) {
   const getPlantingDates = (parentType: string): string[] => {
     const dates = new Set<string>();
     plantio.forEach((p: any) => {
-      if (normalizeParent(p.tipo) === parentType && p.data_iso) dates.add(p.data_iso);
+      const key = normalizeDateKey(p.data_iso);
+      if (normalizeParent(p.tipo) === parentType && key) dates.add(key);
     });
-    return Array.from(dates).sort();
+    return Array.from(dates).sort((a, b) => a.localeCompare(b));
   };
 
   const femaleDates = getPlantingDates("Fêmea");
