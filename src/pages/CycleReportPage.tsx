@@ -154,19 +154,34 @@ export default function CycleReportPage() {
         cycleId,
       });
 
-      await navigator.clipboard.writeText(publicUrl);
+      try { await navigator.clipboard.writeText(publicUrl); } catch { /* fallback below */ }
 
-      toast.success("Link copiado! Cole no WhatsApp para enviar.", {
-        id: loadingToastId,
-        duration: 10000,
-        action: {
-          label: "Abrir WhatsApp",
-          onClick: () => {
-            const text = encodeURIComponent(`📄 Relatório de Campo - ${clientName}\n\n${publicUrl}`);
-            window.open(`https://wa.me/?text=${text}`, "_blank");
-          },
-        },
-      });
+      toast.success(
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <p style={{ fontWeight: 600, margin: 0 }}>Link gerado com sucesso!</p>
+          <div style={{ background: "#f1f1f1", borderRadius: 4, padding: "4px 8px" }}>
+            <code style={{ fontSize: 11, wordBreak: "break-all" }}>{publicUrl}</code>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              style={{ fontSize: 12, padding: "6px 12px", borderRadius: 4, background: "#2563eb", color: "white", border: "none", cursor: "pointer", fontWeight: 500 }}
+              onClick={() => { navigator.clipboard.writeText(publicUrl); toast.success("Link copiado!", { duration: 2000 }); }}
+            >
+              📋 Copiar link
+            </button>
+            <button
+              style={{ fontSize: 12, padding: "6px 12px", borderRadius: 4, background: "#25D366", color: "white", border: "none", cursor: "pointer", fontWeight: 500 }}
+              onClick={() => {
+                const text = encodeURIComponent(`📄 Relatório de Campo - ${clientName}\n\n${publicUrl}`);
+                window.open(`https://wa.me/?text=${text}`, "_blank");
+              }}
+            >
+              WhatsApp
+            </button>
+          </div>
+        </div>,
+        { id: loadingToastId, duration: 30000 },
+      );
     } catch (err) {
       console.error("Falha ao gerar link:", err);
       toast.error("Não foi possível gerar o link compartilhável.", { id: loadingToastId });
