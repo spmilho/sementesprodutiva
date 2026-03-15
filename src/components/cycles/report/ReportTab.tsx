@@ -305,6 +305,47 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
     }
   };
 
+  const handleShareLink = async () => {
+    const reportEl = reportRef.current;
+    if (!reportEl || !data || sharingLink || !user) return;
+
+    const clientName = data.cliente || "Cliente";
+
+    setSharingLink(true);
+    const loadingToastId = toast.loading("Gerando link compartilhável...");
+
+    try {
+      const publicUrl = await uploadHtmlAndGetShareLink({
+        sourceElement: reportEl,
+        fileName: `Relatorio de Campo - ${clientName}.html`,
+        title: `Relatório de Campo - ${clientName}`,
+        styles: standaloneReportStyles,
+        wrapperClassName: "report-container",
+        userId: user.id,
+        cycleId,
+      });
+
+      await navigator.clipboard.writeText(publicUrl);
+
+      toast.success("Link copiado! Cole no WhatsApp para enviar.", {
+        id: loadingToastId,
+        duration: 10000,
+        action: {
+          label: "Abrir WhatsApp",
+          onClick: () => {
+            const text = encodeURIComponent(`📄 Relatório de Campo - ${clientName}\n\n${publicUrl}`);
+            window.open(`https://wa.me/?text=${text}`, "_blank");
+          },
+        },
+      });
+    } catch (err) {
+      console.error("Falha ao gerar link:", err);
+      toast.error("Não foi possível gerar o link compartilhável.", { id: loadingToastId });
+    } finally {
+      setSharingLink(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
