@@ -69,10 +69,10 @@ export default function ReportPlantio({ data }: { data: any }) {
     return values.length > 0 ? values.reduce((a: number, b: number) => a + b, 0) / values.length : null;
   };
 
-  const totalF = sumByType(plantio, "Fêmea");
-  const totalM1 = sumByType(plantio, "Macho 1");
-  const totalM2 = hasMale2 ? sumByType(plantio, "Macho 2") : null;
-  const totalGeral = toNumber(data.area_total) ?? (totalF + totalM1 + (totalM2 || 0));
+  // Use cycle-level areas (female area and male area are distinct; male_1 and male_2 share the same physical area)
+  const totalF = toNumber(data.area_femea) ?? sumByType(plantio, "Fêmea");
+  const totalMacho = toNumber(data.area_macho) ?? Math.max(sumByType(plantio, "Macho 1"), sumByType(plantio, "Macho 2"));
+  const totalGeral = toNumber(data.area_total) ?? (totalF + totalMacho);
 
   const avgCvF = avgCvByType("Fêmea");
   const avgCvM1 = avgCvByType("Macho 1");
