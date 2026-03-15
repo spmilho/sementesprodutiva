@@ -143,9 +143,11 @@ export default function ReportAgua({ data }: { data: any }) {
     const startTs = parseDateForSort(null, earliestPlanting);
     const endTs = parseDateForSort(null, lastWeatherDate);
     const allDates: string[] = [];
-    for (let ts = startTs; ts <= endTs; ts += 86400000) {
-      const d = new Date(ts);
-      allDates.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+    const cursor = new Date(new Date(startTs));
+    const endDate = new Date(endTs);
+    while (cursor <= endDate) {
+      allDates.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`);
+      cursor.setDate(cursor.getDate() + 1);
     }
     return allDates.map(dateStr => {
       const currentTs = parseDateForSort(null, dateStr);
