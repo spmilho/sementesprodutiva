@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Printer, ArrowLeft, FileText, Loader2, Download } from "lucide-react";
+import { Printer, ArrowLeft, FileText, Loader2, Download, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { fetchReportData } from "@/components/cycles/report/useReportData";
 import { transformReportData } from "@/components/cycles/report/transformReportData";
-import { exportStandaloneHtmlFile } from "@/components/cycles/report/exportStandaloneHtml";
+import { exportStandaloneHtmlFile, uploadHtmlAndGetShareLink } from "@/components/cycles/report/exportStandaloneHtml";
 
 import ReportCover from "@/components/cycles/report/sections/ReportCover";
 import ReportResumo from "@/components/cycles/report/sections/ReportResumo";
@@ -28,10 +29,12 @@ const sb = supabase as any;
 
 export default function CycleReportPage() {
   const { cycleId } = useParams<{ cycleId: string }>();
+  const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportingHtml, setExportingHtml] = useState(false);
+  const [sharingLink, setSharingLink] = useState(false);
 
   useEffect(() => {
     if (!cycleId) return;
@@ -129,6 +132,49 @@ export default function CycleReportPage() {
     }
   };
 
+  const handleShareLink = async () => {
+    const reportContainer = document.querySelector(".report-container") as HTMLElement | null;
+    if (!reportContainer || sharingLink || !user || !cycleId) return;
+
+    const clientName = data.cliente || "Cliente";
+
+    setSharingLink(true);
+    const loadingToastId = toast.loading("Gerando link compartilhável...");
+
+    try {
+      const publicUrl = await uploadHtmlAndGetShareLink({
+        sourceElement: reportContainer,
+        fileName: `Relatorio de Campo - ${clientName}.html`,
+        title: `Relatório de Campo - ${clientName}`,
+        styles: `${reportStyles}
+    body { background: #f5f5f5; }
+    .report-container { max-width: 210mm; margin: 20px auto; background: white; box-shadow: 0 4px 24px rgba(0,0,0,0.12); border-radius: 8px; overflow: hidden; }`,
+        wrapperClassName: "report-container",
+        userId: user.id,
+        cycleId,
+      });
+
+      await navigator.clipboard.writeText(publicUrl);
+
+      toast.success("Link copiado! Cole no WhatsApp para enviar.", {
+        id: loadingToastId,
+        duration: 10000,
+        action: {
+          label: "Abrir WhatsApp",
+          onClick: () => {
+            const text = encodeURIComponent(`📄 Relatório de Campo - ${clientName}\n\n${publicUrl}`);
+            window.open(`https://wa.me/?text=${text}`, "_blank");
+          },
+        },
+      });
+    } catch (err) {
+      console.error("Falha ao gerar link:", err);
+      toast.error("Não foi possível gerar o link compartilhável.", { id: loadingToastId });
+    } finally {
+      setSharingLink(false);
+    }
+  };
+
   return (
     <>
       <style>{reportStyles}</style>
@@ -146,7 +192,10 @@ export default function CycleReportPage() {
           <button onClick={handleDownloadHtml} className="toolbar-btn" disabled={exportingHtml}>
             {exportingHtml ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <Download size={16} />} {exportingHtml ? "Gerando..." : "Baixar HTML"}
           </button>
-          <button onClick={() => window.print()} className="toolbar-btn toolbar-btn-primary">
+          <button onClick={handleShareLink} className="toolbar-btn toolbar-btn-primary" disabled={sharingLink} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {sharingLink ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <Share2 size={16} />} {sharingLink ? "Gerando link..." : "Compartilhar"}
+          </button>
+          <button onClick={() => window.print()} className="toolbar-btn">
             <Printer size={16} /> Imprimir / Salvar PDF
           </button>
         </div>

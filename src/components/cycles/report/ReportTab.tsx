@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Printer, FileText, Loader2, ChevronDown, ImageIcon, Brain, BarChart3, Maximize2, Download } from "lucide-react";
+import { Printer, FileText, Loader2, ChevronDown, ImageIcon, Brain, BarChart3, Maximize2, Download, Share2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,8 @@ import { toast } from "sonner";
 
 import { fetchReportData } from "./useReportData";
 import { transformReportData } from "./transformReportData";
-import { exportStandaloneHtmlFile } from "./exportStandaloneHtml";
+import { exportStandaloneHtmlFile, uploadHtmlAndGetShareLink } from "./exportStandaloneHtml";
+import { useAuth } from "@/hooks/useAuth";
 
 import ReportCover from "./sections/ReportCover";
 import ReportResumo from "./sections/ReportResumo";
@@ -39,11 +40,13 @@ interface ReportTabProps {
 }
 
 export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
+  const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const [exportingHtml, setExportingHtml] = useState(false);
+  const [sharingLink, setSharingLink] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -302,6 +305,47 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
     }
   };
 
+  const handleShareLink = async () => {
+    const reportEl = reportRef.current;
+    if (!reportEl || !data || sharingLink || !user) return;
+
+    const clientName = data.cliente || "Cliente";
+
+    setSharingLink(true);
+    const loadingToastId = toast.loading("Gerando link compartilhável...");
+
+    try {
+      const publicUrl = await uploadHtmlAndGetShareLink({
+        sourceElement: reportEl,
+        fileName: `Relatorio de Campo - ${clientName}.html`,
+        title: `Relatório de Campo - ${clientName}`,
+        styles: standaloneReportStyles,
+        wrapperClassName: "report-container",
+        userId: user.id,
+        cycleId,
+      });
+
+      await navigator.clipboard.writeText(publicUrl);
+
+      toast.success("Link copiado! Cole no WhatsApp para enviar.", {
+        id: loadingToastId,
+        duration: 10000,
+        action: {
+          label: "Abrir WhatsApp",
+          onClick: () => {
+            const text = encodeURIComponent(`📄 Relatório de Campo - ${clientName}\n\n${publicUrl}`);
+            window.open(`https://wa.me/?text=${text}`, "_blank");
+          },
+        },
+      });
+    } catch (err) {
+      console.error("Falha ao gerar link:", err);
+      toast.error("Não foi possível gerar o link compartilhável.", { id: loadingToastId });
+    } finally {
+      setSharingLink(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -353,6 +397,10 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
           <Button variant="outline" size="sm" onClick={handleDownloadHtml} disabled={exportingHtml}>
             {exportingHtml ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
             {exportingHtml ? "Gerando..." : "Baixar HTML"}
+          </Button>
+          <Button variant="default" size="sm" onClick={handleShareLink} disabled={sharingLink}>
+            {sharingLink ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Share2 className="h-3 w-3 mr-1" />}
+            {sharingLink ? "Gerando link..." : "Compartilhar"}
           </Button>
           <Button size="sm" onClick={handlePrint}>
             <Printer className="h-3 w-3 mr-1" /> Imprimir / PDF
