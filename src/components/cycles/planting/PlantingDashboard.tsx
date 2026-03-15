@@ -85,11 +85,18 @@ function getSeedsPerMeterActual(actuals: any[], type: ParentGroup): number {
   return getWeightedActualAverage(filtered, (a) => toPositiveNumber(a.seeds_per_meter_actual) || toPositiveNumber(a.seeds_per_meter));
 }
 
-function getAvgSpacing(actuals: any[], type: ParentGroup): number {
-  const matchType = getTypeMatcher(type);
-  const filtered = actuals.filter((a: any) => matchType(String(a.type || "")));
-
-  return getWeightedActualAverage(filtered, (a) => a.row_spacing);
+/**
+ * Get the base row spacing (female-female) from female actuals.
+ * Population is ALWAYS calculated with ff spacing, even for males,
+ * because in seed corn the population refers to density per planted area
+ * using the base inter-row spacing of the field.
+ */
+function getBaseSpacing(actuals: any[]): number {
+  const femaleActuals = actuals.filter((a: any) => isFemaleType(String(a.type || "")));
+  const ffSpacing = getWeightedActualAverage(femaleActuals, (a) => a.row_spacing);
+  if (ffSpacing > 0) return ffSpacing;
+  // Fallback: try any actual
+  return getWeightedActualAverage(actuals, (a) => a.row_spacing);
 }
 
 export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords, standCounts, standPoints, glebas, femaleArea, maleArea }: Props) {
