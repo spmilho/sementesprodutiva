@@ -191,9 +191,9 @@ export default function CycleForm() {
   );
 
   const expectedProduction = useMemo(() => {
-    if (!expectedProductivity || !femaleArea) return 0;
-    return Math.round((femaleArea * expectedProductivity) / 1000 * 100) / 100;
-  }, [femaleArea, expectedProductivity]);
+    if (!expectedProductivity || !totalArea) return 0;
+    return Math.round((totalArea * expectedProductivity) / 1000 * 100) / 100;
+  }, [totalArea, expectedProductivity]);
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-active"],
