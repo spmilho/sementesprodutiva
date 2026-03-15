@@ -29,10 +29,12 @@ const sb = supabase as any;
 
 export default function CycleReportPage() {
   const { cycleId } = useParams<{ cycleId: string }>();
+  const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportingHtml, setExportingHtml] = useState(false);
+  const [sharingLink, setSharingLink] = useState(false);
 
   useEffect(() => {
     if (!cycleId) return;
