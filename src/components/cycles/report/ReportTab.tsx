@@ -270,10 +270,13 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
 
   const handleDownloadHtml = async () => {
     const reportEl = reportRef.current;
-    if (!reportEl || !data) return;
+    if (!reportEl || !data || exportingHtml) return;
 
     const clientName = data.cliente || "Cliente";
     const fileName = `Relatorio de Campo - ${clientName}.html`;
+
+    setExportingHtml(true);
+    const loadingToastId = toast.loading("Gerando HTML compartilhável...");
 
     try {
       await exportStandaloneHtmlFile({
@@ -283,9 +286,13 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
         styles: standaloneReportStyles,
         wrapperClassName: "report-container",
       });
+
+      toast.success("Download iniciado com sucesso.", { id: loadingToastId });
     } catch (err) {
       console.error("Falha ao gerar HTML compartilhável:", err);
-      alert("Não foi possível gerar um HTML 100% compartilhável. Tente novamente.");
+      toast.error("Não foi possível gerar o HTML compartilhável.", { id: loadingToastId });
+    } finally {
+      setExportingHtml(false);
     }
   };
 
