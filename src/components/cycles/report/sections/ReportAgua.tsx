@@ -227,9 +227,16 @@ export default function ReportAgua({ data }: { data: any }) {
   const hasGdu = climaFixed.some((r: any) => r.gdu_diario != null || r.gdu_acumulado != null);
   const hasRadiation = climaFixed.some((r: any) => r.radiacao_mj != null);
 
-  const avgTemp = climaFixed.length > 0
-    ? climaFixed.filter((r: any) => r.temp_media != null).reduce((s: number, r: any) => s + Number(r.temp_media), 0) /
-      Math.max(1, climaFixed.filter((r: any) => r.temp_media != null).length)
+  const tempValues = climaFixed
+    .map((r: any) => {
+      if (r.temp_media != null) return Number(r.temp_media);
+      if (r.temp_max != null && r.temp_min != null) return (Number(r.temp_max) + Number(r.temp_min)) / 2;
+      return null;
+    })
+    .filter((v: number | null): v is number => v != null);
+
+  const avgTemp = tempValues.length > 0
+    ? tempValues.reduce((s: number, v: number) => s + v, 0) / tempValues.length
     : null;
 
   const avgUr = climaFixed.length > 0
