@@ -355,8 +355,8 @@ export default function NdviSection({
 
       const userPrompt = `Dados do campo "${pivotName}"${hybridName ? ` (híbrido: ${hybridName})` : ""}:\n\n- NDVI atual: ${currentNdviVal != null ? currentNdviVal.toFixed(3) : "não disponível"}\n- NDVI anterior: ${previousNdviVal != null ? previousNdviVal.toFixed(3) : "não disponível"}\n- Tendência: ${trend != null ? (trend > 0 ? `+${trend.toFixed(3)} (subindo)` : `${trend.toFixed(3)} (descendo)`) : "não calculável"}\n- Estádio fenológico registrado: ${latestStage || "não registrado"}\n- Data do plantio: ${pDate || "não registrada"}\n- DAP: ${dap != null ? dap : "não calculável"}\n- Total de capturas no período: ${totalImages}\n- Capturas limpas (sem nuvem): ${cleanCount}\n- Capturas descartadas por nuvem: ${cloudyCount}\n- Período de análise iniciando em: ${filterStart || "todas as imagens"}\n- NDVI mínimo no período: ${minMean != null ? minMean.toFixed(3) : "—"}\n- NDVI máximo no período: ${maxMean != null ? maxMean.toFixed(3) : "—"}\n\nRedija o parecer técnico de monitoramento.`;
 
-      const { callAnthropic } = await import("@/lib/anthropic");
-      const analysisText = await callAnthropic(systemPrompt, userPrompt, 1500);
+      const { callClaude } = await import("@/services/anthropicApi");
+      const analysisText = await callClaude(systemPrompt, userPrompt, 1500);
 
       // Persist
       await (supabase as any).from("ndvi_analyses").insert({

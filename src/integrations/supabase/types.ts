@@ -2668,6 +2668,7 @@ export type Database = {
       }
       organization_settings: {
         Row: {
+          anthropic_api_key: string | null
           created_at: string
           id: string
           org_id: string
@@ -2677,6 +2678,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          anthropic_api_key?: string | null
           created_at?: string
           id?: string
           org_id: string
@@ -2686,6 +2688,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          anthropic_api_key?: string | null
           created_at?: string
           id?: string
           org_id?: string
