@@ -358,7 +358,10 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
         const sc = standCounts.filter((s: any) => (s.gleba_id || "none") === gid && s.parent_type === config.standType);
         const latest = sc[0];
 
-        const avgPlanPop = getWeightedPlanAverage(filteredPlans, (p) => p.target_population);
+        // Calculate planned population using the SAME formula as real, just with planned sem/m
+        const avgPlanPop = (seedsPerMeterPlan > 0 && baseSpacing > 0)
+          ? Math.round((seedsPerMeterPlan / (baseSpacing / 100)) * 10000 * (germPct / 100))
+          : getWeightedPlanAverage(filteredPlans, (p) => p.target_population);
 
         const popReal = latest?.avg_plants_per_ha
           ? Math.round(latest.avg_plants_per_ha).toLocaleString("pt-BR")
