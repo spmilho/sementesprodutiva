@@ -1,4 +1,7 @@
 export default function ReportSemente({ data }: { data: any }) {
+  const tratamentos = data.tratamentos || [];
+  const hasTratamentos = tratamentos.length > 0 && tratamentos[0]?.produtos?.length > 0;
+
   return (
     <div className="report-section">
       <div className="section-title">🌱 Semente Básica</div>
@@ -7,10 +10,10 @@ export default function ReportSemente({ data }: { data: any }) {
           <div className="kpi-value">{data.lotes_semente.length}</div>
           <div className="kpi-label">Lotes recebidos</div>
         </div>
-        {data.tratamentos?.length > 0 && (
+        {hasTratamentos && (
           <div className="kpi-card blue">
-            <div className="kpi-value">{data.tratamentos.length}</div>
-            <div className="kpi-label">Tratamentos realizados</div>
+            <div className="kpi-value">{tratamentos[0].produtos.length}</div>
+            <div className="kpi-label">Produtos no TS</div>
           </div>
         )}
       </div>
@@ -39,29 +42,28 @@ export default function ReportSemente({ data }: { data: any }) {
         </tbody>
       </table>
 
-      {data.tratamentos?.length > 0 && (
+      {hasTratamentos && (
         <>
-          <div className="chart-title">Tratamento de Sementes</div>
-          {data.tratamentos.map((t: any, i: number) => (
-            <div key={i} style={{ marginBottom: 16 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
-                Lote {t.lote} ({t.parental}) — {t.data || "—"} — {t.local || "—"}
-              </p>
-              {t.produtos?.length > 0 && (
-                <table className="report-table">
-                  <thead><tr><th>Produto</th><th>Tipo</th><th>I.A.</th><th>Dose</th><th>Unid.</th></tr></thead>
-                  <tbody>
-                    {t.produtos.map((p: any, j: number) => (
-                      <tr key={j}>
-                        <td>{p.produto}</td><td>{p.tipo ?? "—"}</td><td>{p.ia ?? "—"}</td>
-                        <td>{p.dose ?? "—"}</td><td>{p.unidade ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          ))}
+          <div className="chart-title">Tratamento de Sementes (Consolidado)</div>
+          <p style={{ fontSize: 11, color: "#666", marginBottom: 12 }}>
+            Origem: {tratamentos[0].local || "—"} — Aplicado em todos os lotes (fêmea e macho)
+          </p>
+          <table className="report-table">
+            <thead>
+              <tr><th>Produto</th><th>Tipo</th><th>I.A.</th><th>Dose</th><th>Unid.</th></tr>
+            </thead>
+            <tbody>
+              {tratamentos[0].produtos.map((p: any, j: number) => (
+                <tr key={j}>
+                  <td style={{ fontWeight: 500 }}>{p.produto}</td>
+                  <td>{p.tipo ?? "—"}</td>
+                  <td>{p.ia ?? "—"}</td>
+                  <td>{p.dose ?? "—"}</td>
+                  <td>{p.unidade ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </>
       )}
     </div>
