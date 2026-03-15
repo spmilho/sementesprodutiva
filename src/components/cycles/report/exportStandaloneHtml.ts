@@ -405,7 +405,11 @@ export async function uploadHtmlAndGetShareLink(
 
   if (error) throw new Error(`Falha ao fazer upload: ${error.message}`);
 
-  const publicUrl = new URL("/shared-report", window.location.origin);
+  const shareBaseUrl = window.location.hostname.includes("--")
+    ? "https://sementesprodutiva.lovable.app"
+    : window.location.origin;
+
+  const publicUrl = new URL("/shared-report", shareBaseUrl);
   publicUrl.searchParams.set("path", storagePath);
 
   return publicUrl.toString();
