@@ -121,7 +121,7 @@ export default function ReportDespendoamento({ data }: { data: any }) {
     const centerReached = new Set<number>();
 
     while (cursor <= chartEnd) {
-      const cursorKey = cursor.toISOString().slice(0, 10);
+      const cursorKey = toLocalIsoKey(cursor);
       const row: any = { dateBr: formatDateBr(cursor), totalHaDia: 0 };
 
       windows.forEach((w) => {
