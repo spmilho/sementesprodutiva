@@ -274,7 +274,7 @@ const collectExternalDependencies = (cloneRoot: HTMLElement): string[] => {
 
 export async function exportStandaloneHtmlFile(
   options: ExportStandaloneHtmlOptions,
-): Promise<{ objectUrl: string; fileName: string }> {
+): Promise<{ objectUrl: string; fileName: string; blob: Blob }> {
   const { sourceElement, fileName, title, styles, wrapperClassName = "report-container" } = options;
 
   const clone = sourceElement.cloneNode(true) as HTMLElement;
