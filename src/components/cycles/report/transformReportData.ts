@@ -138,7 +138,7 @@ export function transformReportData(data: ReportData, cycle: any): any {
     // ── Plantio Planejado ──
     plantio_planejado: data.plantingPlan.map((p: any) => ({
       data: fmtD(p.planned_date),
-      data_iso: p.planned_date,
+      data_iso: fmtIso(p.planned_date),
       tipo: parent(p.type),
       area: p.planned_area,
     })),
