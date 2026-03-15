@@ -27,6 +27,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
 import CycleReportPage from "./pages/CycleReportPage";
+import SharedReportPage from "./pages/SharedReportPage";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/shared-report" element={<SharedReportPage />} />
             <Route path="/report/:cycleId" element={<ProtectedRoute><CycleReportPage /></ProtectedRoute>} />
             <Route path="*" element={
               <ProtectedRoute>
