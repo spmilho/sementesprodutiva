@@ -28,7 +28,11 @@ Deno.serve(async (req) => {
 
       case "search_images": {
         const { polyid, start, end } = payload;
-        url = `${AGRO_API}/image/search?start=${start}&end=${end}&polyid=${polyid}&appid=${API_KEY}`;
+        // Cap end to current server time to avoid "end after now" API errors
+        const serverNow = Math.floor(Date.now() / 1000);
+        const safeEnd = Math.min(end, serverNow);
+        const safeStart = Math.min(start, safeEnd);
+        url = `${AGRO_API}/image/search?start=${safeStart}&end=${safeEnd}&polyid=${polyid}&appid=${API_KEY}`;
         break;
       }
 
