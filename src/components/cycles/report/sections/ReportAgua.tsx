@@ -87,16 +87,30 @@ export default function ReportAgua({ data }: { data: any }) {
   const waterByDateMap: Record<string, { data: string; irrigacao: number; chuva: number; _sortTs: number }> = {};
 
   irrigacao.forEach((r: any) => {
-    const key = r.data_iso || r.data || "N/A";
-    const display = r.data_iso ? fmtDateFromIso(r.data_iso) : (r.data || "N/A");
-    if (!waterByDateMap[key]) waterByDateMap[key] = { data: display, irrigacao: 0, chuva: 0, _sortTs: parseDateForSort(r.data, r.data_iso) };
+    const key = normalizeDateKey(r.data_iso) || normalizeDateKey(r.data) || "N/A";
+    const display = key !== "N/A" ? fmtDateFromIso(key) : (r.data || "N/A");
+    if (!waterByDateMap[key]) {
+      waterByDateMap[key] = {
+        data: display,
+        irrigacao: 0,
+        chuva: 0,
+        _sortTs: key !== "N/A" ? dateKeyToTs(key) : 0,
+      };
+    }
     waterByDateMap[key].irrigacao += Number(r.lamina_mm) || 0;
   });
 
   chuva.forEach((r: any) => {
-    const key = r.data_iso || r.data || "N/A";
-    const display = r.data_iso ? fmtDateFromIso(r.data_iso) : (r.data || "N/A");
-    if (!waterByDateMap[key]) waterByDateMap[key] = { data: display, irrigacao: 0, chuva: 0, _sortTs: parseDateForSort(r.data, r.data_iso) };
+    const key = normalizeDateKey(r.data_iso) || normalizeDateKey(r.data) || "N/A";
+    const display = key !== "N/A" ? fmtDateFromIso(key) : (r.data || "N/A");
+    if (!waterByDateMap[key]) {
+      waterByDateMap[key] = {
+        data: display,
+        irrigacao: 0,
+        chuva: 0,
+        _sortTs: key !== "N/A" ? dateKeyToTs(key) : 0,
+      };
+    }
     waterByDateMap[key].chuva += Number(r.mm) || 0;
   });
 
