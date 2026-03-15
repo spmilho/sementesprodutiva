@@ -405,9 +405,8 @@ export async function uploadHtmlAndGetShareLink(
 
   if (error) throw new Error(`Falha ao fazer upload: ${error.message}`);
 
-  const { data: urlData } = sb.storage
-    .from("shared-reports")
-    .getPublicUrl(storagePath);
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const publicUrl = `${supabaseUrl}/functions/v1/serve-report?path=${encodeURIComponent(storagePath)}`;
 
-  return urlData.publicUrl;
+  return publicUrl;
 }
