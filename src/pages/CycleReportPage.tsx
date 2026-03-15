@@ -90,6 +90,38 @@ export default function CycleReportPage() {
     );
   }
 
+  const handleDownloadHtml = () => {
+    const reportContainer = document.querySelector(".report-container");
+    if (!reportContainer) return;
+
+    const clientName = data.cliente || "Cliente";
+    const fileName = `Relatorio de Campo - ${clientName}.html`;
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatório de Campo - ${clientName}</title>
+  <style>${reportStyles}
+    body { background: #f5f5f5; }
+    .report-container { max-width: 210mm; margin: 20px auto; background: white; box-shadow: 0 4px 24px rgba(0,0,0,0.12); border-radius: 8px; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <div class="report-container">${reportContainer.innerHTML}</div>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       <style>{reportStyles}</style>
