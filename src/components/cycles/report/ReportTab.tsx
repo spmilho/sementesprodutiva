@@ -265,6 +265,74 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
     window.open(`/report/${cycleId}`, "_blank");
   };
 
+  const handleDownloadHtml = () => {
+    const reportEl = reportRef.current;
+    if (!reportEl || !data) return;
+
+    const clientName = data.cliente || "Cliente";
+    const fileName = `Relatorio de Campo - ${clientName}.html`;
+
+    // Open report page in a hidden iframe, wait for render, then capture
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.left = "-9999px";
+    iframe.style.width = "210mm";
+    iframe.style.height = "297mm";
+    iframe.src = `/report/${cycleId}`;
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        try {
+          const iframeDoc = iframe.contentDocument;
+          if (!iframeDoc) return;
+
+          // Remove toolbar
+          const toolbar = iframeDoc.querySelector(".report-toolbar");
+          toolbar?.remove();
+
+          const reportContainer = iframeDoc.querySelector(".report-container");
+          if (!reportContainer) return;
+
+          // Get computed styles
+          const styleEl = iframeDoc.querySelector("style");
+          const styles = styleEl?.textContent || "";
+
+          const htmlContent = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatório de Campo - ${clientName}</title>
+  <style>${styles}
+    body { background: #f5f5f5; margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1a1a1a; }
+    .report-container { max-width: 210mm; margin: 20px auto; background: white; box-shadow: 0 4px 24px rgba(0,0,0,0.12); border-radius: 8px; overflow: hidden; }
+    @media print {
+      body { background: white; }
+      .report-container { max-width: 100%; margin: 0; box-shadow: none; border-radius: 0; }
+      @page { size: A4; margin: 12mm 10mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-container">${reportContainer.innerHTML}</div>
+</body>
+</html>`;
+
+          const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          URL.revokeObjectURL(url);
+        } finally {
+          document.body.removeChild(iframe);
+        }
+      }, 2000);
+    };
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
