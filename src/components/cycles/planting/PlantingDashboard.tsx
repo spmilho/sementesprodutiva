@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { calcStats, getCvLabel, getOverallStatus, isFemaleType, isMaleType, getPlantingTypeInfo, calcMaleAreaForGleba } from "./planting-utils";
+import { calcStats, getCvLabel, getOverallStatus, isFemaleType, isMaleType } from "./planting-utils";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ReferenceLine, ResponsiveContainer,
 } from "recharts";
@@ -20,34 +20,76 @@ interface Props {
   maleArea?: number;
 }
 
+type ParentGroup = "female" | "male" | "male_1" | "male_2";
+
 const DEFAULT_GERMINATION = 90;
 
-function getGermination(plans: any[], actuals: any[], type: string): number {
-  // 1st: germination_considered_pct from planting_plan
-  const planFiltered = plans.filter((p: any) => type === "female" ? isFemaleType(p.type) : isMaleType(p.type));
-  for (const p of planFiltered) {
-    if (p.germination_considered_pct != null && p.germination_considered_pct > 0) return p.germination_considered_pct;
+const toPositiveNumber = (value: unknown): number => {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
+const getTypeMatcher = (type: ParentGroup) => {
+  if (type === "female") return (value: string) => isFemaleType(value);
+  if (type === "male_1") return (value: string) => value === "male" || value === "male_1";
+  if (type === "male_2") return (value: string) => value === "male_2";
+  return (value: string) => isMaleType(value);
+};
+
+const getWeightedAverage = (items: { value: number; weight: number }[]): number => {
+  const valid = items.filter((item) => item.value > 0);
+  if (valid.length === 0) return 0;
+
+  const weighted = valid.filter((item) => item.weight > 0);
+  if (weighted.length > 0) {
+    const totalWeight = weighted.reduce((sum, item) => sum + item.weight, 0);
+    if (totalWeight > 0) {
+      const weightedSum = weighted.reduce((sum, item) => sum + item.value * item.weight, 0);
+      return weightedSum / totalWeight;
+    }
   }
+
+  return valid.reduce((sum, item) => sum + item.value, 0) / valid.length;
+};
+
+const getWeightedActualAverage = (records: any[], valueSelector: (record: any) => number): number => {
+  return getWeightedAverage(records.map((record) => ({
+    value: toPositiveNumber(valueSelector(record)),
+    weight: toPositiveNumber(record.actual_area),
+  })));
+};
+
+const getWeightedPlanAverage = (records: any[], valueSelector: (record: any) => number): number => {
+  return getWeightedAverage(records.map((record) => ({
+    value: toPositiveNumber(valueSelector(record)),
+    weight: toPositiveNumber(record.planned_area),
+  })));
+};
+
+function getGermination(plans: any[], _actuals: any[], type: ParentGroup): number {
+  const matchType = getTypeMatcher(type);
+  const planFiltered = plans.filter((p: any) => matchType(String(p.type || "")));
+  const weightedGermination = getWeightedPlanAverage(planFiltered, (p) => p.germination_considered_pct);
+
+  if (weightedGermination > 0) return weightedGermination;
+
   // 2nd: germination_pct from seed_lot (if linked via actuals — fallback)
   // For now, we use default
   return DEFAULT_GERMINATION;
 }
 
-function getSeedsPerMeterActual(actuals: any[], type: string): number {
-  const filtered = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
-  if (filtered.length === 0) return 0;
-  const vals = filtered.map((a: any) => Number(a.seeds_per_meter_actual) || 0).filter(v => v > 0);
-  if (vals.length > 0) return vals.reduce((s, v) => s + v, 0) / vals.length;
-  // Fallback to seeds_per_meter (configured, from planting_actual)
-  const fallback = filtered.map((a: any) => Number(a.seeds_per_meter) || 0).filter(v => v > 0);
-  return fallback.length > 0 ? fallback.reduce((s, v) => s + v, 0) / fallback.length : 0;
+function getSeedsPerMeterActual(actuals: any[], type: ParentGroup): number {
+  const matchType = getTypeMatcher(type);
+  const filtered = actuals.filter((a: any) => matchType(String(a.type || "")));
+
+  return getWeightedActualAverage(filtered, (a) => toPositiveNumber(a.seeds_per_meter_actual) || toPositiveNumber(a.seeds_per_meter));
 }
 
-function getAvgSpacing(actuals: any[], type: string): number {
-  const filtered = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
-  if (filtered.length === 0) return 0;
-  const vals = filtered.map((a: any) => Number(a.row_spacing) || 0).filter(v => v > 0);
-  return vals.length > 0 ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
+function getAvgSpacing(actuals: any[], type: ParentGroup): number {
+  const matchType = getTypeMatcher(type);
+  const filtered = actuals.filter((a: any) => matchType(String(a.type || "")));
+
+  return getWeightedActualAverage(filtered, (a) => a.row_spacing);
 }
 
 export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords, standCounts, standPoints, glebas, femaleArea, maleArea }: Props) {
