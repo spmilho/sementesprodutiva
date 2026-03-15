@@ -43,6 +43,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+  const [exportingHtml, setExportingHtml] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
