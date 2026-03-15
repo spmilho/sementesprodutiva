@@ -73,22 +73,15 @@ export default function ReportManejo({ data }: { data: any }) {
           <div className="chart-container">
             <div className="chart-title">Distribuição por Tipo</div>
             <ResponsiveContainer width="100%" height={280}>
-              <PieChart margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
+              <PieChart>
                 <Pie
                   data={pieData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
-                  cy="50%"
-                  outerRadius={60}
-                  label={({ name, value, cx: pcx, x, y }) => {
-                    const anchor = x > pcx ? "start" : "end";
-                    return (
-                      <text x={x} y={y} textAnchor={anchor} dominantBaseline="central" style={{ fontSize: 9 }}>
-                        {`${name}: ${value}`}
-                      </text>
-                    );
-                  }}
+                  cy="45%"
+                  outerRadius={70}
+                  label={({ value }) => value}
                   labelLine={{ strokeWidth: 1 }}
                 >
                   {pieData.map((_: any, i: number) => (
@@ -96,6 +89,13 @@ export default function ReportManejo({ data }: { data: any }) {
                   ))}
                 </Pie>
                 <Tooltip />
+                <Legend
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
+                  wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                  formatter={(value: string) => <span style={{ color: "#333" }}>{value}</span>}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
