@@ -244,7 +244,7 @@ export function transformReportData(data: ReportData, cycle: any): any {
     // ── Irrigação ──
     irrigacao: data.irrigationRecords.map((i: any) => ({
       data: fmtD(i.start_date),
-      data_iso: i.start_date,
+      data_iso: fmtIso(i.start_date),
       lamina_mm: i.depth_mm,
       duracao_h: i.duration_hours,
     })),
