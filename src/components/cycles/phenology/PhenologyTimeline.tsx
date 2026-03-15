@@ -241,7 +241,7 @@ export default function PhenologyTimeline({ records, onClickFuture, onClickPast,
     if (type === "male_1") return male1Infos;
     if (type === "male_2") return male2Infos;
     if (type === "male_3") return male3Infos;
-    return genericMaleInfos;
+    return male1Infos;
   };
 
   const showBoth = filter === "both";
