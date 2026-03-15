@@ -72,18 +72,24 @@ export default function ReportManejo({ data }: { data: any }) {
         {pieData.length > 0 && (
           <div className="chart-container">
             <div className="chart-title">Distribuição por Tipo</div>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
                 <Pie
                   data={pieData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={80}
-                  label={({ name, value }) => `${name}: ${value}`}
+                  outerRadius={60}
+                  label={({ name, value, cx: pcx, x, y }) => {
+                    const anchor = x > pcx ? "start" : "end";
+                    return (
+                      <text x={x} y={y} textAnchor={anchor} dominantBaseline="central" style={{ fontSize: 9 }}>
+                        {`${name}: ${value}`}
+                      </text>
+                    );
+                  }}
                   labelLine={{ strokeWidth: 1 }}
-                  style={{ fontSize: 10 }}
                 >
                   {pieData.map((_: any, i: number) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -98,10 +104,10 @@ export default function ReportManejo({ data }: { data: any }) {
         {barData.length > 1 && (
           <div className="chart-container">
             <div className="chart-title">Aplicações por Data</div>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={barData}>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={barData} margin={{ bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
-                <XAxis dataKey="date" tick={{ fontSize: 9 }} angle={-30} textAnchor="end" height={50} />
+                <XAxis dataKey="date" tick={{ fontSize: 8 }} angle={-45} textAnchor="end" height={70} interval={0} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip />
                 {allTypes.map((t: any, i: number) => (
