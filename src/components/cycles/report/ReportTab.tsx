@@ -265,14 +265,40 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
     window.open(`/report/${cycleId}`, "_blank");
   };
 
-  const handleDownloadHtml = () => {
+  const handleDownloadHtml = async () => {
     const reportEl = reportRef.current;
     if (!reportEl || !data) return;
 
     const clientName = data.cliente || "Cliente";
     const fileName = `Relatorio de Campo - ${clientName}.html`;
 
-    const reportHtml = reportEl.innerHTML;
+    // Clone the report DOM so we can modify it without affecting the page
+    const clone = reportEl.cloneNode(true) as HTMLElement;
+
+    // Convert all images to base64 for standalone HTML
+    const images = clone.querySelectorAll("img");
+    await Promise.all(
+      Array.from(images).map(async (img) => {
+        try {
+          const src = img.getAttribute("src");
+          if (!src || src.startsWith("data:")) return;
+          const response = await fetch(src);
+          if (!response.ok) return;
+          const blob = await response.blob();
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          img.setAttribute("src", base64);
+        } catch {
+          // If conversion fails, keep original src
+        }
+      })
+    );
+
+    const reportHtml = clone.innerHTML;
 
     const htmlContent = `<!DOCTYPE html>
 <html lang="pt-BR">
