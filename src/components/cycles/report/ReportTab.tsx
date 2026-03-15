@@ -204,7 +204,17 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
 
     // Plantio progress
     if (data.plantio?.length > 0) {
-      const totalPlanted = data.plantio.reduce((s: number, p: any) => s + (p.area || 0), 0);
+      // Female area + max(male sub-type areas) since males share the same physical rows
+      const femaleTotal = data.plantio
+        .filter((p: any) => p.tipo === "Fêmea")
+        .reduce((s: number, p: any) => s + (p.area || 0), 0);
+      const male1Total = data.plantio
+        .filter((p: any) => p.tipo === "Macho 1" || p.tipo === "Macho")
+        .reduce((s: number, p: any) => s + (p.area || 0), 0);
+      const male2Total = data.plantio
+        .filter((p: any) => p.tipo === "Macho 2")
+        .reduce((s: number, p: any) => s + (p.area || 0), 0);
+      const totalPlanted = femaleTotal + Math.max(male1Total, male2Total);
       const pct = data.area_total ? ((totalPlanted / data.area_total) * 100).toFixed(0) : "—";
       kpis.push({
         label: "Plantio Realizado",
