@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Save, Upload, Building2, Eye, EyeOff, Key, Loader2, CheckCircle2, XCircle, MinusCircle } from "lucide-react";
 import { toast } from "sonner";
-
+import { callClaude } from "@/services/anthropicApi";
 
 export default function OrganizationTab() {
   const { user } = useAuth();
@@ -71,23 +71,10 @@ export default function OrganizationTab() {
   useEffect(() => {
     if (settings?.anthropic_api_key) {
       setApiKey(settings.anthropic_api_key);
+      // Auto-test silently
       setApiStatus("untested");
-      // Auto-test silently using direct fetch
-      fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": settings.anthropic_api_key,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 10,
-          messages: [{ role: "user", content: "OK" }],
-        }),
-      })
-        .then((r) => setApiStatus(r.ok ? "connected" : "error"))
+      callClaude("Responda apenas: OK", "teste", 10)
+        .then(() => setApiStatus("connected"))
         .catch(() => setApiStatus("error"));
     }
   }, [settings]);
@@ -158,37 +145,14 @@ export default function OrganizationTab() {
   });
 
   const handleTestApi = async () => {
-    if (!apiKey || !apiKey.startsWith("sk-ant-")) {
-      toast.error("Cole uma API key válida (começa com sk-ant-)");
-      return;
-    }
     setTestingApi(true);
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 50,
-          messages: [{ role: "user", content: "Responda apenas: OK" }],
-        }),
-      });
-      if (response.ok) {
-        setApiStatus("connected");
-        toast.success("✅ Conexão OK!");
-      } else {
-        const err = await response.json().catch(() => ({}));
-        setApiStatus("error");
-        toast.error("❌ " + (err?.error?.message || "Erro " + response.status));
-      }
+      await callClaude("Responda apenas: OK", "teste", 10);
+      setApiStatus("connected");
+      toast.success("✅ Conexão OK!");
     } catch (err: any) {
       setApiStatus("error");
-      toast.error("❌ Erro de conexão");
+      toast.error(err.message || "Erro na conexão");
     } finally {
       setTestingApi(false);
     }
