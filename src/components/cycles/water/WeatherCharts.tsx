@@ -358,9 +358,11 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
     const startTs = dateKeyToTimestamp(earliestPlanting);
     const endTs = dateKeyToTimestamp(lastWeatherDate);
     const allDates: string[] = [];
-    for (let ts = startTs; ts <= endTs; ts += 86400000) {
-      const d = new Date(ts);
-      allDates.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`);
+    const cursor = new Date(startTs);
+    const endDate = new Date(endTs);
+    while (cursor <= endDate) {
+      allDates.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`);
+      cursor.setDate(cursor.getDate() + 1);
     }
     return allDates.map(dateStr => {
       const currentTs = dateKeyToTimestamp(dateStr);
