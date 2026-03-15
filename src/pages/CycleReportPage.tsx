@@ -52,6 +52,7 @@ export default function CycleReportPage() {
 
       const reportData = await fetchReportData(id, cycle);
       const transformed = transformReportData(reportData, cycle);
+      transformed._raw = reportData;
       setData(transformed);
     } catch (e: any) {
       console.error("Erro ao carregar relatório:", e);
