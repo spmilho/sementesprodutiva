@@ -334,5 +334,78 @@ export function transformReportData(data: ReportData, cycle: any): any {
         obs: s.notes,
       })),
     })),
+
+    // ── Fotos (collected from all sources) ──
+    _fotos: collectAllPhotos(data),
   };
+}
+
+function collectAllPhotos(data: ReportData): any[] {
+  const photos: any[] = [];
+  const urlMap = data.photoSignedUrls || {};
+
+  const resolveUrl = (p: string) => {
+    if (!p) return null;
+    if (p.startsWith("http")) return p;
+    return urlMap[p] || null;
+  };
+
+  const extract = (records: any[], category: string, dateField: string, captionField?: string) => {
+    for (const r of records) {
+      const arr = Array.isArray(r?.photos) ? r.photos : [];
+      for (const p of arr) {
+        const url = resolveUrl(p);
+        if (url) {
+          photos.push({
+            url,
+            caption: captionField ? (r[captionField] || "") : (r.notes || r.observations || r.non_conformities || r.description || ""),
+            category,
+            date: r[dateField] || null,
+          });
+        }
+      }
+      // Single photo_url field (phenology)
+      if (r?.photo_url) {
+        const url = resolveUrl(r.photo_url);
+        if (url) {
+          photos.push({
+            url,
+            caption: r.description || r.notes || r.observations || "",
+            category,
+            date: r[dateField] || null,
+          });
+        }
+      }
+    }
+  };
+
+  extract(data.plantingActual, "Plantio", "planting_date");
+  extract(data.detasseling, "Despendoamento", "operation_date");
+  extract(data.chemicals, "Aplicação Química", "application_date");
+  extract(data.pests, "Pragas/Doenças", "observation_date");
+  extract(data.moisture, "Umidade", "sample_date");
+  extract(data.phenology, "Fenologia", "observation_date");
+  extract(data.roguingRecords, "Roguing", "operation_date");
+
+  // Field visit photos
+  for (const v of data.fieldVisits) {
+    if (v.field_visit_photos) {
+      for (const fp of v.field_visit_photos) {
+        const url = resolveUrl(fp.photo_url);
+        if (url) {
+          photos.push({
+            url,
+            caption: fp.caption || `Visita ${v.visit_number || ""}`,
+            category: "Avaliação de Campo",
+            date: v.visit_date || null,
+          });
+        }
+      }
+    }
+  }
+
+  // Sort by date
+  photos.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+  return photos;
 }
