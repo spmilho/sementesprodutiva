@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
@@ -56,20 +56,50 @@ export default function Cycles() {
   const [filterCooperator, setFilterCooperator] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
 
+  // Double confirmation state
+  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
+  const [deletingCycle, setDeletingCycle] = useState<any>(null);
+  const [confirmHybrid, setConfirmHybrid] = useState("");
+
   const deleteMutation = useMutation({
     mutationFn: async (cycleId: string) => {
-      const { error } = await (supabase as any).rpc("soft_delete_record", {
-        _table_name: "production_cycles",
-        _record_id: cycleId,
+      const { error } = await (supabase as any).rpc("soft_delete_cycle_cascade", {
+        _cycle_id: cycleId,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["production_cycles"] });
       toast.success("Ciclo excluído com sucesso!");
+      resetDeleteState();
     },
     onError: (err: any) => toast.error(err.message),
   });
+
+  const resetDeleteState = () => {
+    setDeleteStep(0);
+    setDeletingCycle(null);
+    setConfirmHybrid("");
+  };
+
+  const handleDeleteClick = (cycle: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeletingCycle(cycle);
+    setDeleteStep(1);
+  };
+
+  const handleStep1Confirm = () => {
+    setDeleteStep(2);
+    setConfirmHybrid("");
+  };
+
+  const handleStep2Confirm = () => {
+    if (confirmHybrid.trim().toLowerCase() !== deletingCycle?.hybrid_name?.trim().toLowerCase()) {
+      toast.error("Nome do híbrido não confere. Tente novamente.");
+      return;
+    }
+    deleteMutation.mutate(deletingCycle.id);
+  };
 
   const { data: cycles = [], isLoading } = useQuery({
     queryKey: ["production_cycles"],
@@ -221,31 +251,14 @@ export default function Cycles() {
                        </TableCell>
                        {isAdmin && (
                          <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                           <AlertDialog>
-                             <AlertDialogTrigger asChild>
-                               <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                                 <Trash2 className="h-4 w-4" />
-                               </Button>
-                             </AlertDialogTrigger>
-                             <AlertDialogContent>
-                               <AlertDialogHeader>
-                                 <AlertDialogTitle>Excluir ciclo?</AlertDialogTitle>
-                                 <AlertDialogDescription>
-                                   Tem certeza que deseja excluir o ciclo <strong>{c.contract_number || c.field_name}</strong> ({c.hybrid_name})?
-                                   Esta ação não pode ser desfeita.
-                                 </AlertDialogDescription>
-                               </AlertDialogHeader>
-                               <AlertDialogFooter>
-                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                 <AlertDialogAction
-                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                   onClick={() => deleteMutation.mutate(c.id)}
-                                 >
-                                   Excluir
-                                 </AlertDialogAction>
-                               </AlertDialogFooter>
-                             </AlertDialogContent>
-                           </AlertDialog>
+                           <Button
+                             variant="ghost"
+                             size="icon"
+                             className="h-8 w-8 text-destructive hover:text-destructive"
+                             onClick={(e) => handleDeleteClick(c, e)}
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
                          </TableCell>
                        )}
                      </TableRow>
@@ -256,6 +269,57 @@ export default function Cycles() {
           )}
         </CardContent>
       </Card>
+
+      {/* Step 1 Dialog */}
+      <Dialog open={deleteStep === 1} onOpenChange={(open) => !open && resetDeleteState()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir ciclo?</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir o ciclo <strong>{deletingCycle?.contract_number || deletingCycle?.field_name}</strong> ({deletingCycle?.hybrid_name})?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={resetDeleteState}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleStep1Confirm}>Sim, continuar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Step 2 Dialog - Type hybrid name to confirm */}
+      <Dialog open={deleteStep === 2} onOpenChange={(open) => !open && resetDeleteState()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">⚠️ ATENÇÃO — Exclusão irreversível</DialogTitle>
+            <DialogDescription className="space-y-2">
+              <p>Esta ação excluirá <strong>TODOS os dados</strong> do ciclo, incluindo:</p>
+              <p className="text-xs text-muted-foreground">
+                Plantio, Stand, Fenologia, Manejo, NDVI, Nicking, Despendoamento, Pragas, Irrigação, Umidade, Estimativa, Colheita, Visitas de Campo, Documentos.
+              </p>
+              <p className="font-medium mt-3">
+                Digite o nome do híbrido (<strong>{deletingCycle?.hybrid_name}</strong>) para confirmar:
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={confirmHybrid}
+            onChange={(e) => setConfirmHybrid(e.target.value)}
+            placeholder={deletingCycle?.hybrid_name}
+            className="mt-2"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={resetDeleteState}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              onClick={handleStep2Confirm}
+              disabled={deleteMutation.isPending || confirmHybrid.trim().toLowerCase() !== deletingCycle?.hybrid_name?.trim().toLowerCase()}
+            >
+              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Excluir permanentemente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -73,7 +73,7 @@ export default function FeedPostCard({ post }: Props) {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      await (supabase as any).from("feed_posts").delete().eq("id", post.id);
+      await (supabase as any).from("feed_posts").update({ deleted_at: new Date().toISOString() }).eq("id", post.id);
     },
     onSuccess: () => {
       toast.success("Post excluído");

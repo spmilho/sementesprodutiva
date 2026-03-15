@@ -74,7 +74,7 @@ export default function ScoreCard({
   };
 
   const handleRemovePhoto = async (photoId: string) => {
-    await (supabase as any).from("field_visit_photos").delete().eq("id", photoId);
+    await (supabase as any).from("field_visit_photos").update({ deleted_at: new Date().toISOString() }).eq("id", photoId);
     onPhotoRemoved(photoId);
   };
 

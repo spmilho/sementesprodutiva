@@ -90,7 +90,7 @@ export default function FeedAdminPanel() {
 
   const removeUser = useMutation({
     mutationFn: async (id: string) => {
-      await (supabase as any).from("feed_user_permissions").delete().eq("id", id);
+      await (supabase as any).from("feed_user_permissions").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     },
     onSuccess: () => {
       toast.success("Acesso removido");

@@ -370,7 +370,7 @@ function EstimateCard({
 
   const deletePointMutation = useMutation({
     mutationFn: async (pointId: string) => {
-      const { error } = await (supabase as any).from("yield_sample_points").delete().eq("id", pointId);
+      const { error } = await (supabase as any).from("yield_sample_points").update({ deleted_at: new Date().toISOString() }).eq("id", pointId);
       if (error) throw error;
       await updateEstimateAggregates(estimate.id);
     },
@@ -384,14 +384,14 @@ function EstimateCard({
 
   const deleteEstimateMutation = useMutation({
     mutationFn: async () => {
-      // Delete ear samples for all points
-      const { data: pts } = await (supabase as any).from("yield_sample_points").select("id").eq("yield_estimate_id", estimate.id);
+      const now = new Date().toISOString();
+      const { data: pts } = await (supabase as any).from("yield_sample_points").select("id").eq("yield_estimate_id", estimate.id).is("deleted_at", null);
       if (pts && pts.length > 0) {
         const ids = pts.map((p: any) => p.id);
-        await (supabase as any).from("yield_ear_samples").delete().in("sample_point_id", ids);
-        await (supabase as any).from("yield_sample_points").delete().eq("yield_estimate_id", estimate.id);
+        await (supabase as any).from("yield_ear_samples").update({ deleted_at: now }).in("sample_point_id", ids).is("deleted_at", null);
+        await (supabase as any).from("yield_sample_points").update({ deleted_at: now }).eq("yield_estimate_id", estimate.id).is("deleted_at", null);
       }
-      const { error } = await (supabase as any).from("yield_estimates").delete().eq("id", estimate.id);
+      const { error } = await (supabase as any).rpc("soft_delete_record", { _table_name: "yield_estimates", _record_id: estimate.id });
       if (error) throw error;
     },
     onSuccess: () => {

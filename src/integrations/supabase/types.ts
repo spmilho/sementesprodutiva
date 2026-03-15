@@ -674,6 +674,7 @@ export type Database = {
         Row: {
           created_at: string
           cycle_id: string
+          deleted_at: string | null
           id: string
           org_id: string
           role_in_cycle: string
@@ -682,6 +683,7 @@ export type Database = {
         Insert: {
           created_at?: string
           cycle_id: string
+          deleted_at?: string | null
           id?: string
           org_id: string
           role_in_cycle?: string
@@ -690,6 +692,7 @@ export type Database = {
         Update: {
           created_at?: string
           cycle_id?: string
+          deleted_at?: string | null
           id?: string
           org_id?: string
           role_in_cycle?: string
@@ -1152,6 +1155,7 @@ export type Database = {
           caption: string | null
           cliente: string | null
           created_at: string
+          deleted_at: string | null
           fazenda: string | null
           gps_lat: number | null
           gps_lng: number | null
@@ -1171,6 +1175,7 @@ export type Database = {
           caption?: string | null
           cliente?: string | null
           created_at?: string
+          deleted_at?: string | null
           fazenda?: string | null
           gps_lat?: number | null
           gps_lng?: number | null
@@ -1190,6 +1195,7 @@ export type Database = {
           caption?: string | null
           cliente?: string | null
           created_at?: string
+          deleted_at?: string | null
           fazenda?: string | null
           gps_lat?: number | null
           gps_lng?: number | null
@@ -1210,6 +1216,7 @@ export type Database = {
         Row: {
           can_access_feed: boolean
           created_at: string
+          deleted_at: string | null
           id: string
           is_banned: boolean
           role_feed: string
@@ -1219,6 +1226,7 @@ export type Database = {
         Insert: {
           can_access_feed?: boolean
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_banned?: boolean
           role_feed?: string
@@ -1228,6 +1236,7 @@ export type Database = {
         Update: {
           can_access_feed?: boolean
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_banned?: boolean
           role_feed?: string
@@ -1396,6 +1405,7 @@ export type Database = {
         Row: {
           caption: string | null
           created_at: string | null
+          deleted_at: string | null
           id: string
           org_id: string
           photo_url: string
@@ -1405,6 +1415,7 @@ export type Database = {
         Insert: {
           caption?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           org_id: string
           photo_url: string
@@ -1414,6 +1425,7 @@ export type Database = {
         Update: {
           caption?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           org_id?: string
           photo_url?: string
@@ -1447,6 +1459,7 @@ export type Database = {
       field_visit_scores: {
         Row: {
           created_at: string | null
+          deleted_at: string | null
           id: string
           notes: string | null
           org_id: string
@@ -1459,6 +1472,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           notes?: string | null
           org_id: string
@@ -1471,6 +1485,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           notes?: string | null
           org_id?: string
@@ -1503,6 +1518,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           cycle_id: string
+          deleted_at: string | null
           final_score: number | null
           general_notes: string | null
           id: string
@@ -1519,6 +1535,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           cycle_id: string
+          deleted_at?: string | null
           final_score?: number | null
           general_notes?: string | null
           id?: string
@@ -1535,6 +1552,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           cycle_id?: string
+          deleted_at?: string | null
           final_score?: number | null
           general_notes?: string | null
           id?: string
@@ -3017,6 +3035,7 @@ export type Database = {
           concluida_em: string | null
           criado_em: string | null
           criado_por: string | null
+          deleted_at: string | null
           esforco: string | null
           how: string
           how_much: string | null
@@ -3037,6 +3056,7 @@ export type Database = {
           concluida_em?: string | null
           criado_em?: string | null
           criado_por?: string | null
+          deleted_at?: string | null
           esforco?: string | null
           how: string
           how_much?: string | null
@@ -3057,6 +3077,7 @@ export type Database = {
           concluida_em?: string | null
           criado_em?: string | null
           criado_por?: string | null
+          deleted_at?: string | null
           esforco?: string | null
           how?: string
           how_much?: string | null
@@ -3187,6 +3208,7 @@ export type Database = {
           acao_id: string
           autor_id: string
           criado_em: string | null
+          deleted_at: string | null
           editado_em: string | null
           id: string
           texto: string
@@ -3195,6 +3217,7 @@ export type Database = {
           acao_id: string
           autor_id: string
           criado_em?: string | null
+          deleted_at?: string | null
           editado_em?: string | null
           id?: string
           texto: string
@@ -3203,6 +3226,7 @@ export type Database = {
           acao_id?: string
           autor_id?: string
           criado_em?: string | null
+          deleted_at?: string | null
           editado_em?: string | null
           id?: string
           texto?: string
@@ -3419,6 +3443,7 @@ export type Database = {
       planting_cv_points: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           planting_actual_id: string
           point_number: number
@@ -3428,6 +3453,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           planting_actual_id: string
           point_number: number
@@ -3437,6 +3463,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           planting_actual_id?: string
           point_number?: number
@@ -4285,6 +4312,7 @@ export type Database = {
           application_order: number | null
           category: string | null
           created_at: string
+          deleted_at: string | null
           dose: number
           dose_unit: string
           id: string
@@ -4297,6 +4325,7 @@ export type Database = {
           application_order?: number | null
           category?: string | null
           created_at?: string
+          deleted_at?: string | null
           dose: number
           dose_unit: string
           id?: string
@@ -4309,6 +4338,7 @@ export type Database = {
           application_order?: number | null
           category?: string | null
           created_at?: string
+          deleted_at?: string | null
           dose?: number
           dose_unit?: string
           id?: string
@@ -4329,6 +4359,7 @@ export type Database = {
       stand_count_points: {
         Row: {
           created_at: string
+          deleted_at: string | null
           gps_latitude: number | null
           gps_longitude: number | null
           id: string
@@ -4342,6 +4373,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           gps_latitude?: number | null
           gps_longitude?: number | null
           id?: string
@@ -4355,6 +4387,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           gps_latitude?: number | null
           gps_longitude?: number | null
           id?: string
@@ -4851,6 +4884,7 @@ export type Database = {
       yield_ear_samples: {
         Row: {
           created_at: string
+          deleted_at: string | null
           ear_length_cm: number | null
           ear_number: number
           id: string
@@ -4861,6 +4895,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           ear_length_cm?: number | null
           ear_number: number
           id?: string
@@ -4871,6 +4906,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           ear_length_cm?: number | null
           ear_number?: number
           id?: string
@@ -4986,6 +5022,7 @@ export type Database = {
         Row: {
           avg_kernels_per_ear: number | null
           created_at: string
+          deleted_at: string | null
           discarded_ears_counted: number
           ears_per_ha: number | null
           id: string
@@ -5011,6 +5048,7 @@ export type Database = {
         Insert: {
           avg_kernels_per_ear?: number | null
           created_at?: string
+          deleted_at?: string | null
           discarded_ears_counted?: number
           ears_per_ha?: number | null
           id?: string
@@ -5036,6 +5074,7 @@ export type Database = {
         Update: {
           avg_kernels_per_ear?: number | null
           created_at?: string
+          deleted_at?: string | null
           discarded_ears_counted?: number
           ears_per_ha?: number | null
           id?: string
@@ -5130,6 +5169,11 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      restore_cycle: { Args: { _cycle_id: string }; Returns: undefined }
+      soft_delete_cycle_cascade: {
+        Args: { _cycle_id: string }
+        Returns: undefined
+      }
       soft_delete_record: {
         Args: { _record_id: string; _table_name: string }
         Returns: undefined

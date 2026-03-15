@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Users, Layers, FileText, Download, WifiOff, FileSignature, Database } from "lucide-react";
+import { Building2, Users, Layers, FileText, Download, WifiOff, FileSignature, Database, Trash2 } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 import { Navigate } from "react-router-dom";
 import OrganizationTab from "@/components/settings/OrganizationTab";
@@ -11,6 +11,7 @@ import CooperadosTab from "@/components/settings/CooperadosTab";
 import ClientsTab from "@/components/settings/ClientsTab";
 import OfflineQueueTab from "@/components/settings/OfflineQueueTab";
 import BackupTab from "@/components/settings/BackupTab";
+import TrashTab from "@/components/settings/TrashTab";
 import { useState } from "react";
 import ContratoAcessoModal from "@/components/contratos/ContratoAcessoModal";
 
@@ -66,6 +67,11 @@ export default function Configuracoes() {
               <FileSignature className="h-3.5 w-3.5" /> Acesso Contratos
             </TabsTrigger>
           )}
+          {isAdmin && (
+            <TabsTrigger value="trash" className="gap-1.5 text-xs">
+              <Trash2 className="h-3.5 w-3.5" /> 🗑️ Lixeira
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="organization">
@@ -111,6 +117,11 @@ export default function Configuracoes() {
                 <FileSignature className="h-4 w-4" /> Gerenciar Acessos
               </button>
             </div>
+          </TabsContent>
+        )}
+        {isAdmin && (
+          <TabsContent value="trash">
+            <TrashTab />
           </TabsContent>
         )}
       </Tabs>
