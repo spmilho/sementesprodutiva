@@ -23,20 +23,40 @@ function calcGDU(tmax: number | null, tmin: number | null): number {
   return Math.max(0, gdu);
 }
 
-function parseDateForSort(dataStr: string | null | undefined, isoStr: string | null | undefined): number {
-  if (isoStr) {
-    const [y, m, d] = isoStr.split("-").map(Number);
-    return new Date(y, m - 1, d, 12, 0, 0).getTime();
+function normalizeDateKey(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    const [, y, m, d] = iso;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
   }
-  if (!dataStr) return 0;
-  const [d, m, y] = dataStr.split("/").map(Number);
-  if (!d || !m || !y) return 0;
-  return new Date(y, m - 1, d, 12, 0, 0).getTime();
+
+  const br = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (br) {
+    const [, d, m, y] = br;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  return null;
+}
+
+function dateKeyToTs(dateKey: string): number {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1, 12, 0, 0).getTime();
+}
+
+function parseDateForSort(dataStr: string | null | undefined, isoStr: string | null | undefined): number {
+  const key = normalizeDateKey(isoStr) || normalizeDateKey(dataStr);
+  return key ? dateKeyToTs(key) : 0;
 }
 
 function fmtDateFromIso(iso: string | null | undefined): string {
-  if (!iso) return "N/A";
-  const [y, m, d] = iso.split("-");
+  const key = normalizeDateKey(iso);
+  if (!key) return "N/A";
+  const [, m, d] = key.split("-");
   return `${d}/${m}`;
 }
 
@@ -52,14 +72,27 @@ export default function ReportAgua({ data }: { data: any }) {
   const irrigacao = data.irrigacao || [];
   const chuva = data.chuva || [];
 
-  const clima = (data.clima || []).slice().sort((a: any, b: any) => {
-    return parseDateForSort(a.data, a.data_iso) - parseDateForSort(b.data, b.data_iso);
+  const clima = (data.clima || [])
+    .slice()
+    .sort((a: any, b: any) => parseDateForSort(a.data, a.data_iso) - parseDateForSort(b.data, b.data_iso));
+
+  const climaByDate = new Map<string, any>();
+  clima.forEach((r: any) => {
+    const key = normalizeDateKey(r.data_iso) || normalizeDateKey(r.data);
+    if (!key) return;
+    const prev = climaByDate.get(key);
+    if (!prev || String(r.created_at || "") >= String(prev.created_at || "")) {
+      climaByDate.set(key, {
+        ...r,
+        data_iso: key,
+        data: fmtDateFromIso(key),
+      });
+    }
   });
 
-  const climaFixed = clima.map((r: any) => ({
-    ...r,
-    data: r.data_iso ? fmtDateFromIso(r.data_iso) : r.data,
-  }));
+  const climaFixed = Array.from(climaByDate.values()).sort(
+    (a: any, b: any) => parseDateForSort(a.data, a.data_iso) - parseDateForSort(b.data, b.data_iso),
+  );
 
   const totalIrr = irrigacao.reduce((s: number, r: any) => s + (Number(r.lamina_mm) || 0), 0);
   const totalChuva = chuva.reduce((s: number, r: any) => s + (Number(r.mm) || 0), 0);
@@ -67,16 +100,30 @@ export default function ReportAgua({ data }: { data: any }) {
   const waterByDateMap: Record<string, { data: string; irrigacao: number; chuva: number; _sortTs: number }> = {};
 
   irrigacao.forEach((r: any) => {
-    const key = r.data_iso || r.data || "N/A";
-    const display = r.data_iso ? fmtDateFromIso(r.data_iso) : (r.data || "N/A");
-    if (!waterByDateMap[key]) waterByDateMap[key] = { data: display, irrigacao: 0, chuva: 0, _sortTs: parseDateForSort(r.data, r.data_iso) };
+    const key = normalizeDateKey(r.data_iso) || normalizeDateKey(r.data) || "N/A";
+    const display = key !== "N/A" ? fmtDateFromIso(key) : (r.data || "N/A");
+    if (!waterByDateMap[key]) {
+      waterByDateMap[key] = {
+        data: display,
+        irrigacao: 0,
+        chuva: 0,
+        _sortTs: key !== "N/A" ? dateKeyToTs(key) : 0,
+      };
+    }
     waterByDateMap[key].irrigacao += Number(r.lamina_mm) || 0;
   });
 
   chuva.forEach((r: any) => {
-    const key = r.data_iso || r.data || "N/A";
-    const display = r.data_iso ? fmtDateFromIso(r.data_iso) : (r.data || "N/A");
-    if (!waterByDateMap[key]) waterByDateMap[key] = { data: display, irrigacao: 0, chuva: 0, _sortTs: parseDateForSort(r.data, r.data_iso) };
+    const key = normalizeDateKey(r.data_iso) || normalizeDateKey(r.data) || "N/A";
+    const display = key !== "N/A" ? fmtDateFromIso(key) : (r.data || "N/A");
+    if (!waterByDateMap[key]) {
+      waterByDateMap[key] = {
+        data: display,
+        irrigacao: 0,
+        chuva: 0,
+        _sortTs: key !== "N/A" ? dateKeyToTs(key) : 0,
+      };
+    }
     waterByDateMap[key].chuva += Number(r.mm) || 0;
   });
 
@@ -116,7 +163,7 @@ export default function ReportAgua({ data }: { data: any }) {
   // Build daily GDU map from weather data
   const dailyGduMap = new Map<string, number>();
   climaFixed.forEach((r: any) => {
-    const key = r.data_iso;
+    const key = normalizeDateKey(r.data_iso);
     if (key) dailyGduMap.set(key, calcGDU(Number(r.temp_max), Number(r.temp_min)));
   });
 
@@ -125,9 +172,10 @@ export default function ReportAgua({ data }: { data: any }) {
   const getPlantingDates = (parentType: string): string[] => {
     const dates = new Set<string>();
     plantio.forEach((p: any) => {
-      if (normalizeParent(p.tipo) === parentType && p.data_iso) dates.add(p.data_iso);
+      const key = normalizeDateKey(p.data_iso);
+      if (normalizeParent(p.tipo) === parentType && key) dates.add(key);
     });
-    return Array.from(dates).sort();
+    return Array.from(dates).sort((a, b) => a.localeCompare(b));
   };
 
   const femaleDates = getPlantingDates("Fêmea");
@@ -137,7 +185,7 @@ export default function ReportAgua({ data }: { data: any }) {
   const buildGduByPlanting = (plantingDates: string[], prefix: string) => {
     if (plantingDates.length === 0 || climaFixed.length === 0) return [];
     const earliestPlanting = plantingDates[0];
-    const lastWeatherDate = climaFixed[climaFixed.length - 1]?.data_iso;
+    const lastWeatherDate = normalizeDateKey(climaFixed[climaFixed.length - 1]?.data_iso);
     if (!earliestPlanting || !lastWeatherDate) return [];
 
     const startTs = parseDateForSort(null, earliestPlanting);

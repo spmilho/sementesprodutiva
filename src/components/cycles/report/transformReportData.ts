@@ -1,6 +1,34 @@
 import type { ReportData } from "./reportTypes";
 
-const fmtD = (d: any) => (d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR") : null);
+const normalizeDateKey = (value: any): string | null => {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    const [, y, m, d] = iso;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  const br = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (br) {
+    const [, d, m, y] = br;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  return null;
+};
+
+const fmtD = (d: any) => {
+  const key = normalizeDateKey(d);
+  if (!key) return null;
+  const [y, m, day] = key.split("-");
+  return `${day}/${m}/${y}`;
+};
+
+const fmtIso = (d: any) => normalizeDateKey(d);
+
 const parent = (t: any) => {
   if (!t) return "N/A";
   if (t.includes("female") || t === "Fêmea") return "Fêmea";
@@ -96,7 +124,7 @@ export function transformReportData(data: ReportData, cycle: any): any {
     // ── Plantio Realizado ──
     plantio: data.plantingActual.map((p: any) => ({
       data: fmtD(p.planting_date),
-      data_iso: p.planting_date,
+      data_iso: fmtIso(p.planting_date),
       tipo: parent(p.type),
       gleba: p.pivot_glebas?.name || "Geral",
       lote: p.seed_lot_number || "",
@@ -110,7 +138,7 @@ export function transformReportData(data: ReportData, cycle: any): any {
     // ── Plantio Planejado ──
     plantio_planejado: data.plantingPlan.map((p: any) => ({
       data: fmtD(p.planned_date),
-      data_iso: p.planned_date,
+      data_iso: fmtIso(p.planned_date),
       tipo: parent(p.type),
       area: p.planned_area,
     })),
@@ -216,7 +244,8 @@ export function transformReportData(data: ReportData, cycle: any): any {
     // ── Irrigação ──
     irrigacao: data.irrigationRecords.map((i: any) => ({
       data: fmtD(i.start_date),
-      data_iso: i.start_date,
+      data_iso: fmtIso(i.start_date),
+      created_at: i.created_at,
       lamina_mm: i.depth_mm,
       duracao_h: i.duration_hours,
     })),
@@ -224,14 +253,16 @@ export function transformReportData(data: ReportData, cycle: any): any {
     // ── Chuva ──
     chuva: data.rainfallRecords.map((r: any) => ({
       data: fmtD(r.record_date),
-      data_iso: r.record_date,
+      data_iso: fmtIso(r.record_date),
+      created_at: r.created_at,
       mm: r.precipitation_mm,
     })),
 
     // ── Clima (weather_records) ──
     clima: data.weatherRecords.map((w: any) => ({
       data: fmtD(w.record_date),
-      data_iso: w.record_date,
+      data_iso: fmtIso(w.record_date),
+      created_at: w.created_at,
       temp_max: w.temp_max_c,
       temp_min: w.temp_min_c,
       temp_media: w.temp_avg_c,
