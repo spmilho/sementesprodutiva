@@ -11,6 +11,7 @@ import CooperadosTab from "@/components/settings/CooperadosTab";
 import ClientsTab from "@/components/settings/ClientsTab";
 import OfflineQueueTab from "@/components/settings/OfflineQueueTab";
 import BackupTab from "@/components/settings/BackupTab";
+import TrashTab from "@/components/settings/TrashTab";
 import { useState } from "react";
 import ContratoAcessoModal from "@/components/contratos/ContratoAcessoModal";
 
