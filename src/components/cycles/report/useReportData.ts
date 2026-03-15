@@ -135,6 +135,7 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     phenoRes.data || [],
     roguingRes.data || [],
     attachRes.data || [],
+    fieldVisitsRes.data || [],
   );
 
   const reportCycle: ReportCycleData = {
