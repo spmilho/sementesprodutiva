@@ -40,11 +40,13 @@ interface ReportTabProps {
 }
 
 export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
+  const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const [exportingHtml, setExportingHtml] = useState(false);
+  const [sharingLink, setSharingLink] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
