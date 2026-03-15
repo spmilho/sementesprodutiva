@@ -211,12 +211,13 @@ function SingleTimeline({
         </div>
 
         <div className="flex min-w-max px-2 mt-1">
-          <div className="flex-1 text-center" style={{ maxWidth: `${VT_INDEX * 64}px` }}>
+          {/* VT_INDEX items vegetative + connectors, then separator, then reproductive */}
+          <div className="text-center" style={{ flex: VT_INDEX }}>
             <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium uppercase tracking-wider">
               Estádios Vegetativos
             </span>
           </div>
-          <div className="flex-1 text-center">
+          <div className="text-center" style={{ flex: ALL_STAGES.length - VT_INDEX }}>
             <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wider">
               Estádios Reprodutivos
             </span>
