@@ -177,7 +177,7 @@ export default function ReportPlantio({ data }: { data: any }) {
         <thead>
           <tr>
             <th>Data</th><th>Tipo</th><th>Gleba</th><th>Lote</th>
-            <th>Área (ha)</th><th>Esp. (cm)</th><th>Sem/m</th><th>CV%</th><th>Solo</th>
+            <th>Área (ha)</th><th>Esp. (cm)</th><th>Sem/m</th><th>Solo</th>
           </tr>
         </thead>
         <tbody>
@@ -202,13 +202,6 @@ export default function ReportPlantio({ data }: { data: any }) {
               <td>{p.area != null ? p.area.toFixed(1) : "—"}</td>
               <td>{p.espacamento ?? "—"}</td>
               <td>{p.sem_metro != null ? p.sem_metro.toFixed(1) : "—"}</td>
-              <td>
-                {p.cv_plantio != null ? (
-                  <span className={`badge ${getCvBadge(p.cv_plantio)}`}>{p.cv_plantio.toFixed(1)}%</span>
-                ) : (
-                  "—"
-                )}
-              </td>
               <td>{p.solo || "—"}</td>
             </tr>
           ))}
@@ -217,7 +210,7 @@ export default function ReportPlantio({ data }: { data: any }) {
           <tr>
             <td colSpan={4}>TOTAL (área do ciclo)</td>
             <td>{totalGeral.toFixed(1)}</td>
-            <td colSpan={4}></td>
+            <td colSpan={3}></td>
           </tr>
         </tfoot>
       </table>
