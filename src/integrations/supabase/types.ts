@@ -4356,6 +4356,33 @@ export type Database = {
           },
         ]
       }
+      shared_report_links: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          cycle_id: string
+          id: string
+          storage_path: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          cycle_id: string
+          id?: string
+          storage_path: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          cycle_id?: string
+          id?: string
+          storage_path?: string
+        }
+        Relationships: []
+      }
       stand_count_points: {
         Row: {
           created_at: string

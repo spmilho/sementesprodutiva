@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { FileWarning, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+const sb = supabase as any;
 
 const buildServeReportUrl = (path: string) =>
   `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/serve-report?path=${encodeURIComponent(path)}`;
@@ -11,14 +14,17 @@ const extractTitle = (html: string) => {
 };
 
 export default function SharedReportPage() {
+  const { code } = useParams<{ code: string }>();
   const [searchParams] = useSearchParams();
-  const path = searchParams.get("path")?.trim() || "";
+  const legacyPath = searchParams.get("path")?.trim() || "";
   const [html, setHtml] = useState("");
-  const [loading, setLoading] = useState(Boolean(path));
-  const [error, setError] = useState<string | null>(path ? null : "Link do relatório está incompleto.");
+  const [loading, setLoading] = useState(Boolean(code || legacyPath));
+  const [error, setError] = useState<string | null>(
+    !code && !legacyPath ? "Link do relatório está incompleto." : null
+  );
 
   useEffect(() => {
-    if (!path) {
+    if (!code && !legacyPath) {
       setLoading(false);
       return;
     }
@@ -31,7 +37,24 @@ export default function SharedReportPage() {
       setError(null);
 
       try {
-        const response = await fetch(buildServeReportUrl(path), {
+        let storagePath = legacyPath;
+
+        // Resolve short code to storage path
+        if (code) {
+          const { data: linkData, error: linkErr } = await sb
+            .from("shared_report_links")
+            .select("storage_path")
+            .eq("code", code)
+            .maybeSingle();
+
+          if (linkErr) throw new Error("Erro ao buscar relatório.");
+          if (!linkData) throw new Error("Relatório não encontrado. O link pode ter expirado.");
+          storagePath = linkData.storage_path;
+        }
+
+        if (!storagePath) throw new Error("Link do relatório está incompleto.");
+
+        const response = await fetch(buildServeReportUrl(storagePath), {
           method: "GET",
           signal: controller.signal,
         });
@@ -61,7 +84,7 @@ export default function SharedReportPage() {
       active = false;
       controller.abort();
     };
-  }, [path]);
+  }, [code, legacyPath]);
 
   if (loading) {
     return (
