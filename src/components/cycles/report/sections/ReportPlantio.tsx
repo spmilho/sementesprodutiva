@@ -69,10 +69,10 @@ export default function ReportPlantio({ data }: { data: any }) {
     return values.length > 0 ? values.reduce((a: number, b: number) => a + b, 0) / values.length : null;
   };
 
-  const totalF = sumByType(plantio, "Fêmea");
-  const totalM1 = sumByType(plantio, "Macho 1");
-  const totalM2 = hasMale2 ? sumByType(plantio, "Macho 2") : null;
-  const totalGeral = toNumber(data.area_total) ?? (totalF + totalM1 + (totalM2 || 0));
+  // Use cycle-level areas (female area and male area are distinct; male_1 and male_2 share the same physical area)
+  const totalF = toNumber(data.area_femea) ?? sumByType(plantio, "Fêmea");
+  const totalMacho = toNumber(data.area_macho) ?? Math.max(sumByType(plantio, "Macho 1"), sumByType(plantio, "Macho 2"));
+  const totalGeral = toNumber(data.area_total) ?? (totalF + totalMacho);
 
   const avgCvF = avgCvByType("Fêmea");
   const avgCvM1 = avgCvByType("Macho 1");
@@ -133,18 +133,11 @@ export default function ReportPlantio({ data }: { data: any }) {
         </div>
 
         <div className="kpi-card blue">
-          <div className="kpi-value">{totalM1.toFixed(1)} ha</div>
-          <div className="kpi-label">Macho 1 plantado</div>
-          {avgCvM1 != null && <div className="kpi-sub">CV% médio: {avgCvM1.toFixed(1)}%</div>}
+          <div className="kpi-value">{totalMacho.toFixed(1)} ha</div>
+          <div className="kpi-label">{hasMale2 ? "Macho 1 e 2 (mesma área)" : "Macho plantado"}</div>
+          {avgCvM1 != null && <div className="kpi-sub">CV% médio M1: {avgCvM1.toFixed(1)}%</div>}
+          {avgCvM2 != null && <div className="kpi-sub">CV% médio M2: {avgCvM2.toFixed(1)}%</div>}
         </div>
-
-        {hasMale2 && totalM2 != null && (
-          <div className="kpi-card blue">
-            <div className="kpi-value">{totalM2.toFixed(1)} ha</div>
-            <div className="kpi-label">Macho 2 plantado</div>
-            {avgCvM2 != null && <div className="kpi-sub">CV% médio: {avgCvM2.toFixed(1)}%</div>}
-          </div>
-        )}
 
         <div className="kpi-card orange">
           <div className="kpi-value">{totalGeral.toFixed(1)} ha</div>
