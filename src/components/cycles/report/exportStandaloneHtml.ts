@@ -322,8 +322,20 @@ export async function exportStandaloneHtmlFile(options: ExportStandaloneHtmlOpti
   const link = document.createElement("a");
   link.href = url;
   link.download = sanitizeFileName(fileName);
+  link.rel = "noopener";
+  link.style.display = "none";
+
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+
+  window.setTimeout(() => {
+    if (document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+  }, 0);
+
+  // Keep Blob URL alive long enough for slower browsers/iframes to start download
+  window.setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 60_000);
 }
