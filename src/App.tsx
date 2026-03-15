@@ -69,7 +69,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/report/:cycleId" element={<CycleReportPage />} />
+            <Route path="/report/:cycleId" element={<ProtectedRoute><CycleReportPage /></ProtectedRoute>} />
             <Route path="*" element={
               <ProtectedRoute>
                 <Layout>
