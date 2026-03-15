@@ -221,7 +221,7 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
   });
 
   const sortedData = useMemo(() => {
-    return [...records]
+    const mapped = [...records]
       .map((r) => {
         const normalizedDate = normalizeDateKey(r.record_date);
         const safeDate = normalizedDate || r.record_date;
@@ -233,6 +233,16 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
         };
       })
       .sort((a, b) => a._sortTs - b._sortTs);
+
+    // Deduplicate by record_date — keep latest created_at per date
+    const byDate = new Map<string, typeof mapped[0]>();
+    mapped.forEach((r) => {
+      const existing = byDate.get(r.record_date);
+      if (!existing || ((r as any).created_at || "") > ((existing as any).created_at || "")) {
+        byDate.set(r.record_date, r);
+      }
+    });
+    return Array.from(byDate.values()).sort((a, b) => a._sortTs - b._sortTs);
   }, [records]);
 
   // Build stage map for date labels
@@ -352,27 +362,27 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
   const gduByMale2Data = useMemo(() => buildGduByPlanting(uniqueMale2PlantingDates, "gdu_m2"), [sortedData, uniqueMale2PlantingDates, dailyGduMap]);
 
   const stats = useMemo(() => {
-    if (records.length === 0) return null;
-    const temps = records.filter(r => r.temp_avg_c != null).map(r => r.temp_avg_c!);
-    const humids = records.filter(r => r.humidity_avg_pct != null).map(r => r.humidity_avg_pct!);
-    const winds = records.filter(r => r.wind_avg_kmh != null).map(r => r.wind_avg_kmh!);
-    const etos = records.filter(r => r.eto_mm != null).map(r => r.eto_mm!);
-    const radiations = records.filter(r => r.radiation_mj != null).map(r => r.radiation_mj!);
+    if (sortedData.length === 0) return null;
+    const temps = sortedData.filter(r => r.temp_avg_c != null).map(r => r.temp_avg_c!);
+    const humids = sortedData.filter(r => r.humidity_avg_pct != null).map(r => r.humidity_avg_pct!);
+    const winds = sortedData.filter(r => r.wind_avg_kmh != null).map(r => r.wind_avg_kmh!);
+    const etos = sortedData.filter(r => r.eto_mm != null).map(r => r.eto_mm!);
+    const radiations = sortedData.filter(r => r.radiation_mj != null).map(r => r.radiation_mj!);
     const avg = (arr: number[]) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
     const totalGdu = gduData.length > 0 ? gduData[gduData.length - 1].accGdu : 0;
     return {
       avgTemp: avg(temps),
-      maxTemp: temps.length > 0 ? Math.max(...records.filter(r => r.temp_max_c != null).map(r => r.temp_max_c!)) : 0,
-      minTemp: temps.length > 0 ? Math.min(...records.filter(r => r.temp_min_c != null).map(r => r.temp_min_c!)) : 0,
+      maxTemp: sortedData.filter(r => r.temp_max_c != null).length > 0 ? Math.max(...sortedData.filter(r => r.temp_max_c != null).map(r => r.temp_max_c!)) : 0,
+      minTemp: sortedData.filter(r => r.temp_min_c != null).length > 0 ? Math.min(...sortedData.filter(r => r.temp_min_c != null).map(r => r.temp_min_c!)) : 0,
       avgHumidity: avg(humids),
       avgWind: avg(winds),
       avgRadiation: avg(radiations),
       totalEto: etos.reduce((a, b) => a + b, 0),
-      totalPrecip: records.filter(r => r.precipitation_mm != null).reduce((a, r) => a + r.precipitation_mm!, 0),
+      totalPrecip: sortedData.filter(r => r.precipitation_mm != null).reduce((a, r) => a + r.precipitation_mm!, 0),
       totalGdu,
-      days: records.length,
+      days: sortedData.length,
     };
-  }, [records, gduData]);
+  }, [sortedData, gduData]);
 
   // Fetch latest phenology stage
   const latestStage = useMemo(() => {
@@ -418,9 +428,9 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
   // Build weather summary for AI
   const weatherSummary = useMemo(() => {
     if (!stats) return null;
-    const temps = records.filter(r => r.temp_max_c != null);
-    const rads = records.filter(r => r.radiation_mj != null);
-    const hums = records.filter(r => r.humidity_max_pct != null);
+    const temps = sortedData.filter(r => r.temp_max_c != null);
+    const rads = sortedData.filter(r => r.radiation_mj != null);
+    const hums = sortedData.filter(r => r.humidity_max_pct != null);
     return {
       totalDays: stats.days,
       avgTemp: stats.avgTemp,
@@ -434,13 +444,13 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
       daysLowRadiation: rads.filter(r => (r.radiation_mj ?? 99) < 14).length,
       avgHumidity: stats.avgHumidity,
       maxHumidity: hums.length > 0 ? Math.max(...hums.map(r => r.humidity_max_pct!)) : null,
-      minHumidity: records.filter(r => r.humidity_min_pct != null).length > 0 ? Math.min(...records.filter(r => r.humidity_min_pct != null).map(r => r.humidity_min_pct!)) : null,
+      minHumidity: sortedData.filter(r => r.humidity_min_pct != null).length > 0 ? Math.min(...sortedData.filter(r => r.humidity_min_pct != null).map(r => r.humidity_min_pct!)) : null,
       daysHighHumidity: hums.filter(r => (r.humidity_max_pct ?? 0) > 90).length,
       totalGdu: stats.totalGdu,
       totalPrecip: stats.totalPrecip,
       totalEto: stats.totalEto,
     };
-  }, [stats, records]);
+  }, [stats, sortedData]);
 
   // Generate analysis mutation
   const generateWeatherAnalysisMut = useMutation({
