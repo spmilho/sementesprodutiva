@@ -851,10 +851,27 @@ Seja específico com números. Não invente dados que não foram fornecidos.`;
                   <ReactMarkdown>{latestAnalysis.analysis_text}</ReactMarkdown>
                 </div>
 
-                {/* Timestamp */}
-                <p className="text-[10px] text-muted-foreground">
-                  🕐 Atualizado em {format(new Date(latestAnalysis.created_at), "dd/MM/yyyy HH:mm")}
-                </p>
+                {/* Timestamp + Delete */}
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] text-muted-foreground">
+                    🕐 Atualizado em {format(new Date(latestAnalysis.created_at), "dd/MM/yyyy HH:mm")}
+                  </p>
+                  {isAdmin && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs gap-1 text-destructive hover:text-destructive"
+                      onClick={async () => {
+                        if (!confirm("Excluir este parecer?")) return;
+                        await (supabase as any).from("ndvi_analyses").delete().eq("id", latestAnalysis.id);
+                        refetchAnalyses();
+                        toast.success("Parecer excluído!");
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" /> Excluir
+                    </Button>
+                  )}
+                </div>
               </>
             ) : (
               <p className="text-sm text-muted-foreground">
