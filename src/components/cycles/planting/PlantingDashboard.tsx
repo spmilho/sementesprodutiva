@@ -166,7 +166,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
   // Stand stats per type
   const standStats = useMemo(() => {
     const result: Record<string, { avgPlantsHa: number; avgPlantsPerMeter: number; cv: number; emergPct: number; n: number }> = {};
-    for (const type of ["female", "male"]) {
+    for (const type of ["female", "male"] as const) {
       const counts = standCounts.filter((s: any) => s.parent_type === type);
       if (counts.length === 0) {
         result[type] = { avgPlantsHa: 0, avgPlantsPerMeter: 0, cv: 0, emergPct: 0, n: 0 };
