@@ -63,7 +63,7 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     sb.from("water_files").select("*").eq("cycle_id", cycleId).is("deleted_at", null),
     sb.from("roguing_records").select("*, pivot_glebas(name)").eq("cycle_id", cycleId).is("deleted_at", null).order("operation_date"),
     sb.from("ndvi_analyses").select("*").eq("cycle_id", cycleId).order("analysis_date", { ascending: false }).limit(3),
-    sb.from("field_visits").select("*, field_visit_scores(*)").eq("cycle_id", cycleId).order("visit_date", { ascending: false }),
+    sb.from("field_visits").select("*, field_visit_scores(*), field_visit_photos(*)").eq("cycle_id", cycleId).order("visit_date", { ascending: false }),
     sb.from("emergence_counts").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("count_date"),
     sb.from("weather_records").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("record_date"),
   ]);
