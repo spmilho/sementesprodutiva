@@ -10,6 +10,7 @@ import ReactMarkdown from "react-markdown";
 
 import { fetchReportData } from "./useReportData";
 import { transformReportData } from "./transformReportData";
+import { exportStandaloneHtmlFile } from "./exportStandaloneHtml";
 
 import ReportCover from "./sections/ReportCover";
 import ReportResumo from "./sections/ReportResumo";

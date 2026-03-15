@@ -4,6 +4,7 @@ import { Printer, ArrowLeft, FileText, Loader2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchReportData } from "@/components/cycles/report/useReportData";
 import { transformReportData } from "@/components/cycles/report/transformReportData";
+import { exportStandaloneHtmlFile } from "@/components/cycles/report/exportStandaloneHtml";
 
 import ReportCover from "@/components/cycles/report/sections/ReportCover";
 import ReportResumo from "@/components/cycles/report/sections/ReportResumo";
