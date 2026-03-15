@@ -99,6 +99,23 @@ function calcGDU(tmax: number | null, tmin: number | null): number {
   return Math.max(0, gdu);
 }
 
+function normalizeTemperatureTriplet(
+  tempMax: number | null,
+  tempMin: number | null,
+  tempAvg: number | null,
+): { tempMax: number | null; tempMin: number | null; tempAvg: number | null } {
+  // Handles known imported rotation pattern: [avg, max, min]
+  if (tempMax != null && tempMin != null && tempAvg != null && tempMax < tempMin) {
+    return {
+      tempMax: tempMin,
+      tempMin: tempAvg,
+      tempAvg: tempMax,
+    };
+  }
+
+  return { tempMax, tempMin, tempAvg };
+}
+
 function buildPhenologyMap(records: PhenologyRecord[]): Map<string, string> {
   const sorted = [...records]
     .map((r) => ({ ...r, normalizedDate: normalizeDateKey(r.observation_date) }))
@@ -225,8 +242,13 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
       .map((r) => {
         const normalizedDate = normalizeDateKey(r.record_date);
         const safeDate = normalizedDate || r.record_date;
+        const normalizedTemps = normalizeTemperatureTriplet(r.temp_max_c, r.temp_min_c, r.temp_avg_c);
+
         return {
           ...r,
+          temp_max_c: normalizedTemps.tempMax,
+          temp_min_c: normalizedTemps.tempMin,
+          temp_avg_c: normalizedTemps.tempAvg,
           record_date: safeDate,
           dateLabel: normalizedDate ? toDateLabel(normalizedDate) : String(r.record_date),
           _sortTs: normalizedDate ? dateKeyToTimestamp(normalizedDate) : Number.POSITIVE_INFINITY,
