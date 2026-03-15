@@ -259,7 +259,7 @@ export function transformReportData(data: ReportData, cycle: any): any {
     // ── Clima (weather_records) ──
     clima: data.weatherRecords.map((w: any) => ({
       data: fmtD(w.record_date),
-      data_iso: w.record_date,
+      data_iso: fmtIso(w.record_date),
       temp_max: w.temp_max_c,
       temp_min: w.temp_min_c,
       temp_media: w.temp_avg_c,
