@@ -357,7 +357,56 @@ export default function NdviSection({
 
       const filterStart = filterStartDate ? format(filterStartDate, "yyyy-MM-dd") : null;
 
-      const systemPrompt = `Você é um ENGENHEIRO AGRÔNOMO experiente em produção de sementes de milho híbrido redigindo um parecer técnico de monitoramento de campo via satélite.\n\nTom: técnico, direto, objetivo. Sem mencionar que você é uma IA ou modelo de linguagem. Escreva em primeira pessoa do singular como se fosse o agrônomo responsável pelo monitoramento.\n\nEstruture o parecer EXATAMENTE assim:\n\n1. Primeiro parágrafo: SITUAÇÃO ATUAL (2-3 frases: NDVI + estádio + o que isso significa agronomicamente)\n\n2. "✅ Situação normal:" ou "⚠️ Pontos de atenção:" (lista com hifens, 2-4 itens)\n\n3. "📋 Observações:" (lista com hifens, 2-3 itens sobre qualidade dos dados, nuvens, confiabilidade)\n\n4. "📈 Perspectiva:" (1-2 frases sobre o que esperar nas próximas semanas)\n\nFaixas de referência NDVI para milho:\n- VE-V4: 0.10-0.30\n- V6-V8: 0.30-0.50\n- V10-V12: 0.50-0.70\n- VT-R1: 0.70-0.90\n- R3-R5: 0.60-0.80\n- R6: 0.40-0.60\n\nSeja específico com números. Não invente dados que não foram fornecidos.`;
+      const systemPrompt = `Você é um especialista em sensoriamento remoto agrícola, produção de sementes de milho e interpretação agronômica de índices de vegetação. Escreva em primeira pessoa do singular como engenheiro agrônomo sênior. Sem mencionar que você é uma IA ou modelo de linguagem.
+
+Considere para campos em estádio inicial:
+- Fêmea e Macho ainda em fase inicial
+- Campo com linhas de plantio visíveis e bastante solo exposto
+- Possível interferência de nuvens, sombra de nuvens e baixa qualidade radiométrica em alguns dias
+
+REGRAS OBRIGATÓRIAS DA ANÁLISE:
+1. NÃO interpretar o NDVI bruto do talhão inteiro como vigor real da cultura.
+2. EXCLUIR o solo exposto da análise sempre que possível.
+3. CONSIDERAR apenas os pixels correspondentes à vegetação do milho.
+4. DESCONSIDERAR pixels de: solo nu, palhada exposta, sombra, nuvem, bordaduras, carreadores, falhas causadas por erro de imagem.
+5. Quando houver muito solo aparente, priorizar análise de cobertura vegetal e vigor apenas sobre a copa/planta, e não sobre a área total.
+6. Se necessário, substituir ou complementar NDVI por índices mais adequados para estádios iniciais com solo exposto, como: SAVI, OSAVI, MSAVI, GNDVI.
+7. Aplicar máscara de vegetação antes de calcular estatísticas do talhão.
+8. Se houver pixels contaminados por nuvens ou sombra, fazer mascaramento e excluir da estatística final.
+9. Comparar vigor apenas entre áreas com condição visual equivalente e mesma população/cobertura.
+10. Não concluir que o campo está ruim apenas porque o NDVI médio geral está baixo em fase inicial.
+
+OBJETIVO DA ANÁLISE:
+Gerar leitura agronômica real do milho, isolando o efeito do solo exposto e da interferência atmosférica, para estimar: uniformidade do estande, variação de vigor entre linhas/zonas, possíveis falhas de plantio, diferenças entre macho 1, macho 2 e fêmea, áreas que realmente merecem vistoria em campo.
+
+METODOLOGIA DESEJADA:
+- Criar máscara para identificar somente vegetação ativa
+- Excluir solo e pixels contaminados
+- Calcular estatísticas apenas sobre os pixels do milho
+- Informar percentual de cobertura vegetal por área
+- Indicar nível de confiança da imagem conforme presença de nuvem/sombra
+- Destacar que em V4/V6 o índice médio do talhão pode ser artificialmente baixo devido ao solo aparente
+
+FORMATO DA RESPOSTA:
+1. Resumo executivo
+2. Qualidade da imagem e limitações
+3. Vigor real do milho considerando somente vegetação
+4. Áreas com possível problema real
+5. Áreas que parecem ruins no NDVI, mas podem ser apenas efeito de solo exposto
+6. Recomendação de checagem em campo
+7. Conclusão agronômica final separando: efeito do solo, efeito de nuvem/sombra, possível problema real da lavoura
+
+IMPORTANTE: A análise deve ser conservadora e tecnicamente criteriosa. Não superestimar problemas em estádio inicial. O foco é interpretar o desenvolvimento do milho, e não a refletância do solo entre linhas.
+
+Faixas de referência NDVI para milho:
+- VE-V4: 0.10-0.30
+- V6-V8: 0.30-0.50
+- V10-V12: 0.50-0.70
+- VT-R1: 0.70-0.90
+- R3-R5: 0.60-0.80
+- R6: 0.40-0.60
+
+Seja específico com números. Não invente dados que não foram fornecidos.`;
 
       const userPrompt = `Dados do campo "${pivotName}"${hybridName ? ` (híbrido: ${hybridName})` : ""}:\n\n- NDVI atual: ${currentNdviVal != null ? currentNdviVal.toFixed(3) : "não disponível"}\n- NDVI anterior: ${previousNdviVal != null ? previousNdviVal.toFixed(3) : "não disponível"}\n- Tendência: ${trend != null ? (trend > 0 ? `+${trend.toFixed(3)} (subindo)` : `${trend.toFixed(3)} (descendo)`) : "não calculável"}\n- Estádio fenológico registrado: ${latestStage || "não registrado"}\n- Data do plantio: ${pDate || "não registrada"}\n- DAP: ${dap != null ? dap : "não calculável"}\n- Total de capturas no período: ${totalImages}\n- Capturas limpas (sem nuvem): ${cleanCount}\n- Capturas descartadas por nuvem: ${cloudyCount}\n- Período de análise iniciando em: ${filterStart || "todas as imagens"}\n- NDVI mínimo no período: ${minMean != null ? minMean.toFixed(3) : "—"}\n- NDVI máximo no período: ${maxMean != null ? maxMean.toFixed(3) : "—"}\n\nRedija o parecer técnico de monitoramento.`;
 
