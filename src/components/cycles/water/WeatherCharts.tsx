@@ -242,8 +242,13 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
       .map((r) => {
         const normalizedDate = normalizeDateKey(r.record_date);
         const safeDate = normalizedDate || r.record_date;
+        const normalizedTemps = normalizeTemperatureTriplet(r.temp_max_c, r.temp_min_c, r.temp_avg_c);
+
         return {
           ...r,
+          temp_max_c: normalizedTemps.tempMax,
+          temp_min_c: normalizedTemps.tempMin,
+          temp_avg_c: normalizedTemps.tempAvg,
           record_date: safeDate,
           dateLabel: normalizedDate ? toDateLabel(normalizedDate) : String(r.record_date),
           _sortTs: normalizedDate ? dateKeyToTimestamp(normalizedDate) : Number.POSITIVE_INFINITY,
