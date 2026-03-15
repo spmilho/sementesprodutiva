@@ -221,9 +221,9 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
       for (const type of ["female", "male"] as const) {
         const filtered = actuals.filter((a: any) => (a.gleba_id || "none") === gid && (type === "female" ? isFemaleType(a.type) : isMaleType(a.type)));
         if (filtered.length > 0) {
-          const avgSeeds = filtered.reduce((s: number, a: any) => s + (Number(a.seeds_per_meter_actual) || Number(a.seeds_per_meter) || 0), 0) / filtered.length;
-          if (type === "female") entry.ppmF = avgSeeds;
-          else entry.ppmM = avgSeeds;
+          const weightedSeeds = getWeightedActualAverage(filtered, (a) => toPositiveNumber(a.seeds_per_meter_actual) || toPositiveNumber(a.seeds_per_meter));
+          if (type === "female") entry.ppmF = weightedSeeds;
+          else entry.ppmM = weightedSeeds;
         }
       }
 
@@ -246,10 +246,15 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
       for (const type of ["female", "male"] as const) {
         const filtered = plans.filter((p: any) => (p.gleba_id || "none") === gid && (type === "female" ? isFemaleType(p.type) : isMaleType(p.type)));
         if (filtered.length) {
-          const avgPop = filtered.reduce((s: number, p: any) => s + (p.target_population || 0), 0) / filtered.length;
-          const avgSeeds = filtered.reduce((s: number, p: any) => s + (p.seeds_per_meter || 0), 0) / filtered.length;
-          if (type === "female") { entry.popPlanF = avgPop; entry.ppmPlanF = avgSeeds; }
-          else { entry.popPlanM = avgPop; entry.ppmPlanM = avgSeeds; }
+          const weightedPop = getWeightedPlanAverage(filtered, (p) => p.target_population);
+          const weightedSeeds = getWeightedPlanAverage(filtered, (p) => p.seeds_per_meter);
+          if (type === "female") {
+            entry.popPlanF = weightedPop;
+            entry.ppmPlanF = weightedSeeds;
+          } else {
+            entry.popPlanM = weightedPop;
+            entry.ppmPlanM = weightedSeeds;
+          }
         }
       }
 
