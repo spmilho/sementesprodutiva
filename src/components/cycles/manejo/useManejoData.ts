@@ -154,7 +154,7 @@ export function useManejoMutations(cycleId: string, orgId: string) {
         .is("deleted_at", null);
       const { error } = await (supabase as any)
         .from("crop_input_imports")
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq("id", importId);
       if (error) throw error;
     },

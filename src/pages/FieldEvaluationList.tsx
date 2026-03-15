@@ -48,10 +48,11 @@ export default function FieldEvaluationList() {
 
   const deleteMut = useMutation({
     mutationFn: async (visitId: string) => {
-      // Delete photos, scores, then visit (cascade should handle but be explicit)
-      await (supabase as any).from("field_visit_photos").delete().eq("visit_id", visitId);
-      await (supabase as any).from("field_visit_scores").delete().eq("visit_id", visitId);
-      const { error } = await (supabase as any).from("field_visits").delete().eq("id", visitId);
+      // Soft delete photos, scores, then visit
+      const now = new Date().toISOString();
+      await (supabase as any).from("field_visit_photos").update({ deleted_at: now }).eq("visit_id", visitId).is("deleted_at", null);
+      await (supabase as any).from("field_visit_scores").update({ deleted_at: now }).eq("visit_id", visitId).is("deleted_at", null);
+      const { error } = await (supabase as any).rpc("soft_delete_record", { _table_name: "field_visits", _record_id: visitId });
       if (error) throw error;
     },
     onSuccess: () => {

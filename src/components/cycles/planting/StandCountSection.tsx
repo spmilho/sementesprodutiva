@@ -160,7 +160,7 @@ export default function StandCountSection({ cycleId, orgId, standCounts, standPo
         };
         const { error } = await (supabase as any).from("stand_counts").update(headerRow).eq("id", editingId);
         if (error) throw error;
-        await (supabase as any).from("stand_count_points").delete().eq("stand_count_id", editingId);
+        await (supabase as any).from("stand_count_points").update({ deleted_at: new Date().toISOString() }).eq("stand_count_id", editingId).is("deleted_at", null);
         const pointRows = validPoints.map((p, i) => ({
           stand_count_id: editingId, point_number: i + 1,
           plants_counted: parseInt(p.seeds), sample_length_m: parseFloat(p.length),

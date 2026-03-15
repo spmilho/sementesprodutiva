@@ -62,7 +62,7 @@ export default function PlantingCvPoints({ plantingActualId, cycleId, existingPo
 
   const deletePointMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("planting_cv_points").delete().eq("id", id);
+      const { error } = await (supabase as any).from("planting_cv_points").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
       await recalcParent();
     },

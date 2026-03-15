@@ -195,7 +195,7 @@ export function DrawerDetalheAcao({ acao, onClose, onEditar, onRefetch, abaInici
   };
 
   const excluirComentario = async (id: string) => {
-    await (supabase as any).from("plano_acoes_comentarios").delete().eq("id", id);
+    await (supabase as any).from("plano_acoes_comentarios").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     refetchComentarios();
   };
 

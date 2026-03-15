@@ -606,11 +606,12 @@ export default function SeedTreatment({
         if (error) throw error;
         treatmentId = existing.id;
 
-        // Delete old products
+        // Soft delete old products
         await (supabase as any)
           .from("seed_treatment_products")
-          .delete()
-          .eq("seed_treatment_id", treatmentId);
+          .update({ deleted_at: new Date().toISOString() })
+          .eq("seed_treatment_id", treatmentId)
+          .is("deleted_at", null);
       } else {
         const { data: inserted, error } = await (supabase as any)
           .from("seed_treatment")

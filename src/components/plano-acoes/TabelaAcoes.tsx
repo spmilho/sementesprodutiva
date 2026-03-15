@@ -49,7 +49,7 @@ export function TabelaAcoes({ acoes, onSelecionar, onEditar, onRefetch }: Props)
 
   const excluir = async (id: string) => {
     setDeletingId(null);
-    await (supabase as any).from("plano_acoes").delete().eq("id", id);
+    await (supabase as any).from("plano_acoes").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     onRefetch();
     toast({ title: "Ação excluída" });
   };

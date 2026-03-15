@@ -115,7 +115,7 @@ export default function CycleTeamTab() {
 
   const removeMember = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("cycle_team").delete().eq("id", id);
+      const { error } = await (supabase as any).from("cycle_team").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
