@@ -34,6 +34,13 @@ function formatDateBr(date: Date) {
   return `${d}/${m}`;
 }
 
+function toLocalIsoKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function formatDateBrFull(date: Date) {
   const d = String(date.getDate()).padStart(2, "0");
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -73,9 +80,9 @@ export default function ReportDespendoamento({ data }: { data: any }) {
     .forEach((p: any) => {
       const dt = p.data_iso ? parseIsoDate(p.data_iso) : parseBrDate(p.data);
       if (!dt) return;
-      const key = dt.toISOString().slice(0, 10);
+      const key = toLocalIsoKey(dt);
       if (seenDates.has(key)) {
-        const existing = femalePlantings.find(f => f.date.toISOString().slice(0, 10) === key);
+        const existing = femalePlantings.find(f => toLocalIsoKey(f.date) === key);
         if (existing) existing.area += Number(p.area) || 0;
       } else {
         seenDates.add(key);
@@ -114,11 +121,11 @@ export default function ReportDespendoamento({ data }: { data: any }) {
     const centerReached = new Set<number>();
 
     while (cursor <= chartEnd) {
-      const cursorKey = cursor.toISOString().slice(0, 10);
+      const cursorKey = toLocalIsoKey(cursor);
       const row: any = { dateBr: formatDateBr(cursor), totalHaDia: 0 };
 
       windows.forEach((w) => {
-        const centerKey = w.centerDate.toISOString().slice(0, 10);
+        const centerKey = toLocalIsoKey(w.centerDate);
         const isCenter = cursorKey === centerKey;
         const key = `p${w.idx}`;
         row[key] = isCenter ? w.area : 0;
