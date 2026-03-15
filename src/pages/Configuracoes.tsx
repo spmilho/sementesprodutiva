@@ -123,6 +123,7 @@ export default function Configuracoes() {
           <TabsContent value="trash">
             <TrashTab />
           </TabsContent>
+        )}
       </Tabs>
     </div>
   );
