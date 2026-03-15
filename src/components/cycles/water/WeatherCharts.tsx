@@ -221,7 +221,7 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
   });
 
   const sortedData = useMemo(() => {
-    return [...records]
+    const mapped = [...records]
       .map((r) => {
         const normalizedDate = normalizeDateKey(r.record_date);
         const safeDate = normalizedDate || r.record_date;
@@ -233,6 +233,16 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
         };
       })
       .sort((a, b) => a._sortTs - b._sortTs);
+
+    // Deduplicate by record_date — keep latest created_at per date
+    const byDate = new Map<string, typeof mapped[0]>();
+    mapped.forEach((r) => {
+      const existing = byDate.get(r.record_date);
+      if (!existing || ((r as any).created_at || "") > ((existing as any).created_at || "")) {
+        byDate.set(r.record_date, r);
+      }
+    });
+    return Array.from(byDate.values()).sort((a, b) => a._sortTs - b._sortTs);
   }, [records]);
 
   // Build stage map for date labels
