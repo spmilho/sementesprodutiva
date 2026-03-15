@@ -27,6 +27,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
 import CycleReportPage from "./pages/CycleReportPage";
+import SharedReportPage from "./pages/SharedReportPage";
 
 const queryClient = new QueryClient();
 
