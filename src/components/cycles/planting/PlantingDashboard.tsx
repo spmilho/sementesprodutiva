@@ -331,6 +331,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
           filteredActuals,
           (a) => toPositiveNumber(a.seeds_per_meter_actual) || toPositiveNumber(a.seeds_per_meter),
         );
+        const seedsPerMeterPlan = getWeightedPlanAverage(filteredPlans, (p) => p.seeds_per_meter);
 
         if (manualCvRecords.length > 0) {
           cvPlanting = manualCvRecords.reduce((sum: number, r: any) => sum + Number(r.cv_percent), 0) / manualCvRecords.length;
@@ -356,12 +357,18 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
           ? Math.round(latest.avg_plants_per_ha).toLocaleString("pt-BR")
           : (popEstimated > 0 ? `${popEstimated.toLocaleString("pt-BR")}*` : "—");
 
+        const spmDeviation = (seedsPerMeter > 0 && seedsPerMeterPlan > 0)
+          ? ((seedsPerMeter - seedsPerMeterPlan) / seedsPerMeterPlan) * 100
+          : null;
+
         if (area > 0 || latest || cvPlanting > 0 || seedsPerMeter > 0 || avgPlanPop > 0) {
           rows.push({
             gleba: glebaName,
             parental: config.label,
             area: area.toFixed(2),
             seedsPerMeter: seedsPerMeter > 0 ? seedsPerMeter.toFixed(2) : "—",
+            seedsPerMeterPlan: seedsPerMeterPlan > 0 ? seedsPerMeterPlan.toFixed(2) : "—",
+            spmDeviation,
             cvPlanting: cvPlanting > 0 ? cvPlanting.toFixed(1) : "—",
             popPlan: avgPlanPop > 0 ? Math.round(avgPlanPop).toLocaleString("pt-BR") : "—",
             popReal,
