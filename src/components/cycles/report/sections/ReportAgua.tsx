@@ -191,27 +191,6 @@ export default function ReportAgua({ data }: { data: any }) {
         </div>
       )}
 
-      {hasWindEto && (
-        <div className="chart-container">
-          <div className="chart-title">Vento, ETo e Chuva</div>
-          <ResponsiveContainer width="100%" height={280}>
-            <ComposedChart data={climaFixed}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
-              <XAxis dataKey="data" tick={{ fontSize: 9 }} angle={-25} textAnchor="end" height={50} />
-              <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
-              {stageTransitions.map((t: any, i: number) => (
-                <ReferenceLine key={`vento-stage-${i}`} x={t.data} yAxisId="left" stroke="#2E7D32" strokeDasharray="4 4" label={{ value: t.estadio, position: "top", fontSize: 8, fill: "#2E7D32" }} />
-              ))}
-              <Bar yAxisId="left" dataKey="eto_mm" name="ETo (mm)" fill="#FBC02D" radius={[2, 2, 0, 0]} />
-              <Bar yAxisId="left" dataKey="chuva_mm" name="Chuva (mm)" fill="#1E88E5" radius={[2, 2, 0, 0]} />
-              <Line yAxisId="right" type="monotone" dataKey="vento_media" name="Vento (km/h)" stroke="#757575" strokeWidth={2} dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      )}
 
       {hasGdu && (
         <div className="chart-container">

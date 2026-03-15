@@ -123,9 +123,6 @@ export default function CycleReportPage() {
         {data.umidade?.length > 0 && <ReportUmidade data={data} />}
         {data.estimativa && <ReportEstimativa data={data} />}
         {data.colheita?.length > 0 && <ReportColheita data={data} />}
-        {data.visitas?.length > 0 && <ReportVisitas data={data} />}
-
-        <ReportConclusao data={data} />
       </div>
     </>
   );
