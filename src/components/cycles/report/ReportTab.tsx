@@ -26,6 +26,7 @@ import ReportAgua from "./sections/ReportAgua";
 import ReportUmidade from "./sections/ReportUmidade";
 import ReportEstimativa from "./sections/ReportEstimativa";
 import ReportColheita from "./sections/ReportColheita";
+import ReportFotos from "./sections/ReportFotos";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -400,6 +401,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
         {data.umidade?.length > 0 && <ReportUmidade data={data} />}
         {data.estimativa && <ReportEstimativa data={data} />}
         {data.colheita?.length > 0 && <ReportColheita data={data} />}
+        {data._fotos?.length > 0 && <ReportFotos data={data} />}
       </div>
 
       {/* ═══ PHOTOS GALLERY ═══ */}

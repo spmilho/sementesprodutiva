@@ -20,6 +20,7 @@ import ReportAgua from "@/components/cycles/report/sections/ReportAgua";
 import ReportUmidade from "@/components/cycles/report/sections/ReportUmidade";
 import ReportEstimativa from "@/components/cycles/report/sections/ReportEstimativa";
 import ReportColheita from "@/components/cycles/report/sections/ReportColheita";
+import ReportFotos from "@/components/cycles/report/sections/ReportFotos";
 
 const sb = supabase as any;
 
@@ -51,6 +52,7 @@ export default function CycleReportPage() {
 
       const reportData = await fetchReportData(id, cycle);
       const transformed = transformReportData(reportData, cycle);
+      transformed._raw = reportData;
       setData(transformed);
     } catch (e: any) {
       console.error("Erro ao carregar relatório:", e);
@@ -123,6 +125,7 @@ export default function CycleReportPage() {
         {data.umidade?.length > 0 && <ReportUmidade data={data} />}
         {data.estimativa && <ReportEstimativa data={data} />}
         {data.colheita?.length > 0 && <ReportColheita data={data} />}
+        {data._fotos?.length > 0 && <ReportFotos data={data} />}
       </div>
     </>
   );

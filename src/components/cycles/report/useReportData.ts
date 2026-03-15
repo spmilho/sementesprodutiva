@@ -63,7 +63,7 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     sb.from("water_files").select("*").eq("cycle_id", cycleId).is("deleted_at", null),
     sb.from("roguing_records").select("*, pivot_glebas(name)").eq("cycle_id", cycleId).is("deleted_at", null).order("operation_date"),
     sb.from("ndvi_analyses").select("*").eq("cycle_id", cycleId).order("analysis_date", { ascending: false }).limit(3),
-    sb.from("field_visits").select("*, field_visit_scores(*)").eq("cycle_id", cycleId).order("visit_date", { ascending: false }),
+    sb.from("field_visits").select("*, field_visit_scores(*), field_visit_photos(*)").eq("cycle_id", cycleId).order("visit_date", { ascending: false }),
     sb.from("emergence_counts").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("count_date"),
     sb.from("weather_records").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("record_date"),
   ]);
@@ -135,6 +135,7 @@ export async function fetchReportData(cycleId: string, cycle: any): Promise<Repo
     phenoRes.data || [],
     roguingRes.data || [],
     attachRes.data || [],
+    fieldVisitsRes.data || [],
   );
 
   const reportCycle: ReportCycleData = {
@@ -229,9 +230,21 @@ async function resolvePhotoUrls(...recordArrays: any[][]): Promise<Record<string
           storagePaths.add(p);
         }
       }
+      // Single photo_url field (phenology, field_visit_photos)
+      if (record?.photo_url && typeof record.photo_url === "string" && !record.photo_url.startsWith("http")) {
+        storagePaths.add(record.photo_url);
+      }
       // Also check file_url for attachments
       if (record?.file_url && typeof record.file_url === "string" && !record.file_url.startsWith("http")) {
         storagePaths.add(record.file_url);
+      }
+      // Nested field_visit_photos
+      if (Array.isArray(record?.field_visit_photos)) {
+        for (const fp of record.field_visit_photos) {
+          if (fp?.photo_url && typeof fp.photo_url === "string" && !fp.photo_url.startsWith("http")) {
+            storagePaths.add(fp.photo_url);
+          }
+        }
       }
     }
   }
