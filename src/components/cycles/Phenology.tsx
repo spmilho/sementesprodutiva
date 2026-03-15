@@ -312,7 +312,7 @@ export default function Phenology({
                           ? "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400"
                           : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
                       )}>
-                        {r.type === "female" ? "Fêmea" : r.type === "male_1" ? "Macho 1" : r.type === "male_2" ? "Macho 2" : r.type === "male_3" ? "Macho 3" : "Macho"}
+                        {r.type === "female" ? "Fêmea" : r.type === "male_1" ? "Macho 1" : r.type === "male_2" ? "Macho 2" : "Macho"}
                       </span>
                     </div>
                     {r.description && <p className="text-sm text-muted-foreground">{r.description}</p>}
