@@ -71,10 +71,23 @@ export default function OrganizationTab() {
   useEffect(() => {
     if (settings?.anthropic_api_key) {
       setApiKey(settings.anthropic_api_key);
-      // Auto-test silently
       setApiStatus("untested");
-      callClaude("Responda apenas: OK", "teste", 10)
-        .then(() => setApiStatus("connected"))
+      // Auto-test silently using direct fetch
+      fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": settings.anthropic_api_key,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 10,
+          messages: [{ role: "user", content: "OK" }],
+        }),
+      })
+        .then((r) => setApiStatus(r.ok ? "connected" : "error"))
         .catch(() => setApiStatus("error"));
     }
   }, [settings]);
