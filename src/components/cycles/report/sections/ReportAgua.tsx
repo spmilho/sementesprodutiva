@@ -372,10 +372,30 @@ export default function ReportAgua({ data }: { data: any }) {
           <div className="kpi-value">{avgUr != null ? avgUr.toFixed(0) : "—"}%</div>
           <div className="kpi-label">UR média</div>
         </div>
-        <div className="kpi-card orange">
-          <div className="kpi-value">{totalGdu ?? "—"}</div>
-          <div className="kpi-label">GDU acumulado</div>
-        </div>
+        {gduFemaleTotal != null && (
+          <div className="kpi-card purple">
+            <div className="kpi-value">{gduFemaleTotal}</div>
+            <div className="kpi-label">GDU Fêmea</div>
+          </div>
+        )}
+        {gduMale1Total != null && (
+          <div className="kpi-card blue">
+            <div className="kpi-value">{gduMale1Total}</div>
+            <div className="kpi-label">GDU Macho 1</div>
+          </div>
+        )}
+        {gduMale2Total != null && (
+          <div className="kpi-card orange">
+            <div className="kpi-value">{gduMale2Total}</div>
+            <div className="kpi-label">GDU Macho 2</div>
+          </div>
+        )}
+        {gduFemaleTotal == null && gduMale1Total == null && gduMale2Total == null && (
+          <div className="kpi-card orange">
+            <div className="kpi-value">{totalGdu ?? "—"}</div>
+            <div className="kpi-label">GDU acumulado</div>
+          </div>
+        )}
       </div>
 
       {waterDataWithAcc.length > 0 && (
