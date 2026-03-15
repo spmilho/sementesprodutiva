@@ -94,22 +94,18 @@ export function buildReportPayload(data: ReportData, cycle: any): ReportPayload 
       umid: fmt(l.moisture_pct, 0),
     })),
 
-    ts: data.seedLotTreatments.map((t: any) => {
+    ts: data.seedLotTreatments.flatMap((t: any) => {
       const lot = data.seedLots.find((l: any) => l.id === t.seed_lot_id);
       const prods = data.seedLotTreatmentProducts.filter((p: any) => p.seed_lot_treatment_id === t.id);
-      return {
-        lote: lot?.lot_number || "",
+      return prods.map((p: any) => ({
+        origem: t.treatment_location || "",
+        produto: p.product_name,
+        ia: p.active_ingredient || "",
+        tipo: p.product_type || "",
+        dose: p.dose_per_unit || p.dose || "",
+        unidade: p.dose_unit || "",
         parental: parent(lot?.parent_type),
-        data: fmtD(t.treatment_date),
-        local: t.treatment_location || "",
-        germ_pos: fmt(t.germination_after_pct, 0),
-        produtos: prods.map((p: any) => ({
-          nome: p.product_name,
-          ia: p.active_ingredient,
-          tipo: p.product_type,
-          dose: (p.dose_per_unit || p.dose || "") + " " + (p.dose_unit || ""),
-        })),
-      };
+      }));
     }),
 
     plantio: data.plantingActual.map((p: any) => ({
