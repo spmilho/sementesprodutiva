@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Users, Layers, FileText, Download, WifiOff, FileSignature, Database } from "lucide-react";
+import { Building2, Users, Layers, FileText, Download, WifiOff, FileSignature, Database, Trash2 } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 import { Navigate } from "react-router-dom";
 import OrganizationTab from "@/components/settings/OrganizationTab";
