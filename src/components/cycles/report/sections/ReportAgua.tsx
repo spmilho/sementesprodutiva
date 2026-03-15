@@ -172,7 +172,7 @@ export default function ReportAgua({ data }: { data: any }) {
   const buildGduByPlanting = (plantingDates: string[], prefix: string) => {
     if (plantingDates.length === 0 || climaFixed.length === 0) return [];
     const earliestPlanting = plantingDates[0];
-    const lastWeatherDate = climaFixed[climaFixed.length - 1]?.data_iso;
+    const lastWeatherDate = normalizeDateKey(climaFixed[climaFixed.length - 1]?.data_iso);
     if (!earliestPlanting || !lastWeatherDate) return [];
 
     const startTs = parseDateForSort(null, earliestPlanting);
