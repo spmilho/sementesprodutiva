@@ -589,7 +589,9 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
                   <TableHead className="text-xs">Gleba</TableHead>
                   <TableHead className="text-xs">Parental</TableHead>
                   <TableHead className="text-xs text-right">Área(ha)</TableHead>
-                  <TableHead className="text-xs text-right">Sem/metro</TableHead>
+                  <TableHead className="text-xs text-right">Sem/m Plan.</TableHead>
+                  <TableHead className="text-xs text-right">Sem/m Real</TableHead>
+                  <TableHead className="text-xs text-center">Δ Sem/m</TableHead>
                   <TableHead className="text-xs text-right">CV% Plantio</TableHead>
                   <TableHead className="text-xs text-right">Pop.Plan.</TableHead>
                   <TableHead className="text-xs text-right">Pop.Real</TableHead>
@@ -599,20 +601,33 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {summaryRows.map((r: any, i: number) => (
-                  <TableRow key={i}>
-                    <TableCell className="text-sm">{r.gleba}</TableCell>
-                    <TableCell className="text-sm">{r.parental}</TableCell>
-                    <TableCell className="text-sm text-right">{r.area}</TableCell>
-                    <TableCell className="text-sm text-right font-mono">{r.seedsPerMeter}</TableCell>
-                    <TableCell className="text-sm text-right">{r.cvPlanting !== "—" ? <span className={getCvLabel(parseFloat(r.cvPlanting)).color}>{r.cvPlanting}%</span> : "—"}</TableCell>
-                    <TableCell className="text-sm text-right">{r.popPlan}</TableCell>
-                    <TableCell className="text-sm text-right font-semibold">{r.popReal}</TableCell>
-                    <TableCell className="text-sm text-right">{r.cvStand !== "—" ? <span className={getCvLabel(parseFloat(r.cvStand)).color}>{r.cvStand}%</span> : "—"}</TableCell>
-                    <TableCell className="text-sm text-right">{r.emergPct}</TableCell>
-                    <TableCell className="text-center">{r.status.icon}</TableCell>
-                  </TableRow>
-                ))}
+                {summaryRows.map((r: any, i: number) => {
+                  const dev = r.spmDeviation;
+                  const devColor = dev == null ? "" : Math.abs(dev) <= 5 ? "text-green-600 dark:text-green-400" : Math.abs(dev) <= 10 ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400";
+                  const devIcon = dev == null ? "" : Math.abs(dev) <= 5 ? "✅" : Math.abs(dev) <= 10 ? "⚠️" : "🔴";
+                  const devText = dev != null ? `${dev >= 0 ? "+" : ""}${dev.toFixed(1)}%` : "—";
+
+                  return (
+                    <TableRow key={i}>
+                      <TableCell className="text-sm">{r.gleba}</TableCell>
+                      <TableCell className="text-sm">{r.parental}</TableCell>
+                      <TableCell className="text-sm text-right">{r.area}</TableCell>
+                      <TableCell className="text-sm text-right font-mono text-muted-foreground">{r.seedsPerMeterPlan}</TableCell>
+                      <TableCell className="text-sm text-right font-mono font-semibold">{r.seedsPerMeter}</TableCell>
+                      <TableCell className="text-sm text-center">
+                        {dev != null ? (
+                          <span className={`text-xs font-semibold ${devColor}`}>{devIcon} {devText}</span>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell className="text-sm text-right">{r.cvPlanting !== "—" ? <span className={getCvLabel(parseFloat(r.cvPlanting)).color}>{r.cvPlanting}%</span> : "—"}</TableCell>
+                      <TableCell className="text-sm text-right">{r.popPlan}</TableCell>
+                      <TableCell className="text-sm text-right font-semibold">{r.popReal}</TableCell>
+                      <TableCell className="text-sm text-right">{r.cvStand !== "—" ? <span className={getCvLabel(parseFloat(r.cvStand)).color}>{r.cvStand}%</span> : "—"}</TableCell>
+                      <TableCell className="text-sm text-right">{r.emergPct}</TableCell>
+                      <TableCell className="text-center">{r.status.icon}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
