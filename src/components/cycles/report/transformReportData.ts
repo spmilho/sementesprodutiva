@@ -252,7 +252,7 @@ export function transformReportData(data: ReportData, cycle: any): any {
     // ── Chuva ──
     chuva: data.rainfallRecords.map((r: any) => ({
       data: fmtD(r.record_date),
-      data_iso: r.record_date,
+      data_iso: fmtIso(r.record_date),
       mm: r.precipitation_mm,
     })),
 
