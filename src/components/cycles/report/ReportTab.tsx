@@ -26,6 +26,7 @@ import ReportAgua from "./sections/ReportAgua";
 import ReportUmidade from "./sections/ReportUmidade";
 import ReportEstimativa from "./sections/ReportEstimativa";
 import ReportColheita from "./sections/ReportColheita";
+import ReportFotos from "./sections/ReportFotos";
 
 import { supabase } from "@/integrations/supabase/client";
 
