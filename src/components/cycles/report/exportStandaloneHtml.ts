@@ -272,14 +272,86 @@ const collectExternalDependencies = (cloneRoot: HTMLElement): string[] => {
   return Array.from(unresolved);
 };
 
-export async function exportStandaloneHtmlFile(
-  options: ExportStandaloneHtmlOptions,
-): Promise<{ objectUrl: string; fileName: string; blob: Blob }> {
-  const { sourceElement, fileName, title, styles, wrapperClassName = "report-container" } = options;
+const stripRemainingExternalAttrs = (cloneRoot: HTMLElement) => {
+  cloneRoot.querySelectorAll("*").forEach((el) => {
+    RESOURCE_ATTRS.forEach((attr) => {
+      const value = el.getAttribute(attr);
+      if (!value) return;
 
+      if (attr === "srcset") {
+        const kept = value
+          .split(",")
+          .map((item) => item.trim())
+          .filter((item) => {
+            const candidate = item.split(" ")[0];
+            return isIgnorableUrl(candidate) || candidate.startsWith("data:");
+          })
+          .join(", ");
+
+        if (kept) el.setAttribute(attr, kept);
+        else el.removeAttribute(attr);
+        return;
+      }
+
+      if (!isIgnorableUrl(value) && !value.trim().startsWith("data:")) {
+        el.removeAttribute(attr);
+      }
+    });
+
+    const href = el.getAttribute("href");
+    if (href && !isIgnorableUrl(href) && !href.trim().startsWith("data:")) {
+      el.removeAttribute("href");
+    }
+
+    const xlinkHref = el.getAttributeNS("http://www.w3.org/1999/xlink", "href");
+    if (xlinkHref && !isIgnorableUrl(xlinkHref) && !xlinkHref.trim().startsWith("data:")) {
+      el.removeAttributeNS("http://www.w3.org/1999/xlink", "href");
+      el.removeAttribute("href");
+      el.removeAttribute("xlink:href");
+    }
+
+    if (el.tagName.toLowerCase() === "a") {
+      el.removeAttribute("target");
+      el.removeAttribute("rel");
+    }
+  });
+};
+
+const inlineStyleSheetAssets = async (
+  styles: string,
+  unresolved: Set<string>,
+  tolerateUnresolved: boolean,
+): Promise<string> => {
+  let updatedStyles = styles;
+  const matches = Array.from(styles.matchAll(URL_IN_STYLE_REGEX));
+
+  for (const match of matches) {
+    const fullMatch = match[0];
+    const rawUrl = match[2];
+    if (isIgnorableUrl(rawUrl)) continue;
+
+    const absoluteUrl = toAbsoluteUrl(rawUrl);
+    try {
+      const dataUrl = await fetchAsDataUrl(absoluteUrl);
+      updatedStyles = updatedStyles.replace(fullMatch, `url("${dataUrl}")`);
+    } catch {
+      unresolved.add(absoluteUrl);
+      if (tolerateUnresolved) {
+        updatedStyles = updatedStyles.replace(fullMatch, "none");
+      }
+    }
+  }
+
+  return updatedStyles;
+};
+
+const buildStandaloneHtml = async (
+  options: ExportStandaloneHtmlOptions,
+  tolerateUnresolved: boolean,
+): Promise<string> => {
+  const { sourceElement, title, styles, wrapperClassName = "report-container" } = options;
   const clone = sourceElement.cloneNode(true) as HTMLElement;
 
-  // Remove direct inline style blocks from rendered app view to avoid dependency on app design tokens
   Array.from(clone.children).forEach((child) => {
     if (child.tagName.toLowerCase() === "style") child.remove();
   });
@@ -287,6 +359,7 @@ export async function exportStandaloneHtmlFile(
   replaceCanvasWithImages(sourceElement, clone);
 
   const unresolvedResources = new Set<string>();
+  const inlinedStyles = await inlineStyleSheetAssets(styles, unresolvedResources, tolerateUnresolved);
 
   await Promise.all([
     embedImgSources(sourceElement, clone, unresolvedResources),
@@ -297,7 +370,7 @@ export async function exportStandaloneHtmlFile(
   const externalDependencies = collectExternalDependencies(clone);
   externalDependencies.forEach((item) => unresolvedResources.add(item));
 
-  if (unresolvedResources.size > 0) {
+  if (unresolvedResources.size > 0 && !tolerateUnresolved) {
     const sample = Array.from(unresolvedResources).slice(0, 5).join("\n- ");
     throw new Error(
       `Ainda existem recursos externos não incorporados:\n- ${sample}${
@@ -306,18 +379,27 @@ export async function exportStandaloneHtmlFile(
     );
   }
 
-  const htmlContent = `<!DOCTYPE html>
+  stripRemainingExternalAttrs(clone);
+
+  return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
-  <style>${styles}</style>
+  <style>${inlinedStyles}</style>
 </head>
 <body>
   <div class="${wrapperClassName}">${clone.innerHTML}</div>
 </body>
 </html>`;
+};
+
+export async function exportStandaloneHtmlFile(
+  options: ExportStandaloneHtmlOptions,
+): Promise<{ objectUrl: string; fileName: string; blob: Blob }> {
+  const { fileName } = options;
+  const htmlContent = await buildStandaloneHtml(options, false);
 
   const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -337,7 +419,6 @@ export async function exportStandaloneHtmlFile(
     }
   }, 0);
 
-  // Keep Blob URL alive for manual fallback opening from toast action.
   window.setTimeout(() => {
     URL.revokeObjectURL(url);
   }, 300_000);
@@ -353,44 +434,7 @@ export async function uploadHtmlAndGetShareLink(
 ): Promise<string> {
   const { userId, cycleId, ...exportOptions } = options;
 
-  // Generate the HTML content (reuse same logic but without triggering download)
-  const { sourceElement, fileName, title, styles, wrapperClassName = "report-container" } = exportOptions;
-
-  const clone = sourceElement.cloneNode(true) as HTMLElement;
-  Array.from(clone.children).forEach((child) => {
-    if (child.tagName.toLowerCase() === "style") child.remove();
-  });
-
-  replaceCanvasWithImages(sourceElement, clone);
-
-  const unresolvedResources = new Set<string>();
-  await Promise.all([
-    embedImgSources(sourceElement, clone, unresolvedResources),
-    embedSvgImageSources(clone, unresolvedResources),
-    embedBackgroundImages(clone, unresolvedResources),
-  ]);
-
-  // For share link, we tolerate unresolved resources (just remove them)
-  clone.querySelectorAll("img").forEach((img) => {
-    const src = img.getAttribute("src");
-    if (src && !src.startsWith("data:")) {
-      img.removeAttribute("src");
-      img.setAttribute("alt", "Imagem indisponível");
-    }
-  });
-
-  const htmlContent = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
-  <style>${styles}</style>
-</head>
-<body>
-  <div class="${wrapperClassName}">${clone.innerHTML}</div>
-</body>
-</html>`;
+  const htmlContent = await buildStandaloneHtml(exportOptions, true);
 
   const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
   const timestamp = Date.now();
