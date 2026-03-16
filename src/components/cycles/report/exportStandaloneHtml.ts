@@ -473,7 +473,7 @@ export async function uploadHtmlAndGetShareLink(
       });
 
     if (!insertError) {
-      return `${getPublicAppOrigin()}/r/${encodeURIComponent(code)}`;
+      return getPublicServeReportUrl(code);
     }
 
     lastError = new Error(insertError.message);
