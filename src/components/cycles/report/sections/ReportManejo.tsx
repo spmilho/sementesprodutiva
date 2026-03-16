@@ -71,35 +71,13 @@ export default function ReportManejo({ data }: { data: any }) {
       {pieData.length > 0 && (
         <div className="chart-container" style={{ marginBottom: 16 }}>
           <div className="chart-title">Distribuição por Tipo</div>
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
-            <div style={{ flex: "1 1 200px", minWidth: 180, maxWidth: 300 }}>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label={false}
-                  >
-                    {pieData.map((_: any, i: number) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div style={{ flex: "1 1 140px", minWidth: 140, paddingTop: 8 }}>
-              {pieData.map((entry: any, i: number) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, fontSize: 12 }}>
-                  <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, backgroundColor: COLORS[i % COLORS.length], flexShrink: 0 }} />
-                  <span style={{ color: "#333" }}>{entry.name}: <strong>{entry.value}</strong></span>
-                </div>
-              ))}
-            </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {pieData.map((entry: any, i: number) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, background: "#f5f5f5", borderRadius: 6, padding: "6px 12px" }}>
+                <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, backgroundColor: COLORS[i % COLORS.length], flexShrink: 0 }} />
+                <span style={{ color: "#333" }}>{entry.name}: <strong>{entry.value}</strong></span>
+              </div>
+            ))}
           </div>
         </div>
       )}
