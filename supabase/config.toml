@@ -2,3 +2,6 @@ project_id = "bfutkalpemjvjhqbsxfp"
 
 [functions.generate-report]
 verify_jwt = false
+
+[functions.serve-report]
+verify_jwt = false
