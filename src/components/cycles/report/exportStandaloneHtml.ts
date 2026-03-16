@@ -449,25 +449,17 @@ export async function uploadHtmlAndGetShareLink(
 
   if (error) throw new Error(`Falha ao fazer upload: ${error.message}`);
 
-  // Generate a short code for friendly URL
-  const code = generateShortCode();
+  const { data: publicUrlData } = sb.storage
+    .from("shared-reports")
+    .getPublicUrl(storagePath);
 
-  const { error: linkError } = await sb
-    .from("shared_report_links")
-    .insert({
-      code,
-      storage_path: storagePath,
-      created_by: userId,
-      cycle_id: cycleId,
-    });
+  const publicUrl = publicUrlData?.publicUrl;
 
-  if (linkError) throw new Error(`Falha ao criar link curto: ${linkError.message}`);
+  if (!publicUrl) {
+    throw new Error("Falha ao gerar URL pública do relatório.");
+  }
 
-  const shareBaseUrl = window.location.hostname.includes("--")
-    ? "https://sementesprodutiva.lovable.app"
-    : window.location.origin;
-
-  return `${shareBaseUrl}/r/${code}`;
+  return publicUrl;
 }
 
 function generateShortCode(length = 8): string {
