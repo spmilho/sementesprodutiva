@@ -426,8 +426,18 @@ export async function exportStandaloneHtmlFile(
   return { objectUrl: url, fileName: safeFileName, blob };
 }
 
+const PREFERRED_PUBLIC_APP_ORIGIN = "https://sementesprodutiva.lovable.app";
+
+const getPublicAppOrigin = (): string => {
+  const currentOrigin = window.location.origin;
+  if (!currentOrigin.includes("id-preview--") && !currentOrigin.includes("localhost")) {
+    return currentOrigin;
+  }
+  return PREFERRED_PUBLIC_APP_ORIGIN;
+};
+
 /**
- * Upload the standalone HTML to Supabase Storage and return a public URL.
+ * Upload the standalone HTML, register a public slug and return a rendered public route.
  */
 export async function uploadHtmlAndGetShareLink(
   options: ExportStandaloneHtmlOptions & { userId: string; cycleId: string },
@@ -440,26 +450,43 @@ export async function uploadHtmlAndGetShareLink(
   const timestamp = Date.now();
   const storagePath = `${userId}/${cycleId}-${timestamp}.html`;
 
-  const { error } = await sb.storage
+  const { error: uploadError } = await sb.storage
     .from("shared-reports")
     .upload(storagePath, blob, {
-      contentType: "text/html",
+      contentType: "text/html; charset=utf-8",
       upsert: true,
+      cacheControl: "86400",
     });
 
-  if (error) throw new Error(`Falha ao fazer upload: ${error.message}`);
+  if (uploadError) throw new Error(`Falha ao fazer upload: ${uploadError.message}`);
 
-  const { data: publicUrlData } = sb.storage
-    .from("shared-reports")
-    .getPublicUrl(storagePath);
+  let code = "";
+  let lastError: Error | null = null;
 
-  const publicUrl = publicUrlData?.publicUrl;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    code = generateShortCode();
 
-  if (!publicUrl) {
-    throw new Error("Falha ao gerar URL pública do relatório.");
+    const { error: insertError } = await sb
+      .from("shared_report_links")
+      .insert({
+        code,
+        cycle_id: cycleId,
+        created_by: userId,
+        storage_path: storagePath,
+      });
+
+    if (!insertError) {
+      return `${getPublicAppOrigin()}/r/${encodeURIComponent(code)}`;
+    }
+
+    lastError = new Error(insertError.message);
+
+    if (!String(insertError.message || "").toLowerCase().includes("duplicate")) {
+      break;
+    }
   }
 
-  return publicUrl;
+  throw lastError ?? new Error("Falha ao gerar link público do relatório.");
 }
 
 function generateShortCode(length = 8): string {
