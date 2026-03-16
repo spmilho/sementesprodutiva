@@ -56,6 +56,9 @@ export default function SharedReportPage() {
 
         const response = await fetch(buildServeReportUrl(storagePath), {
           method: "GET",
+          headers: {
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
+          },
           signal: controller.signal,
         });
 
