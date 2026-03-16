@@ -434,44 +434,7 @@ export async function uploadHtmlAndGetShareLink(
 ): Promise<string> {
   const { userId, cycleId, ...exportOptions } = options;
 
-  // Generate the HTML content (reuse same logic but without triggering download)
-  const { sourceElement, fileName, title, styles, wrapperClassName = "report-container" } = exportOptions;
-
-  const clone = sourceElement.cloneNode(true) as HTMLElement;
-  Array.from(clone.children).forEach((child) => {
-    if (child.tagName.toLowerCase() === "style") child.remove();
-  });
-
-  replaceCanvasWithImages(sourceElement, clone);
-
-  const unresolvedResources = new Set<string>();
-  await Promise.all([
-    embedImgSources(sourceElement, clone, unresolvedResources),
-    embedSvgImageSources(clone, unresolvedResources),
-    embedBackgroundImages(clone, unresolvedResources),
-  ]);
-
-  // For share link, we tolerate unresolved resources (just remove them)
-  clone.querySelectorAll("img").forEach((img) => {
-    const src = img.getAttribute("src");
-    if (src && !src.startsWith("data:")) {
-      img.removeAttribute("src");
-      img.setAttribute("alt", "Imagem indisponível");
-    }
-  });
-
-  const htmlContent = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
-  <style>${styles}</style>
-</head>
-<body>
-  <div class="${wrapperClassName}">${clone.innerHTML}</div>
-</body>
-</html>`;
+  const htmlContent = await buildStandaloneHtml(exportOptions, true);
 
   const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
   const timestamp = Date.now();
