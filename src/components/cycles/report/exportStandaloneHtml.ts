@@ -426,14 +426,11 @@ export async function exportStandaloneHtmlFile(
   return { objectUrl: url, fileName: safeFileName, blob };
 }
 
-const PREFERRED_PUBLIC_APP_ORIGIN = "https://sementesprodutiva.lovable.app";
-
-const getPublicAppOrigin = (): string => {
-  const currentOrigin = window.location.origin;
-  if (!currentOrigin.includes("id-preview--") && !currentOrigin.includes("localhost")) {
-    return currentOrigin;
-  }
-  return PREFERRED_PUBLIC_APP_ORIGIN;
+const getPublicServeReportUrl = (code: string): string => {
+  const baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/serve-report`;
+  const url = new URL(baseUrl);
+  url.searchParams.set("code", code);
+  return url.toString();
 };
 
 /**
