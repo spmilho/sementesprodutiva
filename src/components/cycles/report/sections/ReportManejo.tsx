@@ -68,56 +68,58 @@ export default function ReportManejo({ data }: { data: any }) {
         )}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        {pieData.length > 0 && (
-          <div className="chart-container">
-            <div className="chart-title">Distribuição por Tipo</div>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="45%"
-                  outerRadius={70}
-                  label={({ value }) => value}
-                  labelLine={{ strokeWidth: 1 }}
-                >
-                  {pieData.map((_: any, i: number) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend
-                  layout="horizontal"
-                  verticalAlign="bottom"
-                  align="center"
-                  wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                  formatter={(value: string) => <span style={{ color: "#333" }}>{value}</span>}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+      {pieData.length > 0 && (
+        <div className="chart-container" style={{ marginBottom: 16 }}>
+          <div className="chart-title">Distribuição por Tipo</div>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
+            <div style={{ flex: "1 1 200px", minWidth: 180, maxWidth: 300 }}>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label={false}
+                  >
+                    {pieData.map((_: any, i: number) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ flex: "1 1 140px", minWidth: 140, paddingTop: 8 }}>
+              {pieData.map((entry: any, i: number) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, fontSize: 12 }}>
+                  <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, backgroundColor: COLORS[i % COLORS.length], flexShrink: 0 }} />
+                  <span style={{ color: "#333" }}>{entry.name}: <strong>{entry.value}</strong></span>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {barData.length > 1 && (
-          <div className="chart-container">
-            <div className="chart-title">Aplicações por Data</div>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={barData} margin={{ bottom: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
-                <XAxis dataKey="date" tick={{ fontSize: 8 }} angle={-45} textAnchor="end" height={70} interval={0} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip />
-                {allTypes.map((t: any, i: number) => (
-                  <Bar key={String(t)} dataKey={String(t)} stackId="a" fill={COLORS[i % COLORS.length]} />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
+      {barData.length > 1 && (
+        <div className="chart-container" style={{ marginBottom: 16 }}>
+          <div className="chart-title">Aplicações por Data</div>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={barData} margin={{ bottom: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
+              <XAxis dataKey="date" tick={{ fontSize: 8 }} angle={-45} textAnchor="end" height={70} interval={0} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip />
+              {allTypes.map((t: any, i: number) => (
+                <Bar key={String(t)} dataKey={String(t)} stackId="a" fill={COLORS[i % COLORS.length]} />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       <table className="report-table">
         <thead>
