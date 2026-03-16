@@ -12,10 +12,11 @@ Deno.serve(async (req) => {
   }
 
   const url = new URL(req.url);
-  const path = url.searchParams.get("path");
+  const rawPath = url.searchParams.get("path")?.trim();
+  const code = url.searchParams.get("code")?.trim();
 
-  if (!path) {
-    return new Response("Parâmetro 'path' é obrigatório", {
+  if (!rawPath && !code) {
+    return new Response("Parâmetro 'path' ou 'code' é obrigatório", {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "text/plain" },
     });
@@ -25,9 +26,28 @@ Deno.serve(async (req) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+  let storagePath = rawPath || "";
+
+  if (!storagePath && code) {
+    const { data: linkData, error: linkError } = await supabase
+      .from("shared_report_links")
+      .select("storage_path")
+      .eq("code", code)
+      .maybeSingle();
+
+    if (linkError || !linkData?.storage_path) {
+      return new Response("Relatório não encontrado. O link pode ter expirado.", {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "text/plain" },
+      });
+    }
+
+    storagePath = linkData.storage_path;
+  }
+
   const { data, error } = await supabase.storage
     .from("shared-reports")
-    .download(path);
+    .download(storagePath);
 
   if (error || !data) {
     return new Response("Relatório não encontrado", {

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { FileWarning, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
-const sb = supabase as any;
-
-const buildServeReportUrl = (path: string) =>
-  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/serve-report?path=${encodeURIComponent(path)}`;
+const buildServeReportUrl = ({ code, path }: { code?: string; path?: string }) => {
+  const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/serve-report`);
+  if (code) url.searchParams.set("code", code);
+  if (path) url.searchParams.set("path", path);
+  return url.toString();
+};
 
 const extractTitle = (html: string) => {
   const match = html.match(/<title>(.*?)<\/title>/i);
@@ -37,27 +38,10 @@ export default function SharedReportPage() {
       setError(null);
 
       try {
-        let storagePath = legacyPath;
-
-        // Resolve short code to storage path
-        if (code) {
-          const { data: linkData, error: linkErr } = await sb
-            .from("shared_report_links")
-            .select("storage_path")
-            .eq("code", code)
-            .maybeSingle();
-
-          if (linkErr) throw new Error("Erro ao buscar relatório.");
-          if (!linkData) throw new Error("Relatório não encontrado. O link pode ter expirado.");
-          storagePath = linkData.storage_path;
-        }
-
-        if (!storagePath) throw new Error("Link do relatório está incompleto.");
-
-        const response = await fetch(buildServeReportUrl(storagePath), {
+        const response = await fetch(buildServeReportUrl({ code, path: legacyPath || undefined }), {
           method: "GET",
           headers: {
-            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
           },
           signal: controller.signal,
         });
