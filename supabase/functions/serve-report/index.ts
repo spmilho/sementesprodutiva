@@ -12,9 +12,9 @@ Deno.serve(async (req) => {
   }
 
   const url = new URL(req.url);
-  const rawPath = url.searchParams.get("path")?.trim();
-  const code = url.searchParams.get("code")?.trim();
-
+  const payload = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+  const rawPath = (typeof payload.path === "string" ? payload.path : url.searchParams.get("path"))?.trim();
+  const code = (typeof payload.code === "string" ? payload.code : url.searchParams.get("code"))?.trim();
   if (!rawPath && !code) {
     return new Response("Parâmetro 'path' ou 'code' é obrigatório", {
       status: 400,
