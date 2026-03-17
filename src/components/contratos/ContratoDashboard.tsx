@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Contrato, ContratoAditivo } from "@/hooks/useContratos";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Clock, MapPin, Package, DollarSign, Calendar, AlertTriangle, FileText } from "lucide-react";
 
 interface Props {
