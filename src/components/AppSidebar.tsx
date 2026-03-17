@@ -74,7 +74,7 @@ export function AppSidebar() {
             <img src={logoImg} alt="Produtiva Sementes" className="w-9 h-9 rounded-lg object-contain" />
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
               <span className="text-sm font-bold text-sidebar-foreground tracking-tight">Produtiva Sementes</span>
-              <span className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">Caderno de Campo</span>
+            <span className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">Torre de Controle de Produção</span>
             </div>
           </div>
         </SidebarHeader>
@@ -108,7 +108,7 @@ export function AppSidebar() {
           <img src={logoImg} alt="Produtiva Sementes" className="w-9 h-9 rounded-lg object-contain" />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-bold text-sidebar-foreground tracking-tight">Produtiva Sementes</span>
-            <span className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">Caderno de Campo</span>
+            <span className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">Torre de Controle de Produção</span>
           </div>
         </div>
       </SidebarHeader>
