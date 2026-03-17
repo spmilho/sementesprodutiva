@@ -120,6 +120,7 @@ export default function ContratoDashboard({ contrato, aditivos }: Props) {
             <CardContent className="space-y-2 text-sm">
               {contrato.dados_ia.condicoes_pagamento && <Info label="Pagamento" value={contrato.dados_ia.condicoes_pagamento} />}
               {contrato.dados_ia.penalidades && <Info label="Penalidades" value={contrato.dados_ia.penalidades} />}
+              {contrato.dados_ia.observacoes_gerais && <Info label="Observações" value={contrato.dados_ia.observacoes_gerais} />}
 
               {/* Tabela de Preços por Range */}
               {contrato.dados_ia.tabela_precos?.length > 0 && (
@@ -169,6 +170,17 @@ export default function ContratoDashboard({ contrato, aditivos }: Props) {
                     ))}
                   </ul>
                 </div>
+              )}
+
+              {/* Fallback when no data was extracted */}
+              {!contrato.dados_ia.condicoes_pagamento &&
+               !contrato.dados_ia.penalidades &&
+               !contrato.dados_ia.tabela_precos?.length &&
+               !contrato.dados_ia.clausulas_importantes?.length &&
+               !contrato.dados_ia.observacoes_gerais && (
+                <p className="text-xs text-muted-foreground italic">
+                  Nenhum dado extraído. Use o botão "Re-analisar PDF" acima para enviar o arquivo do contrato novamente.
+                </p>
               )}
             </CardContent>
           </Card>

@@ -1,13 +1,14 @@
-import { useState } from "react";
-import { useContratos, useContratoAditivos, useDeleteContrato, useContratoAccess } from "@/hooks/useContratos";
+import { useState, useRef } from "react";
+import { useContratos, useContratoAditivos, useDeleteContrato, useContratoAccess, useUpdateContrato, parseContratoPdf } from "@/hooks/useContratos";
 import { Navigate } from "react-router-dom";
 import { useRole } from "@/hooks/useRole";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, FileText, ChevronRight, FilePlus } from "lucide-react";
+import { Plus, Trash2, FileText, ChevronRight, FilePlus, RefreshCw, Loader2 } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
+import { toast } from "sonner";
 import ContratoDashboard from "@/components/contratos/ContratoDashboard";
 import ContratoFormDialog from "@/components/contratos/ContratoFormDialog";
 import AditivoFormDialog from "@/components/contratos/AditivoFormDialog";
@@ -144,16 +145,72 @@ export default function Contratos() {
 
 function SelectedContratoDashboard({ contrato, canInsert, onAddAditivo }: { contrato: any; canInsert: boolean; onAddAditivo: () => void }) {
   const { data: aditivos = [] } = useContratoAditivos(contrato.id);
+  const updateContrato = useUpdateContrato();
+  const [reanalyzing, setReanalyzing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleReanalyze = async (file: File) => {
+    setReanalyzing(true);
+    try {
+      const dados = await parseContratoPdf(file, contrato.tipo);
+      await updateContrato.mutateAsync({
+        id: contrato.id,
+        dados_ia: dados,
+        ...(dados.titulo && { titulo: dados.titulo }),
+        ...(dados.numero_contrato && { numero_contrato: dados.numero_contrato }),
+        ...(dados.contratante && { contratante: dados.contratante }),
+        ...(dados.contratado && { contratado: dados.contratado }),
+        ...(dados.hibrido && { hibrido: dados.hibrido }),
+        ...(dados.safra && { safra: dados.safra }),
+        ...(dados.data_inicio && { data_inicio: dados.data_inicio }),
+        ...(dados.data_fim && { data_fim: dados.data_fim }),
+        ...(dados.area_ha && { area_ha: dados.area_ha }),
+        ...(dados.volume_sacos && { volume_sacos: dados.volume_sacos }),
+        ...(dados.preco_por_ha && { preco_por_ha: dados.preco_por_ha }),
+        ...(dados.preco_por_saco && { preco_por_saco: dados.preco_por_saco }),
+        ...(dados.valor_total && { valor_total: dados.valor_total }),
+      });
+      toast.success("Contrato re-analisado com sucesso!");
+    } catch (e: any) {
+      toast.error("Erro: " + e.message);
+    } finally {
+      setReanalyzing(false);
+    }
+  };
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg font-semibold">{contrato.titulo}</h2>
-        {canInsert && (
-          <Button variant="outline" size="sm" onClick={onAddAditivo}>
-            <FilePlus className="h-4 w-4 mr-1" /> Aditivo
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {canInsert && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.txt,.doc,.docx"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleReanalyze(f);
+                  e.target.value = "";
+                }}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={reanalyzing}
+              >
+                {reanalyzing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+                {reanalyzing ? "Analisando..." : "Re-analisar PDF"}
+              </Button>
+              <Button variant="outline" size="sm" onClick={onAddAditivo}>
+                <FilePlus className="h-4 w-4 mr-1" /> Aditivo
+              </Button>
+            </>
+          )}
+        </div>
       </div>
       <ContratoDashboard contrato={contrato} aditivos={aditivos} />
     </div>

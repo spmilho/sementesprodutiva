@@ -195,23 +195,22 @@ export function useCreateAditivo() {
 }
 
 export async function parseContratoPdf(file: File, tipo: string): Promise<any> {
-  const text = await file.text();
-
-  const systemPrompt = `Você é um especialista em análise de contratos de produção de milho híbrido e beneficiamento de sementes.\nAnalise o texto do contrato fornecido e extraia os dados comerciais principais em formato estruturado.\n\nRetorne APENAS o JSON com os seguintes campos (use null se não encontrar):\n{\n  "titulo": "título/objeto do contrato",\n  "numero_contrato": "número do contrato",\n  "contratante": "nome da empresa contratante",\n  "contratado": "nome da empresa contratada",\n  "tipo": "producao_campo" ou "beneficiamento",\n  "hibrido": "nome do híbrido",\n  "safra": "safra (ex: 2025/2026)",\n  "data_inicio": "YYYY-MM-DD",\n  "data_fim": "YYYY-MM-DD",\n  "area_ha": número em hectares,\n  "volume_sacos": número de sacos,\n  "preco_por_ha": preço por hectare em R$,\n  "preco_por_saco": preço por saco em R$,\n  "valor_total": valor total do contrato em R$,\n  "clausulas_importantes": ["lista de cláusulas relevantes resumidas"],\n  "tabela_precos": [{"faixa": "faixa de volume/área", "preco": valor numérico, "unidade": "R$/sc ou R$/ha", "observacao": "condição se houver"}],\n  "condicoes_pagamento": "condições de pagamento",\n  "penalidades": "penalidades por descumprimento",\n  "observacoes_gerais": "observações importantes"\n}`;
-
-  const userPrompt = `Analise este contrato de ${tipo === 'beneficiamento' ? 'beneficiamento de sementes' : 'produção de campo de milho híbrido'}:\n\n${text}`;
-
-  const { callClaude } = await import("@/services/anthropicApi");
-  const content = await callClaude(systemPrompt, userPrompt, 2048);
-
-  let parsed;
-  try {
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
-  } catch {
-    parsed = { raw_response: content };
+  // Convert PDF to base64 for Vision AI processing on backend
+  const arrayBuffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
   }
-  return parsed;
+  const pdfBase64 = btoa(binary);
+
+  const { data, error } = await supabase.functions.invoke('parse-contrato', {
+    body: { pdfBase64, tipo },
+  });
+
+  if (error) throw new Error(error.message || 'Erro ao analisar contrato');
+  if (data?.error) throw new Error(data.error);
+  return data?.data || {};
 }
 
 export async function uploadContratoPdf(file: File, orgId: string): Promise<string> {
