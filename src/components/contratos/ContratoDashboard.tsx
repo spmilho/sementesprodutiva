@@ -120,6 +120,46 @@ export default function ContratoDashboard({ contrato, aditivos }: Props) {
             <CardContent className="space-y-2 text-sm">
               {contrato.dados_ia.condicoes_pagamento && <Info label="Pagamento" value={contrato.dados_ia.condicoes_pagamento} />}
               {contrato.dados_ia.penalidades && <Info label="Penalidades" value={contrato.dados_ia.penalidades} />}
+
+              {/* Tabela de Preços por Range */}
+              {contrato.dados_ia.tabela_precos?.length > 0 && (
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">Tabela de Preços por Range</p>
+                  <div className="border rounded-md overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="h-8 text-xs px-2">Faixa</TableHead>
+                          <TableHead className="h-8 text-xs px-2 text-right">Preço</TableHead>
+                          {contrato.dados_ia.tabela_precos[0]?.unidade && (
+                            <TableHead className="h-8 text-xs px-2">Unidade</TableHead>
+                          )}
+                          {contrato.dados_ia.tabela_precos[0]?.observacao && (
+                            <TableHead className="h-8 text-xs px-2">Obs.</TableHead>
+                          )}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {contrato.dados_ia.tabela_precos.map((row: any, i: number) => (
+                          <TableRow key={i}>
+                            <TableCell className="py-1.5 px-2 text-xs">{row.faixa || row.range || "—"}</TableCell>
+                            <TableCell className="py-1.5 px-2 text-xs text-right font-medium">
+                              {row.preco != null ? formatCurrency(Number(row.preco)) : row.valor || "—"}
+                            </TableCell>
+                            {contrato.dados_ia.tabela_precos[0]?.unidade && (
+                              <TableCell className="py-1.5 px-2 text-xs">{row.unidade || "—"}</TableCell>
+                            )}
+                            {contrato.dados_ia.tabela_precos[0]?.observacao && (
+                              <TableCell className="py-1.5 px-2 text-xs text-muted-foreground">{row.observacao || "—"}</TableCell>
+                            )}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
               {contrato.dados_ia.clausulas_importantes?.length > 0 && (
                 <div>
                   <p className="text-muted-foreground text-xs">Cláusulas Importantes</p>
