@@ -1,13 +1,14 @@
-import { useState } from "react";
-import { useContratos, useContratoAditivos, useDeleteContrato, useContratoAccess } from "@/hooks/useContratos";
+import { useState, useRef } from "react";
+import { useContratos, useContratoAditivos, useDeleteContrato, useContratoAccess, useUpdateContrato, parseContratoPdf } from "@/hooks/useContratos";
 import { Navigate } from "react-router-dom";
 import { useRole } from "@/hooks/useRole";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, FileText, ChevronRight, FilePlus } from "lucide-react";
+import { Plus, Trash2, FileText, ChevronRight, FilePlus, RefreshCw, Loader2 } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
+import { toast } from "sonner";
 import ContratoDashboard from "@/components/contratos/ContratoDashboard";
 import ContratoFormDialog from "@/components/contratos/ContratoFormDialog";
 import AditivoFormDialog from "@/components/contratos/AditivoFormDialog";
