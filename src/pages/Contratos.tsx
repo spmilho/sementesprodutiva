@@ -145,16 +145,72 @@ export default function Contratos() {
 
 function SelectedContratoDashboard({ contrato, canInsert, onAddAditivo }: { contrato: any; canInsert: boolean; onAddAditivo: () => void }) {
   const { data: aditivos = [] } = useContratoAditivos(contrato.id);
+  const updateContrato = useUpdateContrato();
+  const [reanalyzing, setReanalyzing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleReanalyze = async (file: File) => {
+    setReanalyzing(true);
+    try {
+      const dados = await parseContratoPdf(file, contrato.tipo);
+      await updateContrato.mutateAsync({
+        id: contrato.id,
+        dados_ia: dados,
+        ...(dados.titulo && { titulo: dados.titulo }),
+        ...(dados.numero_contrato && { numero_contrato: dados.numero_contrato }),
+        ...(dados.contratante && { contratante: dados.contratante }),
+        ...(dados.contratado && { contratado: dados.contratado }),
+        ...(dados.hibrido && { hibrido: dados.hibrido }),
+        ...(dados.safra && { safra: dados.safra }),
+        ...(dados.data_inicio && { data_inicio: dados.data_inicio }),
+        ...(dados.data_fim && { data_fim: dados.data_fim }),
+        ...(dados.area_ha && { area_ha: dados.area_ha }),
+        ...(dados.volume_sacos && { volume_sacos: dados.volume_sacos }),
+        ...(dados.preco_por_ha && { preco_por_ha: dados.preco_por_ha }),
+        ...(dados.preco_por_saco && { preco_por_saco: dados.preco_por_saco }),
+        ...(dados.valor_total && { valor_total: dados.valor_total }),
+      });
+      toast.success("Contrato re-analisado com sucesso!");
+    } catch (e: any) {
+      toast.error("Erro: " + e.message);
+    } finally {
+      setReanalyzing(false);
+    }
+  };
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg font-semibold">{contrato.titulo}</h2>
-        {canInsert && (
-          <Button variant="outline" size="sm" onClick={onAddAditivo}>
-            <FilePlus className="h-4 w-4 mr-1" /> Aditivo
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {canInsert && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.txt,.doc,.docx"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleReanalyze(f);
+                  e.target.value = "";
+                }}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={reanalyzing}
+              >
+                {reanalyzing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+                {reanalyzing ? "Analisando..." : "Re-analisar PDF"}
+              </Button>
+              <Button variant="outline" size="sm" onClick={onAddAditivo}>
+                <FilePlus className="h-4 w-4 mr-1" /> Aditivo
+              </Button>
+            </>
+          )}
+        </div>
       </div>
       <ContratoDashboard contrato={contrato} aditivos={aditivos} />
     </div>
