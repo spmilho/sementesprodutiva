@@ -24,7 +24,8 @@ interface ActualHarvestProps {
   femaleArea: number;
   glebas: any[];
   schedule: ScheduleRow[];
-  bagWeightKg: number;
+  expectedProductivity?: number | null;
+  yieldEstimates?: any[];
 }
 
 interface HarvestRecord {
@@ -43,7 +44,7 @@ interface HarvestRecord {
   notes: string | null;
 }
 
-export default function ActualHarvest({ cycleId, orgId, femaleArea, glebas, schedule, bagWeightKg }: ActualHarvestProps) {
+export default function ActualHarvest({ cycleId, orgId, femaleArea, glebas, schedule, expectedProductivity, yieldEstimates = [] }: ActualHarvestProps) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [groupByGleba, setGroupByGleba] = useState(false);
@@ -158,9 +159,9 @@ export default function ActualHarvest({ cycleId, orgId, femaleArea, glebas, sche
     const totalArea = records.reduce((s, r) => s + Number(r.area_harvested_ha), 0);
     const totalTons = records.reduce((s, r) => s + Number(r.total_weight_tons), 0);
     const totalLoads = records.reduce((s, r) => s + r.loads_count, 0);
-    const totalBags = bagWeightKg > 0 ? (totalTons * 1000) / bagWeightKg : 0;
     const avgTonPerLoad = totalLoads > 0 ? totalTons / totalLoads : 0;
     const progressPct = femaleArea > 0 ? (totalArea / femaleArea) * 100 : 0;
+    const tonPerHa = totalArea > 0 ? totalTons / totalArea : 0;
 
     // Weighted moisture avg
     let moistureAvg = 0;
@@ -185,8 +186,8 @@ export default function ActualHarvest({ cycleId, orgId, femaleArea, glebas, sche
       }
     }
 
-    return { totalArea, totalTons, totalBags, totalLoads, avgTonPerLoad, progressPct, moistureAvg, projectionLabel };
-  }, [records, femaleArea, bagWeightKg]);
+    return { totalArea, totalTons, totalLoads, avgTonPerLoad, progressPct, moistureAvg, projectionLabel, tonPerHa };
+  }, [records, femaleArea]);
 
   // Chart data: merge planned schedule with actual records by date
   const chartData = useMemo(() => {
@@ -265,10 +266,9 @@ export default function ActualHarvest({ cycleId, orgId, femaleArea, glebas, sche
   return (
     <div className="space-y-6">
       {/* DASHBOARD CARDS */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <DashCard icon={<TrendingUp className="h-4 w-4" />} title="Progresso" value={`${stats.totalArea.toFixed(1)} / ${femaleArea} ha`} subtitle={`${stats.progressPct.toFixed(1)}%`} progress={stats.progressPct} />
-        <DashCard icon={<Wheat className="h-4 w-4" />} title="Toneladas" value={`${stats.totalTons.toFixed(1)} ton`} />
-        <DashCard icon={<Package className="h-4 w-4" />} title="Sacos" value={`${Math.round(stats.totalBags)} sc`} subtitle={`${bagWeightKg} kg/sc`} />
+        <DashCard icon={<Wheat className="h-4 w-4" />} title="Toneladas MPB" value={`${stats.totalTons.toFixed(1)} ton`} subtitle={stats.tonPerHa > 0 ? `${stats.tonPerHa.toFixed(2)} ton/ha` : undefined} />
         <DashCard icon={<BarChart3 className="h-4 w-4" />} title="Média ton/carga" value={stats.avgTonPerLoad > 0 ? `${stats.avgTonPerLoad.toFixed(2)} ton` : "—"} />
         <DashCard icon={<Truck className="h-4 w-4" />} title="Total cargas" value={`${stats.totalLoads}`} />
         <DashCard icon={<Droplets className="h-4 w-4" />} title="Umidade média" value={stats.moistureAvg > 0 ? `${stats.moistureAvg.toFixed(1)}%` : "—"} />

@@ -160,6 +160,35 @@ export function useDashboardData(filters: {
     staleTime: 60_000,
   });
 
+  // Phenology records
+  const phenologyQuery = useQuery({
+    queryKey: ["dashboard-phenology", filters.season],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("phenology_records")
+        .select("cycle_id, parent_type, current_stage, growth_stage, observation_date, dap")
+        .is("deleted_at", null)
+        .order("observation_date", { ascending: false });
+      return data || [];
+    },
+    staleTime: 60_000,
+  });
+
+  // Crop inputs for manejo chart
+  const cropInputsQuery = useQuery({
+    queryKey: ["dashboard-crop-inputs", filters.season],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("crop_inputs")
+        .select("cycle_id, input_type, execution_date, recommendation_date, growth_stage_at_application, product_name")
+        .is("deleted_at", null);
+      return data || [];
+    },
+    staleTime: 60_000,
+  });
+
   // Clients for filter
   const clientsQuery = useQuery({
     queryKey: ["dashboard-clients"],
@@ -216,6 +245,8 @@ export function useDashboardData(filters: {
     harvestPlans: harvestPlansQuery.data || [],
     moisture: moistureQuery.data || [],
     nicking: nickingQuery.data || [],
+    phenologyRecords: phenologyQuery.data || [],
+    cropInputs: cropInputsQuery.data || [],
     clients: clientsQuery.data || [],
     cooperators: cooperatorsQuery.data || [],
     seasons: seasonsQuery.data || [],

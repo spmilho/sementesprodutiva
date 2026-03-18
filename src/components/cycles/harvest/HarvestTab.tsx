@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Settings2, Pencil, Calendar, Wheat, BarChart3, Clock, Target, Package } from "lucide-react";
+import { Settings2, Pencil, Calendar, Wheat, BarChart3, Clock, Target } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import ActualHarvest from "./ActualHarvest";
 import HarvestForecast from "./HarvestForecast";
@@ -28,6 +28,7 @@ interface HarvestTabProps {
   hybridName: string;
   cooperatorName?: string;
   femaleArea: number;
+  totalArea: number;
   materialCycleDays?: number;
   targetMoisture?: number;
   expectedProductivity?: number;
@@ -35,7 +36,7 @@ interface HarvestTabProps {
 
 export default function HarvestTab({
   cycleId, orgId, contractNumber, pivotName, hybridName, cooperatorName,
-  femaleArea, materialCycleDays, targetMoisture = 18, expectedProductivity,
+  femaleArea, totalArea, materialCycleDays, targetMoisture = 18, expectedProductivity,
 }: HarvestTabProps) {
   const queryClient = useQueryClient();
   const { addRecord } = useOfflineSyncContext();
@@ -44,7 +45,6 @@ export default function HarvestTab({
   const [localCycleDays, setLocalCycleDays] = useState(materialCycleDays || 130);
   const [localMoisture, setLocalMoisture] = useState(targetMoisture);
   const [localHaPerDay, setLocalHaPerDay] = useState<number>(15);
-  const [localBagWeight, setLocalBagWeight] = useState<number>(20);
   const [chartView, setChartView] = useState<"general" | "gleba">("general");
 
   // Fetch saved harvest_plan params
@@ -68,7 +68,6 @@ export default function HarvestTab({
       setLocalCycleDays(savedParams.cycle_days_used);
       setLocalMoisture(savedParams.target_moisture_pct || targetMoisture);
       setLocalHaPerDay(savedParams.target_ha_per_day || 15);
-      setLocalBagWeight(savedParams.bag_weight_kg || 20);
     }
   }, [savedParams]);
 
@@ -143,8 +142,8 @@ export default function HarvestTab({
     cycleDays: localCycleDays,
     targetMoisture: localMoisture,
     targetHaPerDay: localHaPerDay,
-    bagWeightKg: localBagWeight,
-  }), [localCycleDays, localMoisture, localHaPerDay, localBagWeight]);
+    bagWeightKg: 20,
+  }), [localCycleDays, localMoisture, localHaPerDay]);
 
   const glebaRows = useMemo(
     () => buildGlebaRows(glebas, plantingPlans, plantingActuals, moistureSamples, params, femaleArea),
@@ -163,7 +162,6 @@ export default function HarvestTab({
             cycle_days_used: localCycleDays,
             target_moisture_pct: localMoisture,
             target_ha_per_day: localHaPerDay,
-            bag_weight_kg: localBagWeight,
           })
           .eq("id", savedParams.id);
         if (error) throw error;
@@ -174,7 +172,6 @@ export default function HarvestTab({
             cycle_days_used: localCycleDays,
             target_moisture_pct: localMoisture,
             target_ha_per_day: localHaPerDay,
-            bag_weight_kg: localBagWeight,
             planting_source: "planned",
           }, cycleId);
         if (error) throw error;
@@ -191,12 +188,19 @@ export default function HarvestTab({
   // Summary card data
   const firstGleba = glebaRows.find(r => r.updatedHarvestDate);
   const lastScheduleRow = schedule[schedule.length - 1];
-  const totalArea = glebaRows.reduce((s, r) => s + r.areaHa, 0);
+  const glebaAreaSum = glebaRows.reduce((s, r) => s + r.areaHa, 0);
   const readyCount = glebaRows.filter(r => r.overallStatus === "ready_to_harvest").length;
 
   const latestEstimate = yieldEstimates[0];
   const productionTons = latestEstimate?.total_production_tons;
-  const productionBags = latestEstimate?.total_production_bags;
+
+  // Use yield estimate if available, otherwise Target Yield MPB (expectedProductivity kg/ha)
+  const effectiveYieldTonPerHa = latestEstimate?.productivity_kg_ha
+    ? Number(latestEstimate.productivity_kg_ha) / 1000
+    : expectedProductivity
+      ? expectedProductivity / 1000
+      : null;
+  const tonPerDay = effectiveYieldTonPerHa ? (localHaPerDay * effectiveYieldTonPerHa) : null;
 
   const today = startOfDay(new Date());
 
@@ -224,7 +228,7 @@ export default function HarvestTab({
               <span><strong>Híbrido:</strong> {hybridName}</span>
               {cooperatorName && <span><strong>Cooperado:</strong> {cooperatorName}</span>}
               <span><strong>Pivô:</strong> {pivotName}</span>
-              <span><strong>Área fêmea:</strong> {femaleArea} ha</span>
+              <span><strong>Área total:</strong> {totalArea} ha</span>
               <span><strong>Ciclo:</strong> {localCycleDays} dias</span>
               <span><strong>Umidade alvo:</strong> {localMoisture}%</span>
             </div>
@@ -239,7 +243,7 @@ export default function HarvestTab({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-xs text-muted-foreground">Ciclo do material (dias)</label>
                 <div className="flex items-center gap-1 mt-1">
@@ -260,10 +264,6 @@ export default function HarvestTab({
               <div>
                 <label className="text-xs text-muted-foreground">Meta ha/dia *</label>
                 <Input type="number" step="0.1" value={localHaPerDay} onChange={(e) => setLocalHaPerDay(Number(e.target.value))} className="h-8 mt-1 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Peso médio saco (kg)</label>
-                <Input type="number" value={localBagWeight} onChange={(e) => setLocalBagWeight(Number(e.target.value))} className="h-8 mt-1 text-sm" />
               </div>
             </div>
             <div className="flex items-center justify-between">
@@ -309,7 +309,7 @@ export default function HarvestTab({
             icon={<Target className="h-4 w-4" />}
             title="Meta Diária"
             value={`${localHaPerDay} ha/dia`}
-            subtitle={expectedProductivity ? `~${((localHaPerDay * expectedProductivity) / 1000).toFixed(1)} ton/dia` : undefined}
+            subtitle={tonPerDay ? `~${tonPerDay.toFixed(1)} ton/dia` : undefined}
           />
           <SummaryCard
             icon={<Wheat className="h-4 w-4" />}
@@ -318,10 +318,10 @@ export default function HarvestTab({
             progress={(readyCount / Math.max(glebaRows.length, 1)) * 100}
           />
           <SummaryCard
-            icon={<Package className="h-4 w-4" />}
+            icon={<Wheat className="h-4 w-4" />}
             title="Estimativa Produção"
-            value={productionTons ? `${Number(productionTons).toFixed(1)} ton` : "Sem estimativa"}
-            subtitle={productionBags ? `${Number(productionBags).toFixed(0)} sc` : undefined}
+            value={productionTons ? `${Number(productionTons).toFixed(1)} ton` : (effectiveYieldTonPerHa ? `~${(effectiveYieldTonPerHa * totalArea).toFixed(1)} ton (target)` : "Sem estimativa")}
+            subtitle={effectiveYieldTonPerHa ? `${(effectiveYieldTonPerHa * 1000).toFixed(0)} kg/ha` : undefined}
           />
         </div>
 
@@ -482,10 +482,11 @@ export default function HarvestTab({
         <ActualHarvest
           cycleId={cycleId}
           orgId={orgId}
-          femaleArea={femaleArea}
+          femaleArea={totalArea}
           glebas={glebas}
           schedule={schedule}
-          bagWeightKg={localBagWeight}
+          expectedProductivity={expectedProductivity}
+          yieldEstimates={yieldEstimates}
         />
       </div>
     </TooltipProvider>

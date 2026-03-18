@@ -12,6 +12,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, Legend, ReferenceLine,
 } from "recharts";
 import KPICard from "@/components/KPICard";
+import DashboardExtraCharts from "@/components/DashboardExtraCharts";
 import { useDashboardData, type DashboardCycle } from "@/hooks/useDashboardData";
 import { differenceInDays, parseISO, format } from "date-fns";
 
@@ -77,7 +78,7 @@ export default function Dashboard() {
 
   const {
     cycles, plantingPlans, plantingActuals, detasseling, harvestRecords, harvestPlans,
-    moisture, nicking, clients, cooperators, seasons, isLoading,
+    moisture, nicking, phenologyRecords, cropInputs, clients, cooperators, seasons, isLoading,
   } = useDashboardData({ season, clientId, cooperatorId, statuses: selectedStatuses });
 
   // Apply client-side filters
@@ -421,6 +422,14 @@ export default function Dashboard() {
         <KPICard title="Colheita" value={`${harvestedArea} / ${totalHarvestArea} ha`} icon={Wheat} progress={harvestPct} description={`${harvestPct}%`} />
         <KPICard title="Produção" value={`${totalProduction} t`} icon={Target} description="acumulada" />
       </div>
+
+      {/* Extra Charts: Phenology, Forecasts, Manejo */}
+      <DashboardExtraCharts
+        cycles={filtered}
+        phenologyRecords={phenologyRecords}
+        plantingActuals={plantingActuals}
+        cropInputs={cropInputs}
+      />
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
