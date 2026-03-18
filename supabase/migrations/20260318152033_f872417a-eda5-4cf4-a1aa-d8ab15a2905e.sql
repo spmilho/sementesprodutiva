@@ -1,0 +1,1 @@
+ALTER TABLE public.stand_cv_records ADD COLUMN IF NOT EXISTS plantas_por_metro numeric;

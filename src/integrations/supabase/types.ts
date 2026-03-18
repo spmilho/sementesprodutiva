@@ -4537,6 +4537,7 @@ export type Database = {
           notes: string | null
           org_id: string
           photo_url: string | null
+          plantas_por_metro: number | null
           recorded_date: string
           type: string
         }
@@ -4549,6 +4550,7 @@ export type Database = {
           notes?: string | null
           org_id: string
           photo_url?: string | null
+          plantas_por_metro?: number | null
           recorded_date?: string
           type: string
         }
@@ -4561,6 +4563,7 @@ export type Database = {
           notes?: string | null
           org_id?: string
           photo_url?: string | null
+          plantas_por_metro?: number | null
           recorded_date?: string
           type?: string
         }
