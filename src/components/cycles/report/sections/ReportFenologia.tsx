@@ -51,7 +51,7 @@ function TimelineBlock({ title, records, accent }: { title: string; records: any
       <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8 }}>
         {STAGES.map((stage, i) => {
           const rec = stageMap.get(stage);
-          const isReached = i <= currentIdx;
+          const isReached = i <= currentIdx; // includes skipped stages
           const isCurrent = i === currentIdx;
           const isFuture = i > currentIdx;
 
