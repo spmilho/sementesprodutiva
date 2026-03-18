@@ -47,7 +47,7 @@ export function usePlantingDate(cycleId: string) {
         .from("planting_actual")
         .select("planting_date")
         .eq("cycle_id", cycleId)
-        .eq("parent_type", "female")
+        .eq("type", "female")
         .is("deleted_at", null)
         .order("planting_date", { ascending: true })
         .limit(1);
