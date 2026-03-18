@@ -65,8 +65,8 @@ function buildStageInfos(records: any[], filter: string, plantingDate?: string |
 
   return ALL_STAGES.map((stage, i) => {
     const rec = stageMap.get(stage);
-    const isPast = rec != null && i < lastIdx;
-    const isCurrent = i === lastIdx && rec != null;
+    const isPast = i <= lastIdx;
+    const isCurrent = i === lastIdx;
     let dap: number | null = null;
     if (rec && plantDate) {
       const obsDate = new Date(rec.observation_date + "T12:00:00");
