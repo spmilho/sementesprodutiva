@@ -385,7 +385,16 @@ export default function CycleDetail() {
         </TabsContent>
 
         <TabsContent value="roguing">
-          <Roguing cycleId={id!} orgId={cycle.org_id} />
+          <Roguing
+            cycleId={id!}
+            orgId={cycle.org_id}
+            contractNumber={cycle.contract_number}
+            hybridName={cycle.hybrid_name}
+            cooperatorName={(cycle as any).cooperators?.name}
+            pivotName={cycle.field_name}
+            femaleArea={cycle.female_area}
+            maleArea={cycle.male_area}
+          />
         </TabsContent>
 
         <TabsContent value="pragas">
