@@ -158,6 +158,7 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
     setEditingId(record.id);
     setSelectedType(record.type);
     setCvValue(String(record.cv_percent));
+    setPlantasPorMetro(record.plantas_por_metro != null ? String(record.plantas_por_metro) : "");
     setPhotoFile(null);
     setPhotoPreview(record.photo_url || null);
     setDialogOpen(true);
