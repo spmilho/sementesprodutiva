@@ -63,10 +63,9 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array", cellDates: true });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const json: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
-      if (json.length < 2) { toast.error("Planilha vazia"); return; }
-      // Preserve date headers properly — read raw too for date detection
       const jsonRaw: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      if (jsonRaw.length < 2) { toast.error("Planilha vazia"); return; }
+      // Preserve date headers properly
       const hdrs = (jsonRaw[0] || []).map((h: any) => {
         if (h instanceof Date && !isNaN(h.getTime())) {
           const d = String(h.getDate()).padStart(2, "0");
@@ -76,7 +75,7 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
         }
         return String(h || "").trim();
       });
-      const rows = json.slice(1).filter(r => r.some(c => c !== null && c !== undefined && c !== ""));
+      const rows = jsonRaw.slice(1).filter(r => r.some(c => c !== null && c !== undefined && c !== ""));
       setWeatherHeaders(hdrs);
       setWeatherRawData(rows);
       setWeatherImportOpen(true);
