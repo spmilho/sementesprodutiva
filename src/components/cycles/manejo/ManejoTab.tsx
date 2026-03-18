@@ -172,6 +172,9 @@ export default function ManejoTab({
       {/* Dashboard */}
       <ManejoDashboard inputs={inputs} imports={imports} />
 
+      {/* Timeline */}
+      {inputs.length > 0 && <ManejoTimeline inputs={inputs} plantingDate={plantingDate} />}
+
       {/* Content tabs */}
       {inputs.length > 0 && (
         <Tabs defaultValue="operacoes">
@@ -187,10 +190,7 @@ export default function ManejoTab({
             <ManejoTable inputs={inputs} />
           </TabsContent>
           <TabsContent value="graficos">
-            <div className="space-y-4">
-              <ManejoTimeline inputs={inputs} plantingDate={plantingDate} />
-              <ManejoCharts inputs={inputs} />
-            </div>
+            <ManejoCharts inputs={inputs} />
           </TabsContent>
         </Tabs>
       )}
