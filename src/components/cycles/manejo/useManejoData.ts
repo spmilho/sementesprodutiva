@@ -160,5 +160,17 @@ export function useManejoMutations(cycleId: string, orgId: string) {
     onSuccess: () => invalidate(),
   });
 
-  return { upsertInputs, insertManual, deleteInput, saveImportRecord, deleteImportRecord };
+  const deleteAllInputs = useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase as any)
+        .from("crop_inputs")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("cycle_id", cycleId)
+        .is("deleted_at", null);
+      if (error) throw error;
+    },
+    onSuccess: () => invalidate(),
+  });
+
+  return { upsertInputs, insertManual, deleteInput, saveImportRecord, deleteImportRecord, deleteAllInputs };
 }
