@@ -65,7 +65,9 @@ function toDateLabel(dateKey: string): string {
 
 function calcGDU(tmax: number | null, tmin: number | null): number {
   if (tmax == null || tmin == null) return 0;
-  return Math.max(0, (tmax + tmin) / 2 - T_BASE);
+  const adjMax = Math.min(tmax, 30);
+  const adjMin = Math.max(tmin, T_BASE);
+  return Math.max(0, (adjMax + adjMin) / 2 - T_BASE);
 }
 
 function normalizeTemperatureTriplet(

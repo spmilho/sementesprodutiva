@@ -74,7 +74,7 @@ const T_BASE = 10;
 
 function calcGDU(tmax: number | null, tmin: number | null): number {
   if (tmax == null || tmin == null) return 0;
-  return Math.max(0, (tmax + tmin) / 2 - T_BASE);
+  return Math.max(0, (Math.min(tmax, 30) + Math.max(tmin, T_BASE)) / 2 - T_BASE);
 }
 
 function buildReportPayload(data: ReportData) {
