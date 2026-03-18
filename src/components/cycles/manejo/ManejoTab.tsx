@@ -26,7 +26,7 @@ export default function ManejoTab({
   const { data: inputs = [], isLoading } = useCropInputs(cycleId);
   const { data: imports = [] } = useCropInputImports(cycleId);
   const { data: plantingDate } = usePlantingDate(cycleId);
-  const { upsertInputs, insertManual, saveImportRecord, deleteImportRecord } = useManejoMutations(cycleId, orgId);
+  const { upsertInputs, insertManual, saveImportRecord, deleteImportRecord, deleteAllInputs } = useManejoMutations(cycleId, orgId);
 
   const [importOpen, setImportOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
@@ -63,7 +63,7 @@ export default function ManejoTab({
   }, []);
 
   const handleImport = useCallback(async (records: Partial<CropInput>[], skipSeeds: boolean) => {
-    // Enrich with DAP and stage
+    // Enrich with DAP, stage, and auto-calculate dose_per_ha
     const enriched = records.map(r => {
       const date = r.execution_date || r.recommendation_date;
       let dap: number | null = null;
@@ -72,24 +72,33 @@ export default function ManejoTab({
         dap = Math.floor((new Date(date).getTime() - new Date(plantingDate).getTime()) / 86400000);
         if (dap >= 0) stage = getDapRange(dap);
       }
-      return { ...r, dap_at_application: dap, growth_stage_at_application: stage, created_by: user?.id };
+      // Auto-calculate dose_per_ha from qty_applied / totalArea
+      let dose = r.dose_per_ha;
+      if ((dose === null || dose === undefined) && r.qty_applied && totalArea && totalArea > 0) {
+        dose = r.qty_applied / totalArea;
+      }
+      return { ...r, dap_at_application: dap, growth_stage_at_application: stage, dose_per_ha: dose, created_by: user?.id };
     });
 
     try {
-      const result = await upsertInputs.mutateAsync(enriched);
-      await saveImportRecord.mutateAsync({
+      // 1) Create import record first to get its ID
+      const importId = await saveImportRecord.mutateAsync({
         file_name: fileName,
-        records_total: result.total,
-        records_new: result.newCount,
-        records_updated: result.updatedCount,
+        records_total: enriched.length,
+        records_new: enriched.length,
+        records_updated: 0,
         imported_by: user?.id,
       });
+
+      // 2) Upsert inputs linked to import record
+      const result = await upsertInputs.mutateAsync({ inputs: enriched, importFileId: importId });
+
       toast.success(`✅ Importados ${result.total} registros (${result.newCount} novos, ${result.updatedCount} atualizados)`);
       setImportOpen(false);
     } catch (err: any) {
       toast.error(err.message || "Erro ao importar");
     }
-  }, [plantingDate, user, fileName, upsertInputs, saveImportRecord]);
+  }, [plantingDate, user, fileName, totalArea, upsertInputs, saveImportRecord]);
 
   const handleManualSave = useCallback(async (input: Partial<CropInput>) => {
     // Enrich with DAP
@@ -138,6 +147,24 @@ export default function ManejoTab({
           <Plus className="h-4 w-4" />
           Registro Manual
         </Button>
+        {inputs.length > 0 && (
+          <Button
+            variant="outline"
+            className="gap-2 text-destructive hover:text-destructive"
+            disabled={deleteAllInputs.isPending}
+            onClick={() => {
+              if (confirm(`Excluir todos os ${inputs.length} insumos registrados neste ciclo?`)) {
+                deleteAllInputs.mutate(undefined, {
+                  onSuccess: () => toast.success("Todos os insumos foram excluídos"),
+                  onError: (err: any) => toast.error(err.message || "Erro ao excluir"),
+                });
+              }
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+            Limpar Todos
+          </Button>
+        )}
       </div>
 
       {/* Import history */}

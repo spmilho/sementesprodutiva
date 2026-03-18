@@ -65,12 +65,13 @@ export function useManejoMutations(cycleId: string, orgId: string) {
   };
 
   const upsertInputs = useMutation({
-    mutationFn: async (inputs: Partial<CropInput>[]) => {
-      // For each input, check if duplicate exists (same event_code + product_name + cycle_id)
+    mutationFn: async ({ inputs, importFileId }: { inputs: Partial<CropInput>[]; importFileId?: string }) => {
       let newCount = 0;
       let updatedCount = 0;
 
       for (const input of inputs) {
+        const record = { ...input, cycle_id: cycleId, org_id: orgId, ...(importFileId ? { import_file_id: importFileId } : {}) };
+
         if (input.event_code && input.product_name) {
           const { data: existing } = await (supabase as any)
             .from("crop_inputs")
@@ -82,28 +83,22 @@ export function useManejoMutations(cycleId: string, orgId: string) {
             .limit(1);
 
           if (existing && existing.length > 0) {
-            // Update
             await (supabase as any)
               .from("crop_inputs")
-              .update({
-                ...input,
-                cycle_id: cycleId,
-                org_id: orgId,
-              })
+              .update(record)
               .eq("id", existing[0].id);
             updatedCount++;
           } else {
-            // Insert
             const { error } = await (supabase as any)
               .from("crop_inputs")
-              .insert({ ...input, cycle_id: cycleId, org_id: orgId });
+              .insert(record);
             if (error) throw error;
             newCount++;
           }
         } else {
           const { error } = await (supabase as any)
             .from("crop_inputs")
-            .insert({ ...input, cycle_id: cycleId, org_id: orgId });
+            .insert(record);
           if (error) throw error;
           newCount++;
         }
@@ -137,10 +132,13 @@ export function useManejoMutations(cycleId: string, orgId: string) {
 
   const saveImportRecord = useMutation({
     mutationFn: async (record: Partial<CropInputImport>) => {
-      const { error } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from("crop_input_imports")
-        .insert({ ...record, cycle_id: cycleId, org_id: orgId });
+        .insert({ ...record, cycle_id: cycleId, org_id: orgId })
+        .select("id")
+        .single();
       if (error) throw error;
+      return data.id as string;
     },
     onSuccess: () => invalidate(),
   });
@@ -162,5 +160,17 @@ export function useManejoMutations(cycleId: string, orgId: string) {
     onSuccess: () => invalidate(),
   });
 
-  return { upsertInputs, insertManual, deleteInput, saveImportRecord, deleteImportRecord };
+  const deleteAllInputs = useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase as any)
+        .from("crop_inputs")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("cycle_id", cycleId)
+        .is("deleted_at", null);
+      if (error) throw error;
+    },
+    onSuccess: () => invalidate(),
+  });
+
+  return { upsertInputs, insertManual, deleteInput, saveImportRecord, deleteImportRecord, deleteAllInputs };
 }
