@@ -188,12 +188,19 @@ export default function HarvestTab({
   // Summary card data
   const firstGleba = glebaRows.find(r => r.updatedHarvestDate);
   const lastScheduleRow = schedule[schedule.length - 1];
-  const totalArea = glebaRows.reduce((s, r) => s + r.areaHa, 0);
+  const glebaAreaSum = glebaRows.reduce((s, r) => s + r.areaHa, 0);
   const readyCount = glebaRows.filter(r => r.overallStatus === "ready_to_harvest").length;
 
   const latestEstimate = yieldEstimates[0];
   const productionTons = latestEstimate?.total_production_tons;
-  const productionBags = latestEstimate?.total_production_bags;
+
+  // Use yield estimate if available, otherwise Target Yield MPB (expectedProductivity kg/ha)
+  const effectiveYieldTonPerHa = latestEstimate?.productivity_kg_ha
+    ? Number(latestEstimate.productivity_kg_ha) / 1000
+    : expectedProductivity
+      ? expectedProductivity / 1000
+      : null;
+  const tonPerDay = effectiveYieldTonPerHa ? (localHaPerDay * effectiveYieldTonPerHa) : null;
 
   const today = startOfDay(new Date());
 
