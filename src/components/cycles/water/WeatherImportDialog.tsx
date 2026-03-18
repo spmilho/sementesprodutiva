@@ -119,11 +119,10 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
   const [rowMappings, setRowMappings] = useState<Record<number, string>>(() => {
     if (!isTransposed) return {};
     const auto: Record<number, string> = {};
-    // Try to auto-detect from first cell of each row (if it's a label)
     rawData.forEach((row, ri) => {
-      const firstCell = String(row[0] ?? "").toLowerCase().trim();
-      if (ROW_LABEL_MAP[firstCell]) {
-        auto[ri] = ROW_LABEL_MAP[firstCell];
+      const detectedField = detectWeatherField(row[0]);
+      if (detectedField) {
+        auto[ri] = detectedField;
       }
     });
     return auto;
