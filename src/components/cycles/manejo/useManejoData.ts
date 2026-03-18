@@ -65,12 +65,13 @@ export function useManejoMutations(cycleId: string, orgId: string) {
   };
 
   const upsertInputs = useMutation({
-    mutationFn: async (inputs: Partial<CropInput>[]) => {
-      // For each input, check if duplicate exists (same event_code + product_name + cycle_id)
+    mutationFn: async ({ inputs, importFileId }: { inputs: Partial<CropInput>[]; importFileId?: string }) => {
       let newCount = 0;
       let updatedCount = 0;
 
       for (const input of inputs) {
+        const record = { ...input, cycle_id: cycleId, org_id: orgId, ...(importFileId ? { import_file_id: importFileId } : {}) };
+
         if (input.event_code && input.product_name) {
           const { data: existing } = await (supabase as any)
             .from("crop_inputs")
@@ -82,28 +83,22 @@ export function useManejoMutations(cycleId: string, orgId: string) {
             .limit(1);
 
           if (existing && existing.length > 0) {
-            // Update
             await (supabase as any)
               .from("crop_inputs")
-              .update({
-                ...input,
-                cycle_id: cycleId,
-                org_id: orgId,
-              })
+              .update(record)
               .eq("id", existing[0].id);
             updatedCount++;
           } else {
-            // Insert
             const { error } = await (supabase as any)
               .from("crop_inputs")
-              .insert({ ...input, cycle_id: cycleId, org_id: orgId });
+              .insert(record);
             if (error) throw error;
             newCount++;
           }
         } else {
           const { error } = await (supabase as any)
             .from("crop_inputs")
-            .insert({ ...input, cycle_id: cycleId, org_id: orgId });
+            .insert(record);
           if (error) throw error;
           newCount++;
         }
