@@ -36,7 +36,7 @@ interface HarvestTabProps {
 
 export default function HarvestTab({
   cycleId, orgId, contractNumber, pivotName, hybridName, cooperatorName,
-  femaleArea, materialCycleDays, targetMoisture = 18, expectedProductivity,
+  femaleArea, totalArea, materialCycleDays, targetMoisture = 18, expectedProductivity,
 }: HarvestTabProps) {
   const queryClient = useQueryClient();
   const { addRecord } = useOfflineSyncContext();
