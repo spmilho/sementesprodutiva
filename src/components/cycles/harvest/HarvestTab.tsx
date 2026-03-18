@@ -278,6 +278,9 @@ export default function HarvestTab({
           </CardContent>
         </Card>
 
+        {/* HARVEST FORECAST CHART */}
+        <HarvestForecast cycleId={cycleId} cycleDays={localCycleDays} />
+
         {/* SECTION 3 — Summary Cards (placed before table for visibility) */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <SummaryCard
