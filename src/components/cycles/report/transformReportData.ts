@@ -164,7 +164,9 @@ export function transformReportData(data: ReportData, cycle: any): any {
     // ── Insumos ──
     insumos: data.cropInputs.map((i: any) => ({
       data_exec: fmtD(i.execution_date),
+      data_exec_iso: fmtIso(i.execution_date),
       data_rec: fmtD(i.recommendation_date),
+      data_rec_iso: fmtIso(i.recommendation_date),
       produto: i.product_name,
       ia: i.active_ingredient || "",
       tipo: i.input_type,
@@ -173,6 +175,8 @@ export function transformReportData(data: ReportData, cycle: any): any {
       unidade: i.unit,
       evento: i.event_type,
       status: i.status,
+      estadio: i.growth_stage_at_application || null,
+      dap: i.dap_at_application ?? null,
     })),
 
     // ── Fenologia ──
