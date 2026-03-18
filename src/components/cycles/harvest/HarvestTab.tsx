@@ -28,6 +28,7 @@ interface HarvestTabProps {
   hybridName: string;
   cooperatorName?: string;
   femaleArea: number;
+  totalArea: number;
   materialCycleDays?: number;
   targetMoisture?: number;
   expectedProductivity?: number;
