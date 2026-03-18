@@ -172,7 +172,6 @@ export default function HarvestTab({
             cycle_days_used: localCycleDays,
             target_moisture_pct: localMoisture,
             target_ha_per_day: localHaPerDay,
-            bag_weight_kg: localBagWeight,
             planting_source: "planned",
           }, cycleId);
         if (error) throw error;
