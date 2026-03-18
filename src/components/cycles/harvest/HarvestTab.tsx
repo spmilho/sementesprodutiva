@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Settings2, Pencil, Calendar, Wheat, BarChart3, Clock, Target, Package } from "lucide-react";
+import { Settings2, Pencil, Calendar, Wheat, BarChart3, Clock, Target } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import ActualHarvest from "./ActualHarvest";
 import HarvestForecast from "./HarvestForecast";
