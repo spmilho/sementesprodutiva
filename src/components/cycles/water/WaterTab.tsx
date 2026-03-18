@@ -78,15 +78,19 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
   const handleWeatherImport = useCallback(async (records: Record<string, any>[]) => {
     setWeatherImporting(true);
     try {
+      // Always delete old weather records before importing new ones
+      if (weatherRecords.length > 0) {
+        await deleteWeatherBatch.mutateAsync();
+      }
       await saveWeatherRecords.mutateAsync(records);
-      toast.success(`✅ ${records.length} registros meteorológicos importados`);
+      toast.success(`✅ ${records.length} registros meteorológicos importados (dados anteriores substituídos)`);
       setWeatherImportOpen(false);
     } catch (err: any) {
       toast.error(err.message || "Erro ao importar");
     } finally {
       setWeatherImporting(false);
     }
-  }, [saveWeatherRecords]);
+  }, [saveWeatherRecords, deleteWeatherBatch, weatherRecords.length]);
 
   const getFileExtension = (name: string) => {
     const ext = name.split(".").pop()?.toLowerCase() || "";
