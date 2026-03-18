@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { repairAmbiguousIsoRecordDates } from "./weatherDateUtils";
 
 export function useWaterFiles(cycleId: string) {
   return useQuery({
@@ -49,7 +50,7 @@ export function useWeatherRecords(cycleId: string) {
         .from("weather_records").select("*").eq("cycle_id", cycleId)
         .is("deleted_at", null).order("record_date", { ascending: true });
       if (error) throw error;
-      return data || [];
+      return repairAmbiguousIsoRecordDates((data || []) as any[]);
     },
   });
 }
