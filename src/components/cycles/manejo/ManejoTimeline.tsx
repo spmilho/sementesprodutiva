@@ -24,18 +24,59 @@ const TYPE_BG: Record<string, string> = {
   other: "bg-gray-500 text-white",
 };
 
-export default function ManejoTimeline({ inputs, plantingDate }: Props) {
+export default function ManejoTimeline({ inputs, plantingDate, cycleId }: Props) {
+  // Fetch TS (seed treatment) products
+  const { data: tsProducts = [] } = useQuery({
+    queryKey: ["seed_treatment_products_for_timeline", cycleId],
+    queryFn: async () => {
+      // Get seed lots for this cycle
+      const { data: lots } = await (supabase as any)
+        .from("seed_lots")
+        .select("id")
+        .eq("cycle_id", cycleId)
+        .is("deleted_at", null);
+      if (!lots || lots.length === 0) return [];
+      const lotIds = lots.map((l: any) => l.id);
+      // Get treatments
+      const { data: treatments } = await (supabase as any)
+        .from("seed_lot_treatments")
+        .select("id")
+        .in("seed_lot_id", lotIds)
+        .is("deleted_at", null);
+      if (!treatments || treatments.length === 0) return [];
+      const treatmentIds = treatments.map((t: any) => t.id);
+      // Get treatment products
+      const { data: products } = await (supabase as any)
+        .from("seed_lot_treatment_products")
+        .select("product_name, dose, dose_unit, product_type, category")
+        .in("seed_lot_treatment_id", treatmentIds);
+      return products || [];
+    },
+    enabled: !!cycleId,
+  });
+
   const stageProducts = useMemo(() => {
     const map: Record<string, { type: string; name: string; dose: string }[]> = {};
     STAGES_ORDER.forEach(s => { map[s] = []; });
 
-    // Calculate stage for each input based on DAP
+    // Add TS products
     const seen = new Set<string>();
+    tsProducts.forEach((p: any) => {
+      const key = `TS_${p.product_name}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      map["TS"].push({
+        type: "seed",
+        name: p.product_name,
+        dose: p.dose != null ? `${Number(p.dose).toFixed(2)} ${p.dose_unit || ""}/ha` : "",
+      });
+    });
+
+    // Calculate stage for each input based on DAP
     inputs.forEach(inp => {
       const date = inp.execution_date || inp.recommendation_date;
       if (!date) return;
 
-      // Determine stage: use stored value, or calculate from planting date
       let stage = inp.growth_stage_at_application;
       if (!stage && plantingDate) {
         const dap = Math.floor((new Date(date).getTime() - new Date(plantingDate).getTime()) / 86400000);
@@ -45,7 +86,6 @@ export default function ManejoTimeline({ inputs, plantingDate }: Props) {
           stage = getDapRange(dap);
         }
       }
-      // If no planting date, try to place pre-planting items
       if (!stage) return;
 
       const stageIdx = STAGES_ORDER.indexOf(stage);
@@ -63,7 +103,7 @@ export default function ManejoTimeline({ inputs, plantingDate }: Props) {
     });
 
     return map;
-  }, [inputs, plantingDate]);
+  }, [inputs, plantingDate, tsProducts]);
 
   const hasData = Object.values(stageProducts).some(arr => arr.length > 0);
   if (!hasData) return null;

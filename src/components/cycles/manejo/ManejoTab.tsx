@@ -173,7 +173,7 @@ export default function ManejoTab({
       <ManejoDashboard inputs={inputs} imports={imports} />
 
       {/* Timeline */}
-      {inputs.length > 0 && <ManejoTimeline inputs={inputs} plantingDate={plantingDate} />}
+      {inputs.length > 0 && <ManejoTimeline inputs={inputs} plantingDate={plantingDate} cycleId={cycleId} />}
 
       {/* Content tabs */}
       {inputs.length > 0 && (
