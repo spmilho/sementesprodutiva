@@ -13,14 +13,10 @@ import {
 } from "recharts";
 
 const T_BASE = 10;
-const T_MAX_CAP = 30;
 
 function calcGDU(tmax: number | null, tmin: number | null): number {
   if (tmax == null || tmin == null) return 0;
-  const adjMax = Math.min(tmax, T_MAX_CAP);
-  const adjMin = Math.max(tmin, T_BASE);
-  const gdu = (adjMax + adjMin) / 2 - T_BASE;
-  return Math.max(0, gdu);
+  return Math.max(0, (tmax + tmin) / 2 - T_BASE);
 }
 
 function toNullableNumber(value: unknown): number | null {
