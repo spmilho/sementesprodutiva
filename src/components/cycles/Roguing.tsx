@@ -55,6 +55,7 @@ interface Props {
 
 export default function Roguing({ cycleId, orgId }: Props) {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const { addRecord } = useOfflineSyncContext();
   const [formOpen, setFormOpen] = useState(false);
   const [saving, setSaving] = useState(false);
