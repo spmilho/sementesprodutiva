@@ -118,12 +118,15 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
     try {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array", cellDates: true });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const parsed = extractWeatherSheetData(ws);
-      if (!parsed || parsed.rows.length === 0) {
+      const parsed = wb.SheetNames
+        .map((sheetName) => extractWeatherSheetData(wb.Sheets[sheetName]))
+        .find((sheet) => sheet && sheet.rows.length > 0);
+
+      if (!parsed) {
         toast.error("Planilha vazia ou sem linhas válidas");
         return;
       }
+
       setWeatherHeaders(parsed.headers);
       setWeatherRawData(parsed.rows);
       setWeatherImportOpen(true);
