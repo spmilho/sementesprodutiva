@@ -78,7 +78,7 @@ export default function Dashboard() {
 
   const {
     cycles, plantingPlans, plantingActuals, detasseling, harvestRecords, harvestPlans,
-    moisture, nicking, clients, cooperators, seasons, isLoading,
+    moisture, nicking, phenologyRecords, cropInputs, clients, cooperators, seasons, isLoading,
   } = useDashboardData({ season, clientId, cooperatorId, statuses: selectedStatuses });
 
   // Apply client-side filters
