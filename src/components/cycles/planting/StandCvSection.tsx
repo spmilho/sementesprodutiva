@@ -106,7 +106,7 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
       if (photoUrl) row.photo_url = photoUrl;
 
       if (editingId) {
-        const updateData: any = { cv_percent: val };
+        const updateData: any = { cv_percent: val, plantas_por_metro: ppm };
         if (photoUrl) updateData.photo_url = photoUrl;
         const { error } = await (supabase as any)
           .from("stand_cv_records")
