@@ -143,6 +143,7 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
   const resetForm = () => {
     setEditingId(null);
     setCvValue("");
+    setPlantasPorMetro("");
     setSelectedType("");
     setPhotoFile(null);
     setPhotoPreview(null);
