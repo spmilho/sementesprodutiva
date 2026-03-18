@@ -451,6 +451,7 @@ export default function CycleDetail() {
             hybridName={cycle.hybrid_name}
             cooperatorName={(cycle as any).cooperators?.name}
             femaleArea={cycle.female_area}
+            totalArea={cycle.pivot_area ?? cycle.total_area}
             materialCycleDays={cycle.material_cycle_days}
             targetMoisture={cycle.target_moisture ?? 18}
             expectedProductivity={cycle.expected_productivity}

@@ -264,11 +264,6 @@ export default function HarvestTab({
               <div>
                 <label className="text-xs text-muted-foreground">Meta ha/dia *</label>
                 <Input type="number" step="0.1" value={localHaPerDay} onChange={(e) => setLocalHaPerDay(Number(e.target.value))} className="h-8 mt-1 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Peso médio saco (kg)</label>
-                <Input type="number" value={localBagWeight} onChange={(e) => setLocalBagWeight(Number(e.target.value))} className="h-8 mt-1 text-sm" />
-              </div>
             </div>
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground italic max-w-lg">

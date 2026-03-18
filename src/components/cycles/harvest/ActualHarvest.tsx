@@ -266,10 +266,9 @@ export default function ActualHarvest({ cycleId, orgId, femaleArea, glebas, sche
   return (
     <div className="space-y-6">
       {/* DASHBOARD CARDS */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <DashCard icon={<TrendingUp className="h-4 w-4" />} title="Progresso" value={`${stats.totalArea.toFixed(1)} / ${femaleArea} ha`} subtitle={`${stats.progressPct.toFixed(1)}%`} progress={stats.progressPct} />
-        <DashCard icon={<Wheat className="h-4 w-4" />} title="Toneladas" value={`${stats.totalTons.toFixed(1)} ton`} />
-        <DashCard icon={<Package className="h-4 w-4" />} title="Sacos" value={`${Math.round(stats.totalBags)} sc`} subtitle={`${bagWeightKg} kg/sc`} />
+        <DashCard icon={<Wheat className="h-4 w-4" />} title="Toneladas MPB" value={`${stats.totalTons.toFixed(1)} ton`} subtitle={stats.tonPerHa > 0 ? `${stats.tonPerHa.toFixed(2)} ton/ha` : undefined} />
         <DashCard icon={<BarChart3 className="h-4 w-4" />} title="Média ton/carga" value={stats.avgTonPerLoad > 0 ? `${stats.avgTonPerLoad.toFixed(2)} ton` : "—"} />
         <DashCard icon={<Truck className="h-4 w-4" />} title="Total cargas" value={`${stats.totalLoads}`} />
         <DashCard icon={<Droplets className="h-4 w-4" />} title="Umidade média" value={stats.moistureAvg > 0 ? `${stats.moistureAvg.toFixed(1)}%` : "—"} />
