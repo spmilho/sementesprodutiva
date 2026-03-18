@@ -30,6 +30,7 @@ export function useCropInputImports(cycleId: string) {
         .from("crop_input_imports")
         .select("*")
         .eq("cycle_id", cycleId)
+        .is("deleted_at", null)
         .order("imported_at", { ascending: false });
       if (error) throw error;
       return (data || []) as CropInputImport[];

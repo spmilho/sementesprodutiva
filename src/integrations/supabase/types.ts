@@ -520,6 +520,7 @@ export type Database = {
       crop_input_imports: {
         Row: {
           cycle_id: string
+          deleted_at: string | null
           file_name: string
           file_url: string | null
           id: string
@@ -532,6 +533,7 @@ export type Database = {
         }
         Insert: {
           cycle_id: string
+          deleted_at?: string | null
           file_name: string
           file_url?: string | null
           id?: string
@@ -544,6 +546,7 @@ export type Database = {
         }
         Update: {
           cycle_id?: string
+          deleted_at?: string | null
           file_name?: string
           file_url?: string | null
           id?: string

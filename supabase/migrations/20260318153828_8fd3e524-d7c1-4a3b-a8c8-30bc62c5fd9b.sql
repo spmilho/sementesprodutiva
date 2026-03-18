@@ -1,0 +1,1 @@
+ALTER TABLE public.crop_input_imports ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
