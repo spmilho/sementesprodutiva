@@ -54,27 +54,24 @@ const parseWeatherCsvLine = (line: string) => {
   return values;
 };
 
-function formatWeatherSheetCell(value: any) {
-  if (value == null) return "";
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    const d = String(value.getDate()).padStart(2, "0");
-    const m = String(value.getMonth() + 1).padStart(2, "0");
-    const y = value.getFullYear();
-    return `${d}/${m}/${y}`;
+function formatCellValue(cell: any) {
+  if (!cell) return "";
+  // For date cells, always use the raw Date value to avoid MM/DD vs DD/MM confusion
+  if (cell.t === "d" || cell.v instanceof Date) {
+    const dateVal = cell.v instanceof Date ? cell.v : new Date(cell.v);
+    if (!Number.isNaN(dateVal.getTime())) {
+      const d = String(dateVal.getDate()).padStart(2, "0");
+      const m = String(dateVal.getMonth() + 1).padStart(2, "0");
+      const y = dateVal.getFullYear();
+      return `${d}/${m}/${y}`;
+    }
   }
-  if (typeof value === "string") return value.trim();
-  return value;
-}
-
-function isFilledWeatherCell(value: any) {
-  return value !== null && value !== undefined && String(value).trim() !== "";
-}
-
-function isDateLikeHeader(value: any) {
-  if (value instanceof Date && !Number.isNaN(value.getTime())) return true;
-  const text = String(value ?? "").trim();
-  if (!text) return false;
-  return /^\d{1,2}[\/\-]\d{1,2}([\/\-]\d{2,4})?$/.test(text) || /^\d{4}-\d{1,2}-\d{1,2}/.test(text);
+  // For number cells, return the numeric value directly
+  if (cell.t === "n") return cell.v;
+  // For everything else, use formatted text or raw value
+  const val = cell.w ?? cell.v ?? "";
+  if (typeof val === "string") return val.trim();
+  return val;
 }
 
 function extractWeatherSheetData(ws: XLSX.WorkSheet) {
@@ -88,25 +85,24 @@ function extractWeatherSheetData(ws: XLSX.WorkSheet) {
       for (let colIndex = range.s.c; colIndex <= range.e.c; colIndex += 1) {
         const address = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
         const cell = ws[address];
-        if (!cell) {
-          row.push("");
-          continue;
-        }
-        row.push(formatWeatherSheetCell(cell.w ?? cell.v ?? ""));
+        row.push(formatCellValue(cell));
       }
       grid.push(row);
     }
   }
 
+  // Fallback: sheet_to_json
   if (grid.length < 2) {
-    grid = XLSX.utils.sheet_to_json(ws, {
+    const raw: any[][] = XLSX.utils.sheet_to_json(ws, {
       header: 1,
       raw: true,
       defval: "",
       blankrows: false,
     });
+    grid = raw.map((row) => row.map(formatWeatherSheetCell));
   }
 
+  // Fallback: CSV
   if (grid.length < 2) {
     const csvString = XLSX.utils.sheet_to_csv(ws, { blankrows: false });
     grid = csvString
@@ -115,16 +111,15 @@ function extractWeatherSheetData(ws: XLSX.WorkSheet) {
       .filter((row) => row.some(isFilledWeatherCell));
   }
 
-  const populatedRows = grid
-    .map((row) => row.map(formatWeatherSheetCell))
-    .filter((row) => row.some(isFilledWeatherCell));
+  const populatedRows = grid.filter((row) => row.some(isFilledWeatherCell));
 
   if (populatedRows.length === 0) return null;
 
+  // Find the header row: the one with the most filled cells or dates
   const headerIndex = populatedRows.findIndex((row) => {
     const filledCount = row.filter(isFilledWeatherCell).length;
     const dateLikeCount = row.filter(isDateLikeHeader).length;
-    return dateLikeCount >= 2 || filledCount >= 2;
+    return dateLikeCount >= 2 || filledCount >= 3;
   });
 
   const safeHeaderIndex = headerIndex >= 0 ? headerIndex : 0;
