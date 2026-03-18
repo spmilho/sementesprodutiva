@@ -313,7 +313,7 @@ export default function HarvestTab({
             icon={<Target className="h-4 w-4" />}
             title="Meta Diária"
             value={`${localHaPerDay} ha/dia`}
-            subtitle={expectedProductivity ? `~${((localHaPerDay * expectedProductivity) / 1000).toFixed(1)} ton/dia` : undefined}
+            subtitle={tonPerDay ? `~${tonPerDay.toFixed(1)} ton/dia` : undefined}
           />
           <SummaryCard
             icon={<Wheat className="h-4 w-4" />}
@@ -322,10 +322,10 @@ export default function HarvestTab({
             progress={(readyCount / Math.max(glebaRows.length, 1)) * 100}
           />
           <SummaryCard
-            icon={<Package className="h-4 w-4" />}
+            icon={<Wheat className="h-4 w-4" />}
             title="Estimativa Produção"
-            value={productionTons ? `${Number(productionTons).toFixed(1)} ton` : "Sem estimativa"}
-            subtitle={productionBags ? `${Number(productionBags).toFixed(0)} sc` : undefined}
+            value={productionTons ? `${Number(productionTons).toFixed(1)} ton` : (effectiveYieldTonPerHa ? `~${(effectiveYieldTonPerHa * totalArea).toFixed(1)} ton (target)` : "Sem estimativa")}
+            subtitle={effectiveYieldTonPerHa ? `${(effectiveYieldTonPerHa * 1000).toFixed(0)} kg/ha` : undefined}
           />
         </div>
 
