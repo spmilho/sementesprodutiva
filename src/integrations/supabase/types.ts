@@ -3894,6 +3894,259 @@ export type Database = {
           },
         ]
       }
+      roguing_evaluations: {
+        Row: {
+          area_covered_ha: number | null
+          auto_conclusion: string
+          auto_conclusion_message: string | null
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          dap: number | null
+          deleted_at: string | null
+          diseased_frequency: string | null
+          diseased_notes: string | null
+          diseased_parent: string | null
+          diseased_photos: string[] | null
+          diseased_types: string[] | null
+          evaluation_date: string
+          evaluator_name: string | null
+          female_in_male_frequency: string | null
+          female_in_male_location: string | null
+          female_in_male_notes: string | null
+          female_in_male_photos: string[] | null
+          female_in_male_type: string | null
+          general_notes: string | null
+          gleba_id: string | null
+          gps_latitude: number | null
+          gps_longitude: number | null
+          growth_stage: string | null
+          has_diseased: boolean
+          has_female_in_male: boolean
+          has_offtype: boolean
+          has_volunteers: boolean
+          id: string
+          offtype_frequency: string | null
+          offtype_location: string | null
+          offtype_notes: string | null
+          offtype_parent: string | null
+          offtype_photos: string[] | null
+          offtype_types: string[] | null
+          org_id: string
+          overall_condition: string
+          parent_evaluated: string
+          volunteers_frequency: string | null
+          volunteers_identification: string | null
+          volunteers_location: string | null
+          volunteers_notes: string | null
+          volunteers_parent: string | null
+          volunteers_photos: string[] | null
+        }
+        Insert: {
+          area_covered_ha?: number | null
+          auto_conclusion?: string
+          auto_conclusion_message?: string | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          dap?: number | null
+          deleted_at?: string | null
+          diseased_frequency?: string | null
+          diseased_notes?: string | null
+          diseased_parent?: string | null
+          diseased_photos?: string[] | null
+          diseased_types?: string[] | null
+          evaluation_date?: string
+          evaluator_name?: string | null
+          female_in_male_frequency?: string | null
+          female_in_male_location?: string | null
+          female_in_male_notes?: string | null
+          female_in_male_photos?: string[] | null
+          female_in_male_type?: string | null
+          general_notes?: string | null
+          gleba_id?: string | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          growth_stage?: string | null
+          has_diseased?: boolean
+          has_female_in_male?: boolean
+          has_offtype?: boolean
+          has_volunteers?: boolean
+          id?: string
+          offtype_frequency?: string | null
+          offtype_location?: string | null
+          offtype_notes?: string | null
+          offtype_parent?: string | null
+          offtype_photos?: string[] | null
+          offtype_types?: string[] | null
+          org_id: string
+          overall_condition?: string
+          parent_evaluated?: string
+          volunteers_frequency?: string | null
+          volunteers_identification?: string | null
+          volunteers_location?: string | null
+          volunteers_notes?: string | null
+          volunteers_parent?: string | null
+          volunteers_photos?: string[] | null
+        }
+        Update: {
+          area_covered_ha?: number | null
+          auto_conclusion?: string
+          auto_conclusion_message?: string | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          dap?: number | null
+          deleted_at?: string | null
+          diseased_frequency?: string | null
+          diseased_notes?: string | null
+          diseased_parent?: string | null
+          diseased_photos?: string[] | null
+          diseased_types?: string[] | null
+          evaluation_date?: string
+          evaluator_name?: string | null
+          female_in_male_frequency?: string | null
+          female_in_male_location?: string | null
+          female_in_male_notes?: string | null
+          female_in_male_photos?: string[] | null
+          female_in_male_type?: string | null
+          general_notes?: string | null
+          gleba_id?: string | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          growth_stage?: string | null
+          has_diseased?: boolean
+          has_female_in_male?: boolean
+          has_offtype?: boolean
+          has_volunteers?: boolean
+          id?: string
+          offtype_frequency?: string | null
+          offtype_location?: string | null
+          offtype_notes?: string | null
+          offtype_parent?: string | null
+          offtype_photos?: string[] | null
+          offtype_types?: string[] | null
+          org_id?: string
+          overall_condition?: string
+          parent_evaluated?: string
+          volunteers_frequency?: string | null
+          volunteers_identification?: string | null
+          volunteers_location?: string | null
+          volunteers_notes?: string | null
+          volunteers_parent?: string | null
+          volunteers_photos?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roguing_evaluations_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roguing_evaluations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roguing_executions: {
+        Row: {
+          area_covered_ha: number | null
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          diseased_removed: number
+          efficacy: string
+          execution_date: string
+          female_in_male_removed: number
+          followup_days: number | null
+          hours_spent: number | null
+          id: string
+          needs_followup: string
+          offtype_removed: number
+          org_id: string
+          photos_post: string[] | null
+          request_id: string
+          result_notes: string | null
+          team_size: number | null
+          total_plants_removed: number
+          volunteers_removed: number
+        }
+        Insert: {
+          area_covered_ha?: number | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          diseased_removed?: number
+          efficacy?: string
+          execution_date?: string
+          female_in_male_removed?: number
+          followup_days?: number | null
+          hours_spent?: number | null
+          id?: string
+          needs_followup?: string
+          offtype_removed?: number
+          org_id: string
+          photos_post?: string[] | null
+          request_id: string
+          result_notes?: string | null
+          team_size?: number | null
+          total_plants_removed?: number
+          volunteers_removed?: number
+        }
+        Update: {
+          area_covered_ha?: number | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          diseased_removed?: number
+          efficacy?: string
+          execution_date?: string
+          female_in_male_removed?: number
+          followup_days?: number | null
+          hours_spent?: number | null
+          id?: string
+          needs_followup?: string
+          offtype_removed?: number
+          org_id?: string
+          photos_post?: string[] | null
+          request_id?: string
+          result_notes?: string | null
+          team_size?: number | null
+          total_plants_removed?: number
+          volunteers_removed?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roguing_executions_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roguing_executions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roguing_executions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "roguing_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roguing_records: {
         Row: {
           affected_area_m2: number | null
@@ -3968,6 +4221,91 @@ export type Database = {
           },
           {
             foreignKeyName: "roguing_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roguing_requests: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          evaluation_id: string | null
+          execution_date: string | null
+          gleba_id: string | null
+          growth_stage: string | null
+          id: string
+          notes: string | null
+          occurrence_summary: string | null
+          occurrence_types: string[] | null
+          org_id: string
+          parent_target: string
+          priority: string
+          request_date: string
+          request_number: number
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          evaluation_id?: string | null
+          execution_date?: string | null
+          gleba_id?: string | null
+          growth_stage?: string | null
+          id?: string
+          notes?: string | null
+          occurrence_summary?: string | null
+          occurrence_types?: string[] | null
+          org_id: string
+          parent_target?: string
+          priority?: string
+          request_date?: string
+          request_number?: number
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          evaluation_id?: string | null
+          execution_date?: string | null
+          gleba_id?: string | null
+          growth_stage?: string | null
+          id?: string
+          notes?: string | null
+          occurrence_summary?: string | null
+          occurrence_types?: string[] | null
+          org_id?: string
+          parent_target?: string
+          priority?: string
+          request_date?: string
+          request_number?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roguing_requests_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roguing_requests_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "roguing_evaluations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roguing_requests_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
