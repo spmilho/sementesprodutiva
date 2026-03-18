@@ -187,7 +187,7 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
                 <Card key={t.value} className="border-dashed">
                   <CardContent className="p-4 flex flex-col items-center justify-center text-center min-h-[80px]">
                     <p className="text-xs text-muted-foreground mb-2">{t.label}</p>
-                    <Button size="sm" variant="ghost" className="text-xs" onClick={() => { setSelectedType(t.value); setCvValue(""); setEditingId(null); setPhotoFile(null); setPhotoPreview(null); setDialogOpen(true); }}>
+                    <Button size="sm" variant="ghost" className="text-xs" onClick={() => { setSelectedType(t.value); setCvValue(""); setPlantasPorMetro(""); setEditingId(null); setPhotoFile(null); setPhotoPreview(null); setDialogOpen(true); }}>
                       + Registrar
                     </Button>
                   </CardContent>
