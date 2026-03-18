@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { CropInput, INPUT_TYPE_CONFIG, getDapRange } from "./types";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 interface Props {
   inputs: CropInput[];
   plantingDate: string | null;
+  cycleId: string;
 }
 
 const STAGES_ORDER = ["DESSEC.", "TS", "VE", "V1-V2", "V3-V4", "V6-V8", "V10-V12", "V14-VT", "VT-R1", "R2-R3", "R4-R5", "R6"];
