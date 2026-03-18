@@ -510,7 +510,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
         {(data.irrigacao?.length > 0 || data.chuva?.length > 0 || data.clima?.length > 0) && <ReportAgua data={data} />}
         {data.umidade?.length > 0 && <ReportUmidade data={data} />}
         {data.estimativa && <ReportEstimativa data={data} />}
-        {data.colheita?.length > 0 && <ReportColheita data={data} />}
+        {(data.colheita?.length > 0 || data._raw?.plantingActual?.some((p: any) => p.type === "female") || data._raw?.plantingPlan?.some((p: any) => p.type === "female")) && <ReportColheita data={data} />}
         {data._fotos?.length > 0 && <ReportFotos data={data} />}
       </div>
 
