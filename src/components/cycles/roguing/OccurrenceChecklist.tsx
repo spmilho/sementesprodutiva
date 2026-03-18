@@ -4,8 +4,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FREQUENCIES, LOCATIONS, PARENTS, OFFTYPE_OPTIONS, DISEASED_OPTIONS } from "./types";
+import PhotoUpload from "./PhotoUpload";
 
 interface ChecklistProps {
+  cycleId: string;
   // Voluntárias
   hasVolunteers: boolean; setHasVolunteers: (v: boolean) => void;
   volunteersFreq: string; setVolunteersFreq: (v: string) => void;
@@ -13,6 +15,7 @@ interface ChecklistProps {
   volunteersParent: string; setVolunteersParent: (v: string) => void;
   volunteersId: string; setVolunteersId: (v: string) => void;
   volunteersNotes: string; setVolunteersNotes: (v: string) => void;
+  volunteersPhotos: string[]; setVolunteersPhotos: (v: string[]) => void;
   // Off-type
   hasOfftype: boolean; setHasOfftype: (v: boolean) => void;
   offtypeTypes: string[]; setOfftypeTypes: (v: string[]) => void;
@@ -20,18 +23,21 @@ interface ChecklistProps {
   offtypeLoc: string; setOfftypeLoc: (v: string) => void;
   offtypeParent: string; setOfftypeParent: (v: string) => void;
   offtypeNotes: string; setOfftypeNotes: (v: string) => void;
+  offtypePhotos: string[]; setOfftypePhotos: (v: string[]) => void;
   // Doentes
   hasDiseased: boolean; setHasDiseased: (v: boolean) => void;
   diseasedTypes: string[]; setDiseasedTypes: (v: string[]) => void;
   diseasedFreq: string; setDiseasedFreq: (v: string) => void;
   diseasedParent: string; setDiseasedParent: (v: string) => void;
   diseasedNotes: string; setDiseasedNotes: (v: string) => void;
+  diseasedPhotos: string[]; setDiseasedPhotos: (v: string[]) => void;
   // Fêmea no macho
   hasFemaleInMale: boolean; setHasFemaleInMale: (v: boolean) => void;
   femaleInMaleType: string; setFemaleInMaleType: (v: string) => void;
   femaleInMaleFreq: string; setFemaleInMaleFreq: (v: string) => void;
   femaleInMaleLoc: string; setFemaleInMaleLoc: (v: string) => void;
   femaleInMaleNotes: string; setFemaleInMaleNotes: (v: string) => void;
+  femaleInMalePhotos: string[]; setFemaleInMalePhotos: (v: string[]) => void;
 }
 
 function FrequencyRadio({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -134,6 +140,7 @@ export default function OccurrenceChecklist(props: ChecklistProps) {
               </RadioGroup>
             </div>
             <Textarea value={props.volunteersNotes} onChange={e => props.setVolunteersNotes(e.target.value)} placeholder="Observações..." className="min-h-[60px]" />
+            <PhotoUpload photos={props.volunteersPhotos} onChange={props.setVolunteersPhotos} cycleId={props.cycleId} />
           </div>
         )}
       </div>
@@ -160,6 +167,7 @@ export default function OccurrenceChecklist(props: ChecklistProps) {
             <LocationRadio value={props.offtypeLoc} onChange={props.setOfftypeLoc} />
             <ParentRadio value={props.offtypeParent} onChange={props.setOfftypeParent} />
             <Textarea value={props.offtypeNotes} onChange={e => props.setOfftypeNotes(e.target.value)} placeholder="Observações..." className="min-h-[60px]" />
+            <PhotoUpload photos={props.offtypePhotos} onChange={props.setOfftypePhotos} cycleId={props.cycleId} label="📷 Fotos (importante para off-type)" />
           </div>
         )}
       </div>
@@ -185,6 +193,7 @@ export default function OccurrenceChecklist(props: ChecklistProps) {
             <FrequencyRadio value={props.diseasedFreq} onChange={props.setDiseasedFreq} />
             <ParentRadio value={props.diseasedParent} onChange={props.setDiseasedParent} />
             <Textarea value={props.diseasedNotes} onChange={e => props.setDiseasedNotes(e.target.value)} placeholder="Observações..." className="min-h-[60px]" />
+            <PhotoUpload photos={props.diseasedPhotos} onChange={props.setDiseasedPhotos} cycleId={props.cycleId} />
           </div>
         )}
       </div>
@@ -219,6 +228,7 @@ export default function OccurrenceChecklist(props: ChecklistProps) {
             <FrequencyRadio value={props.femaleInMaleFreq} onChange={props.setFemaleInMaleFreq} />
             <LocationRadio value={props.femaleInMaleLoc} onChange={props.setFemaleInMaleLoc} />
             <Textarea value={props.femaleInMaleNotes} onChange={e => props.setFemaleInMaleNotes(e.target.value)} placeholder="Observações..." className="min-h-[60px]" />
+            <PhotoUpload photos={props.femaleInMalePhotos} onChange={props.setFemaleInMalePhotos} cycleId={props.cycleId} />
           </div>
         )}
       </div>
