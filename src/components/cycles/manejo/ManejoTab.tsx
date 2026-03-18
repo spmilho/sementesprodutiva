@@ -147,6 +147,24 @@ export default function ManejoTab({
           <Plus className="h-4 w-4" />
           Registro Manual
         </Button>
+        {inputs.length > 0 && (
+          <Button
+            variant="outline"
+            className="gap-2 text-destructive hover:text-destructive"
+            disabled={deleteAllInputs.isPending}
+            onClick={() => {
+              if (confirm(`Excluir todos os ${inputs.length} insumos registrados neste ciclo?`)) {
+                deleteAllInputs.mutate(undefined, {
+                  onSuccess: () => toast.success("Todos os insumos foram excluídos"),
+                  onError: (err: any) => toast.error(err.message || "Erro ao excluir"),
+                });
+              }
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+            Limpar Todos
+          </Button>
+        )}
       </div>
 
       {/* Import history */}
