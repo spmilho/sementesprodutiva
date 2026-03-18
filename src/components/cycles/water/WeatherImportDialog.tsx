@@ -31,10 +31,13 @@ const COLUMN_FIELD_OPTIONS = [
 const ROW_LABEL_MAP: Record<string, string> = {
   "temp max": "temp_max_c", "temp. max": "temp_max_c", "temp máx": "temp_max_c",
   "temp. máx": "temp_max_c", "temperatura máxima": "temp_max_c", "tmax": "temp_max_c",
+  "temperatura max": "temp_max_c", "temp maxima": "temp_max_c", "temperatura maxima": "temp_max_c",
   "temp min": "temp_min_c", "temp. min": "temp_min_c", "temp mín": "temp_min_c",
   "temp. mín": "temp_min_c", "temperatura mínima": "temp_min_c", "tmin": "temp_min_c",
+  "temperatura min": "temp_min_c", "temp minima": "temp_min_c", "temperatura minima": "temp_min_c",
   "temp med": "temp_avg_c", "temp. med": "temp_avg_c", "temp média": "temp_avg_c",
   "temp. média": "temp_avg_c", "temperatura média": "temp_avg_c", "tmed": "temp_avg_c",
+  "temperatura media": "temp_avg_c", "temp media": "temp_avg_c",
   "umidade max": "humidity_max_pct", "umidade máx": "humidity_max_pct",
   "ur max": "humidity_max_pct", "ur máx": "humidity_max_pct",
   "umidade min": "humidity_min_pct", "umidade mín": "humidity_min_pct",
@@ -49,6 +52,38 @@ const ROW_LABEL_MAP: Record<string, string> = {
   "precipitação": "precipitation_mm", "precipitacao": "precipitation_mm",
   "chuva": "precipitation_mm", "precip": "precipitation_mm",
 };
+
+function normalizeWeatherLabel(value: unknown) {
+  return String(value ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[()°º%.,:_-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function detectWeatherField(label: unknown): string | null {
+  const normalized = normalizeWeatherLabel(label);
+  if (!normalized) return null;
+  if (ROW_LABEL_MAP[normalized]) return ROW_LABEL_MAP[normalized];
+
+  const contains = (terms: string[]) => terms.some((term) => normalized.includes(term));
+
+  if ((contains(["temperatura", "temp", "tmax"]) && contains(["max", "maxima", "maxima"])) || normalized.includes("tmax")) return "temp_max_c";
+  if ((contains(["temperatura", "temp", "tmin"]) && contains(["min", "minima", "minima"])) || normalized.includes("tmin")) return "temp_min_c";
+  if ((contains(["temperatura", "temp", "tmed", "media"]) && contains(["med", "media"])) || normalized.includes("tmed")) return "temp_avg_c";
+  if ((contains(["umidade", "ur"]) && contains(["max", "maxima", "maxima"])) || normalized === "ur max") return "humidity_max_pct";
+  if ((contains(["umidade", "ur"]) && contains(["min", "minima", "minima"])) || normalized === "ur min") return "humidity_min_pct";
+  if ((contains(["umidade", "ur"]) && contains(["med", "media"])) || normalized === "ur media") return "humidity_avg_pct";
+  if (contains(["vento"]) && contains(["max", "maxima", "maxima"])) return "wind_max_kmh";
+  if (contains(["vento"]) && contains(["med", "media"])) return "wind_avg_kmh";
+  if (contains(["radiacao", "rad solar"])) return "radiation_mj";
+  if (contains(["eto", "et0", "evapotranspiracao"])) return "eto_mm";
+  if (contains(["precipitacao", "chuva", "precip"])) return "precipitation_mm";
+
+  return null;
+}
 
 const COLUMN_HEADER_MAP: Record<string, string> = {
   data: "date",
@@ -84,11 +119,10 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
   const [rowMappings, setRowMappings] = useState<Record<number, string>>(() => {
     if (!isTransposed) return {};
     const auto: Record<number, string> = {};
-    // Try to auto-detect from first cell of each row (if it's a label)
     rawData.forEach((row, ri) => {
-      const firstCell = String(row[0] ?? "").toLowerCase().trim();
-      if (ROW_LABEL_MAP[firstCell]) {
-        auto[ri] = ROW_LABEL_MAP[firstCell];
+      const detectedField = detectWeatherField(row[0]);
+      if (detectedField) {
+        auto[ri] = detectedField;
       }
     });
     return auto;
@@ -98,9 +132,9 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
   const [colMappings, setColMappings] = useState<Record<string, string>>(() => {
     if (isTransposed) return {};
     const auto: Record<string, string> = {};
-    headers.forEach(h => {
-      const norm = h.toLowerCase().trim();
-      if (COLUMN_HEADER_MAP[norm]) auto[h] = COLUMN_HEADER_MAP[norm];
+    headers.forEach((h) => {
+      const detectedField = detectWeatherField(h) ?? COLUMN_HEADER_MAP[normalizeWeatherLabel(h)];
+      if (detectedField) auto[h] = detectedField;
     });
     return auto;
   });
