@@ -228,7 +228,7 @@ export default function HarvestTab({
               <span><strong>Híbrido:</strong> {hybridName}</span>
               {cooperatorName && <span><strong>Cooperado:</strong> {cooperatorName}</span>}
               <span><strong>Pivô:</strong> {pivotName}</span>
-              <span><strong>Área fêmea:</strong> {femaleArea} ha</span>
+              <span><strong>Área total:</strong> {totalArea} ha</span>
               <span><strong>Ciclo:</strong> {localCycleDays} dias</span>
               <span><strong>Umidade alvo:</strong> {localMoisture}%</span>
             </div>
