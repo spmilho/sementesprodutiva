@@ -38,6 +38,7 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
   const [selectedType, setSelectedType] = useState("");
   const [cvValue, setCvValue] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [plantasPorMetro, setPlantasPorMetro] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
