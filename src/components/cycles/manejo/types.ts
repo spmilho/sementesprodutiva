@@ -57,6 +57,7 @@ export const INPUT_TYPE_CONFIG: Record<string, { icon: string; label: string; co
   herbicide: { icon: "🧪", label: "Herbicida", colorClass: "text-orange-700 dark:text-orange-300", bgClass: "bg-orange-100 dark:bg-orange-900" },
   fungicide: { icon: "🍄", label: "Fungicida", colorClass: "text-purple-700 dark:text-purple-300", bgClass: "bg-purple-100 dark:bg-purple-900" },
   adjuvant: { icon: "💧", label: "Adjuvante", colorClass: "text-gray-700 dark:text-gray-300", bgClass: "bg-gray-100 dark:bg-gray-800" },
+  seed: { icon: "🌱", label: "Tratamento Semente", colorClass: "text-teal-700 dark:text-teal-300", bgClass: "bg-teal-100 dark:bg-teal-900" },
   other: { icon: "📦", label: "Outro", colorClass: "text-gray-600 dark:text-gray-400", bgClass: "bg-gray-100 dark:bg-gray-800" },
 };
 
