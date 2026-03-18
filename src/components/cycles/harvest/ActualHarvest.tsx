@@ -24,7 +24,8 @@ interface ActualHarvestProps {
   femaleArea: number;
   glebas: any[];
   schedule: ScheduleRow[];
-  bagWeightKg: number;
+  expectedProductivity?: number | null;
+  yieldEstimates?: any[];
 }
 
 interface HarvestRecord {
