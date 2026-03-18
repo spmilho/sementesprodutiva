@@ -38,6 +38,7 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
   const [selectedType, setSelectedType] = useState("");
   const [cvValue, setCvValue] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [plantasPorMetro, setPlantasPorMetro] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -92,17 +93,20 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
 
       const photoUrl = await uploadPhoto();
 
+      const ppm = plantasPorMetro ? parseFloat(plantasPorMetro) : null;
+
       const row: any = {
         cycle_id: cycleId,
         org_id: orgId,
         type: selectedType,
         cv_percent: val,
+        plantas_por_metro: ppm,
         recorded_date: new Date().toISOString().split("T")[0],
       };
       if (photoUrl) row.photo_url = photoUrl;
 
       if (editingId) {
-        const updateData: any = { cv_percent: val };
+        const updateData: any = { cv_percent: val, plantas_por_metro: ppm };
         if (photoUrl) updateData.photo_url = photoUrl;
         const { error } = await (supabase as any)
           .from("stand_cv_records")
@@ -112,7 +116,7 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
       } else {
         const existing = cvRecords.find((r: any) => r.type === selectedType);
         if (existing) {
-          const updateData: any = { cv_percent: val };
+          const updateData: any = { cv_percent: val, plantas_por_metro: ppm };
           if (photoUrl) updateData.photo_url = photoUrl;
           const { error } = await (supabase as any)
             .from("stand_cv_records")
@@ -139,6 +143,7 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
   const resetForm = () => {
     setEditingId(null);
     setCvValue("");
+    setPlantasPorMetro("");
     setSelectedType("");
     setPhotoFile(null);
     setPhotoPreview(null);
@@ -153,6 +158,7 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
     setEditingId(record.id);
     setSelectedType(record.type);
     setCvValue(String(record.cv_percent));
+    setPlantasPorMetro(record.plantas_por_metro != null ? String(record.plantas_por_metro) : "");
     setPhotoFile(null);
     setPhotoPreview(record.photo_url || null);
     setDialogOpen(true);
@@ -181,7 +187,7 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
                 <Card key={t.value} className="border-dashed">
                   <CardContent className="p-4 flex flex-col items-center justify-center text-center min-h-[80px]">
                     <p className="text-xs text-muted-foreground mb-2">{t.label}</p>
-                    <Button size="sm" variant="ghost" className="text-xs" onClick={() => { setSelectedType(t.value); setCvValue(""); setEditingId(null); setPhotoFile(null); setPhotoPreview(null); setDialogOpen(true); }}>
+                    <Button size="sm" variant="ghost" className="text-xs" onClick={() => { setSelectedType(t.value); setCvValue(""); setPlantasPorMetro(""); setEditingId(null); setPhotoFile(null); setPhotoPreview(null); setDialogOpen(true); }}>
                       + Registrar
                     </Button>
                   </CardContent>
@@ -200,6 +206,9 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
                     <span className="text-2xl font-bold">{Number(record.cv_percent).toFixed(1)}%</span>
                     <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", label.bg)}>{label.emoji} {label.label}</span>
                   </div>
+                  {record.plantas_por_metro != null && (
+                    <p className="text-xs text-muted-foreground">{Number(record.plantas_por_metro).toFixed(1)} pl/m</p>
+                  )}
                   {record.photo_url && (
                     <div className="mt-2">
                       <img src={record.photo_url} alt="Foto stand" className="h-16 w-auto rounded object-cover" />
@@ -232,6 +241,16 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Stand Final (plantas por metro)</Label>
+              <Input
+                type="number"
+                step="0.1"
+                placeholder="Ex: 5.2"
+                value={plantasPorMetro}
+                onChange={(e) => setPlantasPorMetro(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>CV% (valor calculado externamente)</Label>
