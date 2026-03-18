@@ -44,7 +44,7 @@ interface HarvestRecord {
   notes: string | null;
 }
 
-export default function ActualHarvest({ cycleId, orgId, femaleArea, glebas, schedule, bagWeightKg }: ActualHarvestProps) {
+export default function ActualHarvest({ cycleId, orgId, femaleArea, glebas, schedule, expectedProductivity, yieldEstimates = [] }: ActualHarvestProps) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [groupByGleba, setGroupByGleba] = useState(false);
