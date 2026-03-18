@@ -117,6 +117,7 @@ export default function Roguing({ cycleId, orgId }: Props) {
         affected_area_m2: areaM2 ? parseFloat(areaM2) : null,
         plants_removed: parseInt(plantsRemoved), corrective_action: corrective || null,
         growth_stage: stage || null, gps_latitude: lat, gps_longitude: lng,
+        created_by: user?.id || null,
       }, cycleId);
       if (error) throw error;
       toast.success("Registro salvo!"); qc.invalidateQueries({ queryKey: ["roguing", cycleId] });
