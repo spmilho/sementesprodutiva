@@ -21,32 +21,33 @@ const TYPE_BG: Record<string, string> = {
   other: "bg-gray-500 text-white",
 };
 
-function stageIndex(stage: string | null): number {
-  if (!stage) return -1;
-  const idx = STAGES_ORDER.indexOf(stage);
-  return idx >= 0 ? idx : -1;
-}
-
 export default function ManejoTimeline({ inputs, plantingDate }: Props) {
   const stageProducts = useMemo(() => {
-    const map: Record<string, { type: string; name: string; dose: string; companions: string[] }[]> = {};
+    const map: Record<string, { type: string; name: string; dose: string }[]> = {};
     STAGES_ORDER.forEach(s => { map[s] = []; });
 
-    // Group by event_code to cluster products from same operation
-    const eventGroups: Record<string, CropInput[]> = {};
-    inputs.forEach(inp => {
-      const stage = inp.growth_stage_at_application;
-      if (!stage || stageIndex(stage) < 0) return;
-      const key = inp.event_code || `solo_${inp.id}`;
-      if (!eventGroups[key]) eventGroups[key] = [];
-      eventGroups[key].push(inp);
-    });
-
-    // For each input, place the product in its stage
+    // Calculate stage for each input based on DAP
     const seen = new Set<string>();
     inputs.forEach(inp => {
-      const stage = inp.growth_stage_at_application;
-      if (!stage || stageIndex(stage) < 0) return;
+      const date = inp.execution_date || inp.recommendation_date;
+      if (!date) return;
+
+      // Determine stage: use stored value, or calculate from planting date
+      let stage = inp.growth_stage_at_application;
+      if (!stage && plantingDate) {
+        const dap = Math.floor((new Date(date).getTime() - new Date(plantingDate).getTime()) / 86400000);
+        if (dap < 0) {
+          stage = "DESSEC.";
+        } else {
+          stage = getDapRange(dap);
+        }
+      }
+      // If no planting date, try to place pre-planting items
+      if (!stage) return;
+
+      const stageIdx = STAGES_ORDER.indexOf(stage);
+      if (stageIdx < 0) return;
+
       const prodKey = `${stage}_${inp.product_name}_${inp.input_type}`;
       if (seen.has(prodKey)) return;
       seen.add(prodKey);
@@ -55,12 +56,11 @@ export default function ManejoTimeline({ inputs, plantingDate }: Props) {
         type: inp.input_type,
         name: inp.product_name,
         dose: inp.dose_per_ha != null ? `${Number(inp.dose_per_ha).toFixed(2)} ${inp.unit || ""}/ha` : "",
-        companions: [],
       });
     });
 
     return map;
-  }, [inputs]);
+  }, [inputs, plantingDate]);
 
   const hasData = Object.values(stageProducts).some(arr => arr.length > 0);
   if (!hasData) return null;
@@ -103,7 +103,7 @@ export default function ManejoTimeline({ inputs, plantingDate }: Props) {
               })}
             </div>
 
-            {/* Vertical dashes connecting products to timeline */}
+            {/* Vertical dashes */}
             <div className="flex gap-0 mt-1">
               {STAGES_ORDER.map(stage => (
                 <div key={stage} className="flex-1 flex justify-center">
