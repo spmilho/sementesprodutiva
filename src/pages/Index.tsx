@@ -12,6 +12,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, Legend, ReferenceLine,
 } from "recharts";
 import KPICard from "@/components/KPICard";
+import DashboardExtraCharts from "@/components/DashboardExtraCharts";
 import { useDashboardData, type DashboardCycle } from "@/hooks/useDashboardData";
 import { differenceInDays, parseISO, format } from "date-fns";
 
