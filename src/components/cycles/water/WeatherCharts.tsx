@@ -75,6 +75,11 @@ function normalizeTemperatureTriplet(
   tempMin: number | null,
   tempAvg: number | null,
 ): { tempMax: number | null; tempMin: number | null; tempAvg: number | null } {
+  // Detect humidity value stored as temp_min (e.g. 79 when temp_max is 25)
+  if (tempMax != null && tempMin != null && tempAvg != null && tempMin > 40 && tempMax < 40) {
+    // temp_min is actually humidity — derive real min from avg
+    return { tempMax, tempMin: 2 * tempAvg - tempMax, tempAvg };
+  }
   // Handles known imported rotation pattern: [avg, max, min]
   if (tempMax != null && tempMin != null && tempAvg != null && tempMax < tempMin) {
     return {
@@ -83,7 +88,6 @@ function normalizeTemperatureTriplet(
       tempAvg: tempMax,
     };
   }
-
   return { tempMax, tempMin, tempAvg };
 }
 
