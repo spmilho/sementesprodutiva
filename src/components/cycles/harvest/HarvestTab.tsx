@@ -486,10 +486,11 @@ export default function HarvestTab({
         <ActualHarvest
           cycleId={cycleId}
           orgId={orgId}
-          femaleArea={femaleArea}
+          femaleArea={totalArea}
           glebas={glebas}
           schedule={schedule}
-          bagWeightKg={localBagWeight}
+          expectedProductivity={expectedProductivity}
+          yieldEstimates={yieldEstimates}
         />
       </div>
     </TooltipProvider>
