@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Settings2, Pencil, Calendar, Wheat, BarChart3, Clock, Target, Package } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import ActualHarvest from "./ActualHarvest";
+import HarvestForecast from "./HarvestForecast";
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend, Tooltip as RTooltip, ReferenceLine } from "recharts";
 import { buildGlebaRows, buildSchedule, formatDateBR, GLEBA_COLORS } from "./utils";
 import type { GlebaHarvestRow, HarvestParams, ScheduleRow } from "./types";
@@ -276,6 +277,9 @@ export default function HarvestTab({
             </div>
           </CardContent>
         </Card>
+
+        {/* HARVEST FORECAST CHART */}
+        <HarvestForecast cycleId={cycleId} cycleDays={localCycleDays} />
 
         {/* SECTION 3 — Summary Cards (placed before table for visibility) */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
