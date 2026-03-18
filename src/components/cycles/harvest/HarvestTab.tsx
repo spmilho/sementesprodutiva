@@ -68,7 +68,6 @@ export default function HarvestTab({
       setLocalCycleDays(savedParams.cycle_days_used);
       setLocalMoisture(savedParams.target_moisture_pct || targetMoisture);
       setLocalHaPerDay(savedParams.target_ha_per_day || 15);
-      setLocalBagWeight(savedParams.bag_weight_kg || 20);
     }
   }, [savedParams]);
 
