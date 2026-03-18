@@ -142,8 +142,8 @@ export default function HarvestTab({
     cycleDays: localCycleDays,
     targetMoisture: localMoisture,
     targetHaPerDay: localHaPerDay,
-    bagWeightKg: localBagWeight,
-  }), [localCycleDays, localMoisture, localHaPerDay, localBagWeight]);
+    bagWeightKg: 20,
+  }), [localCycleDays, localMoisture, localHaPerDay]);
 
   const glebaRows = useMemo(
     () => buildGlebaRows(glebas, plantingPlans, plantingActuals, moistureSamples, params, femaleArea),
