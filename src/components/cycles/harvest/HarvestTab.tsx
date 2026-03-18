@@ -45,7 +45,6 @@ export default function HarvestTab({
   const [localCycleDays, setLocalCycleDays] = useState(materialCycleDays || 130);
   const [localMoisture, setLocalMoisture] = useState(targetMoisture);
   const [localHaPerDay, setLocalHaPerDay] = useState<number>(15);
-  const [localBagWeight, setLocalBagWeight] = useState<number>(20);
   const [chartView, setChartView] = useState<"general" | "gleba">("general");
 
   // Fetch saved harvest_plan params
