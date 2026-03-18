@@ -132,9 +132,9 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
   const [colMappings, setColMappings] = useState<Record<string, string>>(() => {
     if (isTransposed) return {};
     const auto: Record<string, string> = {};
-    headers.forEach(h => {
-      const norm = h.toLowerCase().trim();
-      if (COLUMN_HEADER_MAP[norm]) auto[h] = COLUMN_HEADER_MAP[norm];
+    headers.forEach((h) => {
+      const detectedField = detectWeatherField(h) ?? COLUMN_HEADER_MAP[normalizeWeatherLabel(h)];
+      if (detectedField) auto[h] = detectedField;
     });
     return auto;
   });
