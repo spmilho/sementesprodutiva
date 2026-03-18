@@ -27,6 +27,33 @@ interface Props {
   totalArea?: number;
 }
 
+const parseWeatherCsvLine = (line: string) => {
+  const values: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+
+    if (char === '"') {
+      if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === "," && !inQuotes) {
+      values.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  values.push(current.trim());
+  return values;
+};
+
 function formatWeatherSheetCell(value: any) {
   if (value == null) return "";
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
@@ -51,12 +78,20 @@ function isDateLikeHeader(value: any) {
 }
 
 function extractWeatherSheetData(ws: XLSX.WorkSheet) {
-  const grid: any[][] = XLSX.utils.sheet_to_json(ws, {
+  let grid: any[][] = XLSX.utils.sheet_to_json(ws, {
     header: 1,
     raw: true,
     defval: "",
     blankrows: false,
   });
+
+  if (grid.length < 2) {
+    const csvString = XLSX.utils.sheet_to_csv(ws, { blankrows: false });
+    grid = csvString
+      .split(/\r?\n/)
+      .map(parseWeatherCsvLine)
+      .filter((row) => row.some(isFilledWeatherCell));
+  }
 
   const populatedRows = grid
     .map((row) => row.map(formatWeatherSheetCell))
@@ -73,6 +108,8 @@ function extractWeatherSheetData(ws: XLSX.WorkSheet) {
   const safeHeaderIndex = headerIndex >= 0 ? headerIndex : 0;
   const headerRow = populatedRows[safeHeaderIndex] || [];
   const rows = populatedRows.slice(safeHeaderIndex + 1).filter((row) => row.some(isFilledWeatherCell));
+
+  if (headerRow.filter(isFilledWeatherCell).length === 0) return null;
 
   return {
     headers: headerRow.map((cell, index) => {
@@ -118,12 +155,15 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
     try {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array", cellDates: true });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const parsed = extractWeatherSheetData(ws);
-      if (!parsed || parsed.rows.length === 0) {
+      const parsed = wb.SheetNames
+        .map((sheetName) => extractWeatherSheetData(wb.Sheets[sheetName]))
+        .find((sheet) => sheet && sheet.rows.length > 0);
+
+      if (!parsed) {
         toast.error("Planilha vazia ou sem linhas válidas");
         return;
       }
+
       setWeatherHeaders(parsed.headers);
       setWeatherRawData(parsed.rows);
       setWeatherImportOpen(true);
