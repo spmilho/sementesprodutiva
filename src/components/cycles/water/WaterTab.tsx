@@ -27,6 +27,62 @@ interface Props {
   totalArea?: number;
 }
 
+function formatWeatherSheetCell(value: any) {
+  if (value == null) return "";
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const d = String(value.getDate()).padStart(2, "0");
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const y = value.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  if (typeof value === "string") return value.trim();
+  return value;
+}
+
+function isFilledWeatherCell(value: any) {
+  return value !== null && value !== undefined && String(value).trim() !== "";
+}
+
+function isDateLikeHeader(value: any) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return true;
+  const text = String(value ?? "").trim();
+  if (!text) return false;
+  return /^\d{1,2}[\/\-]\d{1,2}([\/\-]\d{2,4})?$/.test(text) || /^\d{4}-\d{1,2}-\d{1,2}/.test(text);
+}
+
+function extractWeatherSheetData(ws: XLSX.WorkSheet) {
+  const grid: any[][] = XLSX.utils.sheet_to_json(ws, {
+    header: 1,
+    raw: true,
+    defval: "",
+    blankrows: false,
+  });
+
+  const populatedRows = grid
+    .map((row) => row.map(formatWeatherSheetCell))
+    .filter((row) => row.some(isFilledWeatherCell));
+
+  if (populatedRows.length === 0) return null;
+
+  const headerIndex = populatedRows.findIndex((row) => {
+    const filledCount = row.filter(isFilledWeatherCell).length;
+    const dateLikeCount = row.filter(isDateLikeHeader).length;
+    return dateLikeCount >= 2 || filledCount >= 2;
+  });
+
+  const safeHeaderIndex = headerIndex >= 0 ? headerIndex : 0;
+  const headerRow = populatedRows[safeHeaderIndex] || [];
+  const rows = populatedRows.slice(safeHeaderIndex + 1).filter((row) => row.some(isFilledWeatherCell));
+
+  return {
+    headers: headerRow.map((cell, index) => {
+      const label = String(cell ?? "").trim();
+      return label || `Coluna ${index + 1}`;
+    }),
+    rows,
+  };
+}
+
 export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hybridName, cooperatorName, totalArea }: Props) {
   const { data: files = [], isLoading: loadingFiles } = useWaterFiles(cycleId);
   const { data: irrigationRecords = [] } = useIrrigationRecords(cycleId);
@@ -63,21 +119,13 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array", cellDates: true });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const jsonRaw: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
-      if (jsonRaw.length < 2) { toast.error("Planilha vazia"); return; }
-      // Preserve date headers properly
-      const hdrs = (jsonRaw[0] || []).map((h: any) => {
-        if (h instanceof Date && !isNaN(h.getTime())) {
-          const d = String(h.getDate()).padStart(2, "0");
-          const m = String(h.getMonth() + 1).padStart(2, "0");
-          const y = h.getFullYear();
-          return `${d}/${m}/${y}`;
-        }
-        return String(h || "").trim();
-      });
-      const rows = jsonRaw.slice(1).filter(r => r.some(c => c !== null && c !== undefined && c !== ""));
-      setWeatherHeaders(hdrs);
-      setWeatherRawData(rows);
+      const parsed = extractWeatherSheetData(ws);
+      if (!parsed || parsed.rows.length === 0) {
+        toast.error("Planilha vazia ou sem linhas válidas");
+        return;
+      }
+      setWeatherHeaders(parsed.headers);
+      setWeatherRawData(parsed.rows);
       setWeatherImportOpen(true);
     } catch {
       toast.error("Erro ao ler planilha meteorológica");
