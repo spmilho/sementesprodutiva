@@ -54,6 +54,29 @@ const parseWeatherCsvLine = (line: string) => {
   return values;
 };
 
+function isFilledWeatherCell(value: any) {
+  return value !== null && value !== undefined && String(value).trim() !== "";
+}
+
+function isDateLikeHeader(value: any) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return true;
+  const text = String(value ?? "").trim();
+  if (!text) return false;
+  return /^\d{1,2}[\/\-]\d{1,2}([\/\-]\d{2,4})?$/.test(text) || /^\d{4}-\d{1,2}-\d{1,2}/.test(text);
+}
+
+function formatWeatherSheetCell(value: any) {
+  if (value == null) return "";
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const d = String(value.getDate()).padStart(2, "0");
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const y = value.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  if (typeof value === "string") return value.trim();
+  return value;
+}
+
 function formatCellValue(cell: any) {
   if (!cell) return "";
   // For date cells, always use the raw Date value to avoid MM/DD vs DD/MM confusion
