@@ -132,10 +132,13 @@ export function useManejoMutations(cycleId: string, orgId: string) {
 
   const saveImportRecord = useMutation({
     mutationFn: async (record: Partial<CropInputImport>) => {
-      const { error } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from("crop_input_imports")
-        .insert({ ...record, cycle_id: cycleId, org_id: orgId });
+        .insert({ ...record, cycle_id: cycleId, org_id: orgId })
+        .select("id")
+        .single();
       if (error) throw error;
+      return data.id as string;
     },
     onSuccess: () => invalidate(),
   });
