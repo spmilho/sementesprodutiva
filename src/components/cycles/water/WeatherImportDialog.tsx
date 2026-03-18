@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, RotateCw } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { parseSpreadsheetDate } from "./weatherDateUtils";
 
 const WEATHER_FIELD_OPTIONS = [
   { value: "ignore", label: "— Ignorar —" },
@@ -27,7 +28,6 @@ const COLUMN_FIELD_OPTIONS = [
   ...WEATHER_FIELD_OPTIONS.slice(1),
 ];
 
-// Auto-detect row labels
 const ROW_LABEL_MAP: Record<string, string> = {
   "temp max": "temp_max_c", "temp. max": "temp_max_c", "temp máx": "temp_max_c",
   "temp. máx": "temp_max_c", "temperatura máxima": "temp_max_c", "tmax": "temp_max_c",
@@ -51,7 +51,9 @@ const ROW_LABEL_MAP: Record<string, string> = {
 };
 
 const COLUMN_HEADER_MAP: Record<string, string> = {
-  "data": "date", "date": "date", ...ROW_LABEL_MAP,
+  data: "date",
+  date: "date",
+  ...ROW_LABEL_MAP,
 };
 
 interface Props {
@@ -63,82 +65,12 @@ interface Props {
   importing: boolean;
 }
 
-function formatDateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+function isDateLike(val: unknown): boolean {
+  return parseSpreadsheetDate(val) !== null;
 }
 
-function parseDate(val: any): string | null {
-  if (val == null || val === "") return null;
-
-  if (val instanceof Date && !Number.isNaN(val.getTime())) {
-    return formatDateString(val);
-  }
-
-  // Excel serial date fallback
-  if (typeof val === "number" && Number.isFinite(val)) {
-    const excelEpochOffset = 25569;
-    const secondsPerDay = 86400;
-    const utcValue = Math.floor((val - excelEpochOffset) * secondsPerDay);
-    const date = new Date(utcValue * 1000);
-    if (!Number.isNaN(date.getTime())) {
-      const y = date.getUTCFullYear();
-      const m = String(date.getUTCMonth() + 1).padStart(2, "0");
-      const d = String(date.getUTCDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
-    }
-  }
-
-  const str = String(val).trim();
-  if (!str) return null;
-
-  // dd/mm/yyyy or dd-mm-yyyy
-  const br = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (br) {
-    const [, d, m, y] = br;
-    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
-
-  // dd/mm (without year) — common in transposed Excel headers
-  const shortBr = str.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
-  if (shortBr) {
-    const [, d, m] = shortBr;
-    const dayNum = Number(d);
-    const monthNum = Number(m);
-    if (dayNum >= 1 && dayNum <= 31 && monthNum >= 1 && monthNum <= 12) {
-      const year = new Date().getFullYear();
-      return `${year}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-    }
-  }
-
-  // yyyy-mm-dd or yyyy-m-d(+time)
-  const iso = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (iso) {
-    const [, y, m, d] = iso;
-    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
-
-  // Fallback — avoid new Date(str) for ambiguous short strings to prevent MM/DD misinterpretation
-  if (str.length >= 8) {
-    const parsed = new Date(str);
-    if (!Number.isNaN(parsed.getTime())) {
-      return formatDateString(parsed);
-    }
-  }
-
-  return null;
-}
-
-function isDateLike(val: any): boolean {
-  if (val instanceof Date) return true;
-  return parseDate(val) !== null;
-}
-
-function detectTransposed(headers: string[], rawData: any[][]): boolean {
-  // If most headers parse as dates, it's transposed
-  const dateCount = headers.filter(h => isDateLike(h)).length;
+function detectTransposed(headers: string[], _rawData: any[][]): boolean {
+  const dateCount = headers.filter((header) => isDateLike(header)).length;
   return dateCount >= Math.max(2, headers.length * 0.5);
 }
 
