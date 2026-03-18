@@ -47,6 +47,9 @@ interface Props {
   hybridName?: string;
 }
 
+const T_BASE = 10;
+const T_MAX_CAP = 30;
+
 function normalizeDateKey(value: string | null | undefined): string | null {
   return parseSpreadsheetDate(value);
 }

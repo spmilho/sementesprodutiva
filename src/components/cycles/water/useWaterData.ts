@@ -50,7 +50,7 @@ export function useWeatherRecords(cycleId: string) {
         .from("weather_records").select("*").eq("cycle_id", cycleId)
         .is("deleted_at", null).order("record_date", { ascending: true });
       if (error) throw error;
-      return repairAmbiguousIsoRecordDates(data || []);
+      return repairAmbiguousIsoRecordDates((data || []) as any[]);
     },
   });
 }
