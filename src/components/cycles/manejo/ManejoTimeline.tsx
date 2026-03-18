@@ -200,7 +200,7 @@ export default function ManejoTimeline({ inputs, plantingDate, cycleId }: Props)
             <div className="flex flex-wrap items-center gap-2 mt-4 px-1">
               <span className="text-[10px] font-semibold text-muted-foreground">LEGENDA:</span>
               {Object.entries(INPUT_TYPE_CONFIG)
-                .filter(([k]) => k !== "other" && k !== "seed")
+                .filter(([k]) => k !== "other")
                 .map(([key, cfg]) => (
                   <div key={key} className="flex items-center gap-1">
                     <div className={`w-3 h-3 rounded-sm ${TYPE_BG[key]?.split(" ")[0] || "bg-gray-400"}`} />
