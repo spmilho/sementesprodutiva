@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { useRole } from "@/hooks/useRole";
+import { parseSpreadsheetDate } from "./weatherDateUtils";
 
 interface WeatherRecord {
   id: string;
@@ -46,39 +47,8 @@ interface Props {
   hybridName?: string;
 }
 
-const T_BASE = 10;
-const T_MAX_CAP = 30;
-
-function formatDateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function normalizeDateKey(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const raw = String(value).trim();
-  if (!raw) return null;
-
-  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (iso) {
-    const [, y, m, d] = iso;
-    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
-
-  const br = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (br) {
-    const [, d, m, y] = br;
-    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
-
-  const parsed = new Date(raw);
-  if (!Number.isNaN(parsed.getTime())) {
-    return formatDateString(parsed);
-  }
-
-  return null;
+  return parseSpreadsheetDate(value);
 }
 
 function dateKeyToTimestamp(dateKey: string): number {
