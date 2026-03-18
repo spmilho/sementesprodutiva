@@ -243,7 +243,7 @@ export default function HarvestTab({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-xs text-muted-foreground">Ciclo do material (dias)</label>
                 <div className="flex items-center gap-1 mt-1">
@@ -264,6 +264,7 @@ export default function HarvestTab({
               <div>
                 <label className="text-xs text-muted-foreground">Meta ha/dia *</label>
                 <Input type="number" step="0.1" value={localHaPerDay} onChange={(e) => setLocalHaPerDay(Number(e.target.value))} className="h-8 mt-1 text-sm" />
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground italic max-w-lg">
