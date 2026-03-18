@@ -423,6 +423,14 @@ export default function Dashboard() {
         <KPICard title="Produção" value={`${totalProduction} t`} icon={Target} description="acumulada" />
       </div>
 
+      {/* Extra Charts: Phenology, Forecasts, Manejo */}
+      <DashboardExtraCharts
+        cycles={filtered}
+        phenologyRecords={phenologyRecords}
+        plantingActuals={plantingActuals}
+        cropInputs={cropInputs}
+      />
+
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
