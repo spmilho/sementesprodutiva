@@ -78,12 +78,34 @@ function isDateLikeHeader(value: any) {
 }
 
 function extractWeatherSheetData(ws: XLSX.WorkSheet) {
-  let grid: any[][] = XLSX.utils.sheet_to_json(ws, {
-    header: 1,
-    raw: true,
-    defval: "",
-    blankrows: false,
-  });
+  const ref = ws["!ref"];
+  let grid: any[][] = [];
+
+  if (ref) {
+    const range = XLSX.utils.decode_range(ref);
+    for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
+      const row: any[] = [];
+      for (let colIndex = range.s.c; colIndex <= range.e.c; colIndex += 1) {
+        const address = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
+        const cell = ws[address];
+        if (!cell) {
+          row.push("");
+          continue;
+        }
+        row.push(formatWeatherSheetCell(cell.w ?? cell.v ?? ""));
+      }
+      grid.push(row);
+    }
+  }
+
+  if (grid.length < 2) {
+    grid = XLSX.utils.sheet_to_json(ws, {
+      header: 1,
+      raw: true,
+      defval: "",
+      blankrows: false,
+    });
+  }
 
   if (grid.length < 2) {
     const csvString = XLSX.utils.sheet_to_csv(ws, { blankrows: false });
