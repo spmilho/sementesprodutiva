@@ -243,6 +243,16 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
               </Select>
             </div>
             <div className="space-y-1.5">
+              <Label>Stand Final (plantas por metro)</Label>
+              <Input
+                type="number"
+                step="0.1"
+                placeholder="Ex: 5.2"
+                value={plantasPorMetro}
+                onChange={(e) => setPlantasPorMetro(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label>CV% (valor calculado externamente)</Label>
               <Input
                 type="number"
