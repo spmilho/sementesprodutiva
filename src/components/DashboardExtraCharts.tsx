@@ -169,7 +169,7 @@ export default function DashboardExtraCharts({ cycles, phenologyRecords, plantin
           }
         }
       }
-      if (!stage || !STAGES_ORDER.includes(stage)) return;
+      if (!stage || !STAGES_ORDER.includes(stage)) continue;
 
       const type = inp.input_type || "other";
       stageMap[stage][type] = (stageMap[stage][type] || 0) + 1;
