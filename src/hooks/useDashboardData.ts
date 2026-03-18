@@ -245,6 +245,8 @@ export function useDashboardData(filters: {
     harvestPlans: harvestPlansQuery.data || [],
     moisture: moistureQuery.data || [],
     nicking: nickingQuery.data || [],
+    phenologyRecords: phenologyQuery.data || [],
+    cropInputs: cropInputsQuery.data || [],
     clients: clientsQuery.data || [],
     cooperators: cooperatorsQuery.data || [],
     seasons: seasonsQuery.data || [],
