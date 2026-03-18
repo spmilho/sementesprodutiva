@@ -167,37 +167,6 @@ export default function ManejoTab({
         )}
       </div>
 
-      {/* Import history */}
-      {imports.length > 0 && (
-        <div className="text-xs text-muted-foreground space-y-1">
-          <p className="font-medium">Histórico de importações:</p>
-          {imports.slice(0, 5).map(imp => (
-            <div key={imp.id} className="flex items-center gap-3">
-              <span>{format(new Date(imp.imported_at), "dd/MM/yyyy HH:mm")}</span>
-              <span className="font-medium">{imp.file_name}</span>
-              <span>{imp.records_total} reg.</span>
-              <Badge variant="outline" className="text-[10px]">{imp.records_new} novos</Badge>
-              <Badge variant="outline" className="text-[10px]">{imp.records_updated} atualiz.</Badge>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-destructive hover:text-destructive"
-                disabled={deleteImportRecord.isPending}
-                onClick={() => {
-                  if (confirm(`Excluir importação "${imp.file_name}" e seus ${imp.records_total} registros?`)) {
-                    deleteImportRecord.mutate(imp.id, {
-                      onSuccess: () => toast.success("Importação excluída"),
-                      onError: (err: any) => toast.error(err.message || "Erro ao excluir"),
-                    });
-                  }
-                }}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* Dashboard */}
       <ManejoDashboard inputs={inputs} imports={imports} />
