@@ -93,11 +93,14 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
 
       const photoUrl = await uploadPhoto();
 
+      const ppm = plantasPorMetro ? parseFloat(plantasPorMetro) : null;
+
       const row: any = {
         cycle_id: cycleId,
         org_id: orgId,
         type: selectedType,
         cv_percent: val,
+        plantas_por_metro: ppm,
         recorded_date: new Date().toISOString().split("T")[0],
       };
       if (photoUrl) row.photo_url = photoUrl;
