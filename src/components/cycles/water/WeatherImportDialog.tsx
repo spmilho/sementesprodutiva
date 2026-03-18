@@ -116,7 +116,7 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
   // Parse dates from headers for transposed mode
   const columnDates = useMemo(() => {
     if (!isTransposed) return [];
-    return headers.map(h => parseDate(h)).filter(Boolean) as string[];
+    return headers.map((header) => parseSpreadsheetDate(header)).filter(Boolean) as string[];
   }, [headers, isTransposed]);
 
   const canImport = isTransposed
@@ -127,9 +127,8 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
     const records: Record<string, any>[] = [];
 
     if (isTransposed) {
-      // Each column = a date, each row = a variable
       for (let ci = 0; ci < headers.length; ci++) {
-        const date = parseDate(headers[ci]);
+        const date = parseSpreadsheetDate(headers[ci]);
         if (!date) continue;
         const rec: Record<string, any> = { record_date: date };
         let hasData = false;
@@ -137,7 +136,7 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
           const field = rowMappings[ri];
           if (!field || field === "ignore") return;
           const val = Number(row[ci]);
-          if (!isNaN(val)) {
+          if (!Number.isNaN(val)) {
             rec[field] = val;
             hasData = true;
           }
@@ -145,7 +144,6 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
         if (hasData) records.push(rec);
       }
     } else {
-      // Normal: each row = a record
       for (const row of rawData) {
         const rec: Record<string, any> = {};
         headers.forEach((h, i) => {
@@ -153,7 +151,7 @@ export default function WeatherImportDialog({ open, onClose, headers, rawData, o
           if (!field || field === "ignore") return;
           const val = row[i];
           if (field === "date") {
-            rec.record_date = parseDate(val);
+            rec.record_date = parseSpreadsheetDate(val);
           } else {
             const num = Number(val);
             if (!isNaN(num)) rec[field] = num;
