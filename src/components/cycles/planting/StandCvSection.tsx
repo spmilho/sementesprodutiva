@@ -206,6 +206,9 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
                     <span className="text-2xl font-bold">{Number(record.cv_percent).toFixed(1)}%</span>
                     <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", label.bg)}>{label.emoji} {label.label}</span>
                   </div>
+                  {record.plantas_por_metro != null && (
+                    <p className="text-xs text-muted-foreground">{Number(record.plantas_por_metro).toFixed(1)} pl/m</p>
+                  )}
                   {record.photo_url && (
                     <div className="mt-2">
                       <img src={record.photo_url} alt="Foto stand" className="h-16 w-auto rounded object-cover" />
