@@ -29,7 +29,6 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<"form" | "confirm">("form");
 
-  // Form state
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [evaluator, setEvaluator] = useState(userName ?? "");
   const [stage, setStage] = useState(lastStage ?? "");
@@ -47,6 +46,7 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
   const [volunteersParent, setVolunteersParent] = useState("");
   const [volunteersId, setVolunteersId] = useState("");
   const [volunteersNotes, setVolunteersNotes] = useState("");
+  const [volunteersPhotos, setVolunteersPhotos] = useState<string[]>([]);
 
   // Offtype
   const [hasOfftype, setHasOfftype] = useState(false);
@@ -55,6 +55,7 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
   const [offtypeLoc, setOfftypeLoc] = useState("");
   const [offtypeParent, setOfftypeParent] = useState("");
   const [offtypeNotes, setOfftypeNotes] = useState("");
+  const [offtypePhotos, setOfftypePhotos] = useState<string[]>([]);
 
   // Diseased
   const [hasDiseased, setHasDiseased] = useState(false);
@@ -62,6 +63,7 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
   const [diseasedFreq, setDiseasedFreq] = useState("");
   const [diseasedParent, setDiseasedParent] = useState("");
   const [diseasedNotes, setDiseasedNotes] = useState("");
+  const [diseasedPhotos, setDiseasedPhotos] = useState<string[]>([]);
 
   // Female in male
   const [hasFemaleInMale, setHasFemaleInMale] = useState(false);
@@ -69,6 +71,7 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
   const [femaleInMaleFreq, setFemaleInMaleFreq] = useState("");
   const [femaleInMaleLoc, setFemaleInMaleLoc] = useState("");
   const [femaleInMaleNotes, setFemaleInMaleNotes] = useState("");
+  const [femaleInMalePhotos, setFemaleInMalePhotos] = useState<string[]>([]);
 
   const conclusion = useMemo(() => computeConclusion({
     has_volunteers: hasVolunteers,
@@ -104,7 +107,6 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
     if (!parentEval) return toast.error("Selecione o parental avaliado");
     setSaving(true);
     try {
-      // 1. Save evaluation
       const evalData = {
         cycle_id: cycleId, org_id: orgId, evaluation_date: date,
         evaluator_name: evaluator || null, growth_stage: stage || null,
@@ -117,22 +119,26 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
         volunteers_parent: hasVolunteers ? volunteersParent || null : null,
         volunteers_identification: hasVolunteers ? volunteersId || null : null,
         volunteers_notes: hasVolunteers ? volunteersNotes || null : null,
+        volunteers_photos: hasVolunteers && volunteersPhotos.length > 0 ? volunteersPhotos : null,
         has_offtype: hasOfftype,
         offtype_types: hasOfftype && offtypeTypes.length > 0 ? offtypeTypes : null,
         offtype_frequency: hasOfftype ? offtypeFreq || null : null,
         offtype_location: hasOfftype ? offtypeLoc || null : null,
         offtype_parent: hasOfftype ? offtypeParent || null : null,
         offtype_notes: hasOfftype ? offtypeNotes || null : null,
+        offtype_photos: hasOfftype && offtypePhotos.length > 0 ? offtypePhotos : null,
         has_diseased: hasDiseased,
         diseased_types: hasDiseased && diseasedTypes.length > 0 ? diseasedTypes : null,
         diseased_frequency: hasDiseased ? diseasedFreq || null : null,
         diseased_parent: hasDiseased ? diseasedParent || null : null,
         diseased_notes: hasDiseased ? diseasedNotes || null : null,
+        diseased_photos: hasDiseased && diseasedPhotos.length > 0 ? diseasedPhotos : null,
         has_female_in_male: hasFemaleInMale,
         female_in_male_type: hasFemaleInMale ? femaleInMaleType || null : null,
         female_in_male_frequency: hasFemaleInMale ? femaleInMaleFreq || null : null,
         female_in_male_location: hasFemaleInMale ? femaleInMaleLoc || null : null,
         female_in_male_notes: hasFemaleInMale ? femaleInMaleNotes || null : null,
+        female_in_male_photos: hasFemaleInMale && femaleInMalePhotos.length > 0 ? femaleInMalePhotos : null,
         overall_condition: overallCondition,
         auto_conclusion: conclusion.action === "sem_acao" ? "clean" : conclusion.action === "observar" ? "observe" : conclusion.action.includes("urgente") ? "urgent_roguing" : "roguing",
         auto_conclusion_message: conclusion.message,
@@ -144,15 +150,10 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
         .from("roguing_evaluations").insert(evalData).select("id").single();
       if (evalError) throw evalError;
 
-      // 2. Generate request if needed
       if (conclusion.action.includes("solicitar")) {
-        // Get next request number
         const { data: existingReqs } = await (supabase as any)
-          .from("roguing_requests")
-          .select("request_number")
-          .eq("cycle_id", cycleId)
-          .order("request_number", { ascending: false })
-          .limit(1);
+          .from("roguing_requests").select("request_number").eq("cycle_id", cycleId)
+          .order("request_number", { ascending: false }).limit(1);
         const nextNum = (existingReqs?.[0]?.request_number ?? 0) + 1;
 
         const occTypes: string[] = [];
@@ -161,24 +162,18 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
         if (hasDiseased) occTypes.push("diseased");
         if (hasFemaleInMale) occTypes.push("female_in_male");
 
-        const reqData = {
-          cycle_id: cycleId, org_id: orgId,
-          evaluation_id: evalResult.id,
-          request_number: nextNum,
-          request_date: date,
-          priority: conclusion.action.includes("urgente") ? "urgent" : "recommended",
-          parent_target: parentEval,
-          growth_stage: stage || null,
-          occurrence_types: occTypes,
-          occurrence_summary: detectedTypes.join(" | "),
-          status: "pending",
-          created_by: user?.id || null,
-        };
-
         const { error: reqError } = await (supabase as any)
-          .from("roguing_requests").insert(reqData);
+          .from("roguing_requests").insert({
+            cycle_id: cycleId, org_id: orgId,
+            evaluation_id: evalResult.id,
+            request_number: nextNum, request_date: date,
+            priority: conclusion.action.includes("urgente") ? "urgent" : "recommended",
+            parent_target: parentEval, growth_stage: stage || null,
+            occurrence_types: occTypes,
+            occurrence_summary: detectedTypes.join(" | "),
+            status: "pending", created_by: user?.id || null,
+          });
         if (reqError) throw reqError;
-
         toast.success(`✅ Avaliação salva + Solicitação #${nextNum} gerada!`);
       } else if (conclusion.action === "observar") {
         toast.success("✅ Avaliação salva. Reavaliar em 5 dias.");
@@ -211,7 +206,6 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
 
         {step === "form" ? (
           <div className="space-y-6">
-            {/* Identificação */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Identificação</h4>
               <div className="grid grid-cols-2 gap-3">
@@ -241,36 +235,39 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
               </div>
             </div>
 
-            {/* Checklist */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Checklist de Ocorrências</h4>
               <OccurrenceChecklist
+                cycleId={cycleId}
                 hasVolunteers={hasVolunteers} setHasVolunteers={setHasVolunteers}
                 volunteersFreq={volunteersFreq} setVolunteersFreq={setVolunteersFreq}
                 volunteersLoc={volunteersLoc} setVolunteersLoc={setVolunteersLoc}
                 volunteersParent={volunteersParent} setVolunteersParent={setVolunteersParent}
                 volunteersId={volunteersId} setVolunteersId={setVolunteersId}
                 volunteersNotes={volunteersNotes} setVolunteersNotes={setVolunteersNotes}
+                volunteersPhotos={volunteersPhotos} setVolunteersPhotos={setVolunteersPhotos}
                 hasOfftype={hasOfftype} setHasOfftype={setHasOfftype}
                 offtypeTypes={offtypeTypes} setOfftypeTypes={setOfftypeTypes}
                 offtypeFreq={offtypeFreq} setOfftypeFreq={setOfftypeFreq}
                 offtypeLoc={offtypeLoc} setOfftypeLoc={setOfftypeLoc}
                 offtypeParent={offtypeParent} setOfftypeParent={setOfftypeParent}
                 offtypeNotes={offtypeNotes} setOfftypeNotes={setOfftypeNotes}
+                offtypePhotos={offtypePhotos} setOfftypePhotos={setOfftypePhotos}
                 hasDiseased={hasDiseased} setHasDiseased={setHasDiseased}
                 diseasedTypes={diseasedTypes} setDiseasedTypes={setDiseasedTypes}
                 diseasedFreq={diseasedFreq} setDiseasedFreq={setDiseasedFreq}
                 diseasedParent={diseasedParent} setDiseasedParent={setDiseasedParent}
                 diseasedNotes={diseasedNotes} setDiseasedNotes={setDiseasedNotes}
+                diseasedPhotos={diseasedPhotos} setDiseasedPhotos={setDiseasedPhotos}
                 hasFemaleInMale={hasFemaleInMale} setHasFemaleInMale={setHasFemaleInMale}
                 femaleInMaleType={femaleInMaleType} setFemaleInMaleType={setFemaleInMaleType}
                 femaleInMaleFreq={femaleInMaleFreq} setFemaleInMaleFreq={setFemaleInMaleFreq}
                 femaleInMaleLoc={femaleInMaleLoc} setFemaleInMaleLoc={setFemaleInMaleLoc}
                 femaleInMaleNotes={femaleInMaleNotes} setFemaleInMaleNotes={setFemaleInMaleNotes}
+                femaleInMalePhotos={femaleInMalePhotos} setFemaleInMalePhotos={setFemaleInMalePhotos}
               />
             </div>
 
-            {/* Avaliação Geral */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Avaliação Geral</h4>
               <div>
