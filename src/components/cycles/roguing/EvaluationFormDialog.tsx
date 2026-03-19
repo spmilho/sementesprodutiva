@@ -146,9 +146,24 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
         created_by: user?.id || null,
       };
 
-      const { data: evalResult, error: evalError } = await (supabase as any)
+      console.log("[Roguing] Inserting evaluation...", { cycleId, orgId });
+
+      const res = await (supabase as any)
         .from("roguing_evaluations").insert(evalData).select("id").single();
-      if (evalError) throw evalError;
+      
+      console.log("[Roguing] Insert response:", JSON.stringify(res));
+      
+      if (res.error) {
+        console.error("[Roguing] Insert error:", res.error);
+        throw res.error;
+      }
+
+      if (!res.data?.id) {
+        console.error("[Roguing] No data returned from insert");
+        throw new Error("Falha ao salvar avaliação — nenhum dado retornado.");
+      }
+
+      const evalId = res.data.id;
 
       if (conclusion.action.includes("solicitar")) {
         const { data: existingReqs } = await (supabase as any)
@@ -165,7 +180,7 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
         const { error: reqError } = await (supabase as any)
           .from("roguing_requests").insert({
             cycle_id: cycleId, org_id: orgId,
-            evaluation_id: evalResult.id,
+            evaluation_id: evalId,
             request_number: nextNum, request_date: date,
             priority: conclusion.action.includes("urgente") ? "urgent" : "recommended",
             parent_target: parentEval, growth_stage: stage || null,
@@ -173,7 +188,10 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
             occurrence_summary: detectedTypes.join(" | "),
             status: "pending", created_by: user?.id || null,
           });
-        if (reqError) throw reqError;
+        if (reqError) {
+          console.error("[Roguing] Request insert error:", reqError);
+          throw reqError;
+        }
         toast.success(`✅ Avaliação salva + Solicitação #${nextNum} gerada!`);
       } else if (conclusion.action === "observar") {
         toast.success("✅ Avaliação salva. Reavaliar em 5 dias.");
@@ -184,7 +202,8 @@ export default function EvaluationFormDialog({ open, onOpenChange, cycleId, orgI
       onSaved();
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err.message);
+      console.error("[Roguing] Save failed:", err);
+      toast.error("Erro ao salvar: " + (err.message || JSON.stringify(err)));
     } finally {
       setSaving(false);
     }
