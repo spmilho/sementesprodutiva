@@ -26,6 +26,7 @@ export function useRoguingData(cycleId: string) {
         .from("roguing_requests")
         .select("*")
         .eq("cycle_id", cycleId)
+        .is("deleted_at", null)
         .order("request_date", { ascending: false });
       if (error) throw error;
       return (data || []) as RoguingRequest[];
