@@ -64,7 +64,7 @@ export default function RoguingCharts({ evaluations, executions }: Props) {
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">📊 Gráficos</h3>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {lineData.length > 1 && (
+        {lineData.length > 0 && (
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm">Evolução de Ocorrências</CardTitle></CardHeader>
             <CardContent>

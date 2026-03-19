@@ -40,6 +40,7 @@ export function useRoguingData(cycleId: string) {
         .from("roguing_executions")
         .select("*")
         .eq("cycle_id", cycleId)
+        .is("deleted_at", null)
         .order("execution_date", { ascending: false });
       if (error) throw error;
       return (data || []) as RoguingExecution[];
