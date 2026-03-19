@@ -78,8 +78,8 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
       const path = `${orgId}/${cycleId}/stand_cv_${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("cycle-documents").upload(path, photoFile);
       if (error) throw error;
-      const { data: urlData } = supabase.storage.from("cycle-documents").getPublicUrl(path);
-      return urlData.publicUrl;
+      // Store the path, not public URL (bucket is private)
+      return path;
     } finally {
       setUploading(false);
     }
