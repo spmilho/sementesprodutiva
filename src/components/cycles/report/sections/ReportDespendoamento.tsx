@@ -112,8 +112,8 @@ export default function ReportDespendoamento({ data }: { data: any }) {
   // Build forecast chart data
   const forecastData = (() => {
     if (!windowStart || !windowEnd) return [];
-    const chartStart = addDays(windowStart, -3);
-    const chartEnd = addDays(windowEnd, 3);
+    const chartStart = addDays(windowStart, -7);
+    const chartEnd = addDays(windowEnd, 7);
 
     const rows: any[] = [];
     let cursor = new Date(chartStart);

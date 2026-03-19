@@ -289,6 +289,29 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
                 );
               })()}
 
+              {/* ±5 day margin shading per planting */}
+              {windows.map((w) => {
+                const marginStart = format(addDays(parseISO(w.centerDate), -5), "yyyy-MM-dd");
+                const marginEnd = format(addDays(parseISO(w.centerDate), 5), "yyyy-MM-dd");
+                const startLabel = chartData.find(d => d.date === marginStart)?.dateLabel;
+                const endLabel = chartData.find(d => d.date === marginEnd)?.dateLabel;
+                if (!startLabel || !endLabel) return null;
+                return (
+                  <ReferenceArea
+                    key={`margin-${w.index}`}
+                    yAxisId="left"
+                    x1={startLabel}
+                    x2={endLabel}
+                    fill={w.color}
+                    fillOpacity={0.07}
+                    stroke={w.color}
+                    strokeOpacity={0.2}
+                    strokeDasharray="4 2"
+                    strokeWidth={1}
+                  />
+                );
+              })}
+
               {/* Center date lines for each planting */}
               {windows.map((w) => {
                 const centerLabel = chartData.find(d => d.date === w.centerDate)?.dateLabel;
