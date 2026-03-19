@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,32 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
     },
   });
 
+  // Generate signed URLs for photos stored as paths
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const paths = cvRecords
+      .filter((r: any) => r.photo_url && !r.photo_url.startsWith("http"))
+      .map((r: any) => r.photo_url);
+    if (paths.length === 0) return;
+
+    Promise.all(
+      paths.map(async (path: string) => {
+        const { data } = await supabase.storage.from("cycle-documents").createSignedUrl(path, 3600);
+        return { path, url: data?.signedUrl ?? "" };
+      })
+    ).then((results) => {
+      const map: Record<string, string> = {};
+      results.forEach((r) => { if (r.url) map[r.path] = r.url; });
+      setSignedUrls(map);
+    });
+  }, [cvRecords]);
+
+  const getPhotoUrl = (record: any): string | null => {
+    if (!record.photo_url) return null;
+    if (record.photo_url.startsWith("http")) return record.photo_url;
+    return signedUrls[record.photo_url] || null;
+  };
+
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -78,8 +104,8 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
       const path = `${orgId}/${cycleId}/stand_cv_${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("cycle-documents").upload(path, photoFile);
       if (error) throw error;
-      const { data: urlData } = supabase.storage.from("cycle-documents").getPublicUrl(path);
-      return urlData.publicUrl;
+      // Store the path, not public URL (bucket is private)
+      return path;
     } finally {
       setUploading(false);
     }
@@ -160,7 +186,8 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
     setCvValue(String(record.cv_percent));
     setPlantasPorMetro(record.plantas_por_metro != null ? String(record.plantas_por_metro) : "");
     setPhotoFile(null);
-    setPhotoPreview(record.photo_url || null);
+    const url = getPhotoUrl(record);
+    setPhotoPreview(url || null);
     setDialogOpen(true);
   };
 
@@ -209,11 +236,14 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
                   {record.plantas_por_metro != null && (
                     <p className="text-xs text-muted-foreground">{Number(record.plantas_por_metro).toFixed(1)} pl/m</p>
                   )}
-                  {record.photo_url && (
-                    <div className="mt-2">
-                      <img src={record.photo_url} alt="Foto stand" className="h-16 w-auto rounded object-cover" />
-                    </div>
-                  )}
+                  {(() => {
+                    const url = getPhotoUrl(record);
+                    return url ? (
+                      <div className="mt-2">
+                        <img src={url} alt="Foto stand" className="h-16 w-auto rounded object-cover" />
+                      </div>
+                    ) : null;
+                  })()}
                 </CardContent>
               </Card>
             );

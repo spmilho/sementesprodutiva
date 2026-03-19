@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import type { RoguingEvaluation, RoguingRequest, RoguingExecution } from "./types";
 import { getFrequencyLabel, getParentLabel } from "./types";
+import EvaluationDetailDrawer from "./EvaluationDetailDrawer";
 
 interface Props {
   evaluations: RoguingEvaluation[];
@@ -18,6 +19,8 @@ interface TimelineItem {
 }
 
 export default function RoguingTimeline({ evaluations, requests, executions }: Props) {
+  const [selectedEval, setSelectedEval] = useState<RoguingEvaluation | null>(null);
+
   const items = useMemo(() => {
     const all: TimelineItem[] = [];
     evaluations.forEach(e => all.push({ date: e.evaluation_date, type: "evaluation", data: e }));
@@ -54,7 +57,10 @@ export default function RoguingTimeline({ evaluations, requests, executions }: P
               item.type === "evaluation" ? "bg-blue-500" :
               item.type === "request" ? "bg-orange-500" : "bg-green-500"
             }`} />
-            <Card>
+            <Card
+              className={item.type === "evaluation" ? "cursor-pointer hover:shadow-md transition-shadow" : ""}
+              onClick={() => item.type === "evaluation" && setSelectedEval(item.data)}
+            >
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-mono text-muted-foreground">{format(parseISO(item.date), "dd/MM/yy")}</span>
@@ -64,6 +70,7 @@ export default function RoguingTimeline({ evaluations, requests, executions }: P
                       <Badge variant="outline" className={`text-xs ${conclusionColors[item.data.auto_conclusion] ?? ""}`}>
                         {conclusionLabels[item.data.auto_conclusion] ?? item.data.auto_conclusion}
                       </Badge>
+                      <span className="text-[10px] text-muted-foreground ml-auto">Clique para abrir →</span>
                     </>
                   )}
                   {item.type === "request" && (
@@ -108,6 +115,12 @@ export default function RoguingTimeline({ evaluations, requests, executions }: P
           </div>
         ))}
       </div>
+
+      <EvaluationDetailDrawer
+        evaluation={selectedEval}
+        open={!!selectedEval}
+        onOpenChange={(o) => { if (!o) setSelectedEval(null); }}
+      />
     </div>
   );
 }

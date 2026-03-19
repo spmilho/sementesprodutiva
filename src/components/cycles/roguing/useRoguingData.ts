@@ -12,6 +12,7 @@ export function useRoguingData(cycleId: string) {
         .from("roguing_evaluations")
         .select("*")
         .eq("cycle_id", cycleId)
+        .is("deleted_at", null)
         .order("evaluation_date", { ascending: false });
       if (error) throw error;
       return (data || []) as RoguingEvaluation[];
@@ -25,6 +26,7 @@ export function useRoguingData(cycleId: string) {
         .from("roguing_requests")
         .select("*")
         .eq("cycle_id", cycleId)
+        .is("deleted_at", null)
         .order("request_date", { ascending: false });
       if (error) throw error;
       return (data || []) as RoguingRequest[];
@@ -38,6 +40,7 @@ export function useRoguingData(cycleId: string) {
         .from("roguing_executions")
         .select("*")
         .eq("cycle_id", cycleId)
+        .is("deleted_at", null)
         .order("execution_date", { ascending: false });
       if (error) throw error;
       return (data || []) as RoguingExecution[];
