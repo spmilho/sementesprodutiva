@@ -59,6 +59,32 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
     },
   });
 
+  // Generate signed URLs for photos stored as paths
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const paths = cvRecords
+      .filter((r: any) => r.photo_url && !r.photo_url.startsWith("http"))
+      .map((r: any) => r.photo_url);
+    if (paths.length === 0) return;
+
+    Promise.all(
+      paths.map(async (path: string) => {
+        const { data } = await supabase.storage.from("cycle-documents").createSignedUrl(path, 3600);
+        return { path, url: data?.signedUrl ?? "" };
+      })
+    ).then((results) => {
+      const map: Record<string, string> = {};
+      results.forEach((r) => { if (r.url) map[r.path] = r.url; });
+      setSignedUrls(map);
+    });
+  }, [cvRecords]);
+
+  const getPhotoUrl = (record: any): string | null => {
+    if (!record.photo_url) return null;
+    if (record.photo_url.startsWith("http")) return record.photo_url;
+    return signedUrls[record.photo_url] || null;
+  };
+
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
