@@ -117,8 +117,9 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
     const today = new Date();
     const todayStr = format(today, "yyyy-MM-dd");
 
-    const chartStartDate = addDays(parseISO(windowStart), -3);
-    const chartEndDate = addDays(parseISO(windowEnd), 3);
+    // Expand chart range to include ±5 day margins
+    const chartStartDate = addDays(parseISO(windowStart), -7);
+    const chartEndDate = addDays(parseISO(windowEnd), 7);
 
     // Track which plantings have had their center date reached (for accumulation)
     const windowCenterReached = new Set<number>();
