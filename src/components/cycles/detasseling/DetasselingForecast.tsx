@@ -117,8 +117,9 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
     const today = new Date();
     const todayStr = format(today, "yyyy-MM-dd");
 
-    const chartStartDate = addDays(parseISO(windowStart), -3);
-    const chartEndDate = addDays(parseISO(windowEnd), 3);
+    // Expand chart range to include ±5 day margins
+    const chartStartDate = addDays(parseISO(windowStart), -7);
+    const chartEndDate = addDays(parseISO(windowEnd), 7);
 
     // Track which plantings have had their center date reached (for accumulation)
     const windowCenterReached = new Set<number>();
@@ -287,6 +288,29 @@ export default function DetasselingForecast({ cycleId, detasselingDap: defaultDa
                   />
                 );
               })()}
+
+              {/* ±5 day margin shading per planting */}
+              {windows.map((w) => {
+                const marginStart = format(addDays(parseISO(w.centerDate), -5), "yyyy-MM-dd");
+                const marginEnd = format(addDays(parseISO(w.centerDate), 5), "yyyy-MM-dd");
+                const startLabel = chartData.find(d => d.date === marginStart)?.dateLabel;
+                const endLabel = chartData.find(d => d.date === marginEnd)?.dateLabel;
+                if (!startLabel || !endLabel) return null;
+                return (
+                  <ReferenceArea
+                    key={`margin-${w.index}`}
+                    yAxisId="left"
+                    x1={startLabel}
+                    x2={endLabel}
+                    fill={w.color}
+                    fillOpacity={0.07}
+                    stroke={w.color}
+                    strokeOpacity={0.2}
+                    strokeDasharray="4 2"
+                    strokeWidth={1}
+                  />
+                );
+              })}
 
               {/* Center date lines for each planting */}
               {windows.map((w) => {

@@ -112,8 +112,8 @@ export default function ReportDespendoamento({ data }: { data: any }) {
   // Build forecast chart data
   const forecastData = (() => {
     if (!windowStart || !windowEnd) return [];
-    const chartStart = addDays(windowStart, -3);
-    const chartEnd = addDays(windowEnd, 3);
+    const chartStart = addDays(windowStart, -7);
+    const chartEnd = addDays(windowEnd, 7);
 
     const rows: any[] = [];
     let cursor = new Date(chartStart);
@@ -196,6 +196,28 @@ export default function ReportDespendoamento({ data }: { data: any }) {
                   <ReferenceArea yAxisId="left" x1={startLbl} x2={endLbl} fill="#4CAF50" fillOpacity={0.08} stroke="#4CAF50" strokeOpacity={0.3} strokeWidth={1} />
                 );
               })()}
+
+              {/* ±5 day margin shading per planting */}
+              {windows.map((w) => {
+                const marginStartDate = addDays(w.centerDate, -5);
+                const marginEndDate = addDays(w.centerDate, 5);
+                const startLbl = formatDateBr(marginStartDate);
+                const endLbl = formatDateBr(marginEndDate);
+                return (
+                  <ReferenceArea
+                    key={`margin-${w.idx}`}
+                    yAxisId="left"
+                    x1={startLbl}
+                    x2={endLbl}
+                    fill={w.color}
+                    fillOpacity={0.07}
+                    stroke={w.color}
+                    strokeOpacity={0.2}
+                    strokeDasharray="4 2"
+                    strokeWidth={1}
+                  />
+                );
+              })}
 
               {/* Center date lines */}
               {windows.map((w) => (
