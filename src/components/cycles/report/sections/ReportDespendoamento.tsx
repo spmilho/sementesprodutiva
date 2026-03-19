@@ -197,6 +197,28 @@ export default function ReportDespendoamento({ data }: { data: any }) {
                 );
               })()}
 
+              {/* ±5 day margin shading per planting */}
+              {windows.map((w) => {
+                const marginStartDate = addDays(w.centerDate, -5);
+                const marginEndDate = addDays(w.centerDate, 5);
+                const startLbl = formatDateBr(marginStartDate);
+                const endLbl = formatDateBr(marginEndDate);
+                return (
+                  <ReferenceArea
+                    key={`margin-${w.idx}`}
+                    yAxisId="left"
+                    x1={startLbl}
+                    x2={endLbl}
+                    fill={w.color}
+                    fillOpacity={0.07}
+                    stroke={w.color}
+                    strokeOpacity={0.2}
+                    strokeDasharray="4 2"
+                    strokeWidth={1}
+                  />
+                );
+              })}
+
               {/* Center date lines */}
               {windows.map((w) => (
                 <ReferenceLine
