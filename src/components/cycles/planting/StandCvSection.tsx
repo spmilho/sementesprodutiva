@@ -235,11 +235,14 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
                   {record.plantas_por_metro != null && (
                     <p className="text-xs text-muted-foreground">{Number(record.plantas_por_metro).toFixed(1)} pl/m</p>
                   )}
-                  {record.photo_url && (
-                    <div className="mt-2">
-                      <img src={record.photo_url} alt="Foto stand" className="h-16 w-auto rounded object-cover" />
-                    </div>
-                  )}
+                  {(() => {
+                    const url = getPhotoUrl(record);
+                    return url ? (
+                      <div className="mt-2">
+                        <img src={url} alt="Foto stand" className="h-16 w-auto rounded object-cover" />
+                      </div>
+                    ) : null;
+                  })()}
                 </CardContent>
               </Card>
             );
