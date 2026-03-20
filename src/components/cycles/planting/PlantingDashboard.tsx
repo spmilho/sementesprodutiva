@@ -411,7 +411,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
     });
 
     return rows;
-  }, [actuals, cvPoints, cvRecords, standCounts, plans, glebas, femaleArea, maleArea]);
+  }, [actuals, cvPoints, cvRecords, standCounts, standCvRecords, plans, femaleArea, maleArea]);
 
   const PopTooltipContent = () => (
     <div className="max-w-xs space-y-1.5 text-xs">
