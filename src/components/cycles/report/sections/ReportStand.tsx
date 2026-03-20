@@ -1,6 +1,8 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 
 export default function ReportStand({ data }: { data: any }) {
+  const cvStandRecs = data.cv_stand_records || [];
+  
   const chartData = data.stand.map((s: any) => ({
     name: `${s.gleba} (${s.parental})`,
     "Pop. pl/ha": s.pop_plha ?? 0,
