@@ -69,6 +69,11 @@ export interface ReportData {
   rainfallRecords: any[];
   waterFiles: any[];
   roguingRecords: any[];
+  roguingEvaluations: any[];
+  roguingRequests: any[];
+  roguingExecutions: any[];
+  plantingCvRecords: any[];
+  standCvRecords: any[];
   ndviAnalyses: any[];
   ndviImages: any[];
   fieldVisits: any[];
