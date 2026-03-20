@@ -209,83 +209,79 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
     return result;
   }, [standCounts, standPoints, standCvRecords]);
 
-  // Chart data by gleba
+  // Chart data (no gleba grouping — single entry)
   const glebaChartData = useMemo(() => {
-    const glebaMap = new Map<string, any>();
-    const getGlebaName = (glebaId: string | null) => {
-      if (!glebaId) return "Geral";
-      return glebas.find((g: any) => g.id === glebaId)?.name || "Geral";
-    };
-    const glebaIds = new Set<string>();
-    actuals.forEach((a: any) => glebaIds.add(a.gleba_id || "none"));
-    standCounts.forEach((s: any) => glebaIds.add(s.gleba_id || "none"));
-    if (glebaIds.size === 0 && cvRecords.length > 0) glebaIds.add("none");
+    const entry: any = { name: "Geral", cvPlantingF: 0, cvPlantingM: 0, cvStandF: 0, cvStandM: 0, popF: 0, popM: 0, popPlanF: 0, popPlanM: 0, emergF: 0, emergM: 0, ppmF: 0, ppmM: 0, ppmPlanF: 0, ppmPlanM: 0 };
 
-    glebaIds.forEach(gid => {
-      const name = getGlebaName(gid === "none" ? null : gid);
-      const entry: any = { name, cvPlantingF: 0, cvPlantingM: 0, cvStandF: 0, cvStandM: 0, popF: 0, popM: 0, popPlanF: 0, popPlanM: 0, emergF: 0, emergM: 0, ppmF: 0, ppmM: 0, ppmPlanF: 0, ppmPlanM: 0, popHaF: 0, popHaM: 0 };
+    for (const type of ["female", "male"] as const) {
+      const manualRecords = cvRecords.filter((r: any) =>
+        type === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
+      );
+      if (manualRecords.length > 0) {
+        const avgCv = manualRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / manualRecords.length;
+        if (type === "female") entry.cvPlantingF = avgCv;
+        else entry.cvPlantingM = avgCv;
+      } else {
+        const filtered = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
+        const pts = filtered.flatMap((a: any) => cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))).filter(v => v > 0);
+        const stats = calcStats(pts);
+        if (type === "female") entry.cvPlantingF = stats.cv;
+        else entry.cvPlantingM = stats.cv;
+      }
+    }
 
-      for (const type of ["female", "male"] as const) {
-        const manualRecords = cvRecords.filter((r: any) =>
-          type === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
-        );
-        if (manualRecords.length > 0) {
-          const avgCv = manualRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / manualRecords.length;
-          if (type === "female") entry.cvPlantingF = avgCv;
-          else entry.cvPlantingM = avgCv;
+    for (const type of ["female", "male"] as const) {
+      const filtered = actuals.filter((a: any) => type === "female" ? isFemaleType(a.type) : isMaleType(a.type));
+      if (filtered.length > 0) {
+        const weightedSeeds = getWeightedActualAverage(filtered, (a) => toPositiveNumber(a.seeds_per_meter_actual) || toPositiveNumber(a.seeds_per_meter));
+        if (type === "female") entry.ppmF = weightedSeeds;
+        else entry.ppmM = weightedSeeds;
+      }
+    }
+
+    for (const type of ["female", "male"] as const) {
+      const counts = standCounts.filter((s: any) => s.parent_type === type);
+      if (counts.length > 0) {
+        const latest = counts[0];
+        if (type === "female") {
+          entry.cvStandF = latest.cv_stand_pct ?? 0;
+          entry.popF = latest.avg_plants_per_ha ?? 0;
+          entry.emergF = latest.emergence_pct ?? 0;
         } else {
-          const filtered = actuals.filter((a: any) => (a.gleba_id || "none") === gid && (type === "female" ? isFemaleType(a.type) : isMaleType(a.type)));
-          const pts = filtered.flatMap((a: any) => cvPoints.filter((p: any) => p.planting_actual_id === a.id).map((p: any) => Number(p.seeds_per_meter))).filter(v => v > 0);
-          const stats = calcStats(pts);
-          if (type === "female") entry.cvPlantingF = stats.cv;
-          else entry.cvPlantingM = stats.cv;
+          entry.cvStandM = latest.cv_stand_pct ?? 0;
+          entry.popM = latest.avg_plants_per_ha ?? 0;
+          entry.emergM = latest.emergence_pct ?? 0;
+        }
+      } else {
+        // Fallback to stand_cv_records
+        const scvRecs = standCvRecords.filter((r: any) =>
+          type === "female" ? r.type === "female" : (r.type === "male" || r.type === "male_1" || r.type === "male_2")
+        );
+        if (scvRecs.length > 0) {
+          const avgCv = scvRecs.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / scvRecs.length;
+          if (type === "female") entry.cvStandF = avgCv;
+          else entry.cvStandM = avgCv;
         }
       }
+    }
 
-      for (const type of ["female", "male"] as const) {
-        const filtered = actuals.filter((a: any) => (a.gleba_id || "none") === gid && (type === "female" ? isFemaleType(a.type) : isMaleType(a.type)));
-        if (filtered.length > 0) {
-          const weightedSeeds = getWeightedActualAverage(filtered, (a) => toPositiveNumber(a.seeds_per_meter_actual) || toPositiveNumber(a.seeds_per_meter));
-          if (type === "female") entry.ppmF = weightedSeeds;
-          else entry.ppmM = weightedSeeds;
+    for (const type of ["female", "male"] as const) {
+      const filtered = plans.filter((p: any) => type === "female" ? isFemaleType(p.type) : isMaleType(p.type));
+      if (filtered.length) {
+        const weightedPop = getWeightedPlanAverage(filtered, (p) => p.target_population);
+        const weightedSeeds = getWeightedPlanAverage(filtered, (p) => p.seeds_per_meter);
+        if (type === "female") {
+          entry.popPlanF = weightedPop;
+          entry.ppmPlanF = weightedSeeds;
+        } else {
+          entry.popPlanM = weightedPop;
+          entry.ppmPlanM = weightedSeeds;
         }
       }
+    }
 
-      for (const type of ["female", "male"] as const) {
-        const counts = standCounts.filter((s: any) => (s.gleba_id || "none") === gid && s.parent_type === type);
-        if (counts.length > 0) {
-          const latest = counts[0];
-          if (type === "female") {
-            entry.cvStandF = latest.cv_stand_pct ?? 0;
-            entry.popF = latest.avg_plants_per_ha ?? 0;
-            entry.emergF = latest.emergence_pct ?? 0;
-          } else {
-            entry.cvStandM = latest.cv_stand_pct ?? 0;
-            entry.popM = latest.avg_plants_per_ha ?? 0;
-            entry.emergM = latest.emergence_pct ?? 0;
-          }
-        }
-      }
-
-      for (const type of ["female", "male"] as const) {
-        const filtered = plans.filter((p: any) => (p.gleba_id || "none") === gid && (type === "female" ? isFemaleType(p.type) : isMaleType(p.type)));
-        if (filtered.length) {
-          const weightedPop = getWeightedPlanAverage(filtered, (p) => p.target_population);
-          const weightedSeeds = getWeightedPlanAverage(filtered, (p) => p.seeds_per_meter);
-          if (type === "female") {
-            entry.popPlanF = weightedPop;
-            entry.ppmPlanF = weightedSeeds;
-          } else {
-            entry.popPlanM = weightedPop;
-            entry.ppmPlanM = weightedSeeds;
-          }
-        }
-      }
-
-      glebaMap.set(gid, entry);
-    });
-    return Array.from(glebaMap.values());
-  }, [actuals, cvPoints, cvRecords, standCounts, plans, glebas]);
+    return [entry];
+  }, [actuals, cvPoints, cvRecords, standCounts, standCvRecords, plans]);
 
   // Summary table
   const summaryRows = useMemo(() => {
