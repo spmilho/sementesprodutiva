@@ -501,7 +501,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
 
         {data.lotes_semente?.length > 0 && <ReportSemente data={data} />}
         {data.plantio?.length > 0 && <ReportPlantio data={data} />}
-        {data.stand?.length > 0 && <ReportStand data={data} />}
+        {(data.stand?.length > 0 || data.cv_stand_records?.length > 0) && <ReportStand data={data} />}
         {data.insumos?.length > 0 && <ReportManejo data={data} />}
         {data.fenologia?.length > 0 && <ReportFenologia data={data} />}
         {data.ndvi_imagens?.length > 0 && <ReportNDVI data={data} />}
