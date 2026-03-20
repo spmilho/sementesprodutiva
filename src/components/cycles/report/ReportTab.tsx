@@ -188,15 +188,6 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
       });
     }
 
-    // Yield estimate
-    if (data.estimativa) {
-      kpis.push({
-        label: "Prod. Estimada",
-        value: data.estimativa.sc_ha ? `${Number(data.estimativa.sc_ha).toFixed(1)} sc/ha` : "—",
-        color: "purple",
-        detail: data.estimativa.prod_total_ton ? `${Number(data.estimativa.prod_total_ton).toFixed(1)} ton total` : "",
-      });
-    }
 
     // Harvest
     if (data.colheita?.length > 0) {
