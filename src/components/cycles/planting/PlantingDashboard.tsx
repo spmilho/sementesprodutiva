@@ -588,7 +588,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
           </CardContent></Card>
 
           <Card><CardContent className="p-4">
-            <p className="text-sm font-medium mb-3">% Emergência por Gleba</p>
+            <p className="text-sm font-medium mb-3">% Emergência</p>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={glebaChartData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
