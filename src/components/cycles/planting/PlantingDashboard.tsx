@@ -13,6 +13,7 @@ interface Props {
   actuals: any[];
   cvPoints: any[];
   cvRecords: any[];
+  standCvRecords: any[];
   standCounts: any[];
   standPoints: any[];
   glebas: any[];
