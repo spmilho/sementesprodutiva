@@ -189,6 +189,7 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
           actuals={actuals}
           cvPoints={cvPoints}
           cvRecords={cvRecords}
+          standCvRecords={standCvRecords}
           standCounts={standCounts}
           standPoints={standPoints}
           glebas={glebas}
