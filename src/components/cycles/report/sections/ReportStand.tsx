@@ -1,6 +1,8 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 
 export default function ReportStand({ data }: { data: any }) {
+  const cvStandRecs = data.cv_stand_records || [];
+  
   const chartData = data.stand.map((s: any) => ({
     name: `${s.gleba} (${s.parental})`,
     "Pop. pl/ha": s.pop_plha ?? 0,
@@ -63,6 +65,30 @@ export default function ReportStand({ data }: { data: any }) {
           ))}
         </tbody>
       </table>
+
+      {/* CV% Stand Final from dedicated records */}
+      {cvStandRecs.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <div className="chart-title">CV% Stand Final (registrado)</div>
+          <div className="kpi-grid">
+            {cvStandRecs.map((r: any, i: number) => {
+              const cv = r.cv_percent;
+              const color = cv <= 20 ? "#4CAF50" : cv <= 25 ? "#FF9800" : "#F44336";
+              const label = cv <= 20 ? "Excelente" : cv <= 25 ? "Bom" : cv <= 30 ? "Aceitável" : "Insatisfatório";
+              return (
+                <div key={i} className="kpi-card" style={{ borderLeft: `4px solid ${color}` }}>
+                  <div className="kpi-value">{cv?.toFixed(1)}%</div>
+                  <div className="kpi-label">CV% Stand {r.tipo}</div>
+                  <div className="kpi-sub">{label}</div>
+                  {r.plants_per_meter != null && (
+                    <div className="kpi-sub">{r.plants_per_meter.toFixed(1)} pl/m</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

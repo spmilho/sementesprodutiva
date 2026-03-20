@@ -29,6 +29,7 @@ import ReportAgua from "./sections/ReportAgua";
 import ReportUmidade from "./sections/ReportUmidade";
 import ReportEstimativa from "./sections/ReportEstimativa";
 import ReportColheita from "./sections/ReportColheita";
+import ReportRoguing from "./sections/ReportRoguing";
 import ReportFotos from "./sections/ReportFotos";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -500,13 +501,14 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
 
         {data.lotes_semente?.length > 0 && <ReportSemente data={data} />}
         {data.plantio?.length > 0 && <ReportPlantio data={data} />}
-        {data.stand?.length > 0 && <ReportStand data={data} />}
+        {(data.stand?.length > 0 || data.cv_stand_records?.length > 0) && <ReportStand data={data} />}
         {data.insumos?.length > 0 && <ReportManejo data={data} />}
         {data.fenologia?.length > 0 && <ReportFenologia data={data} />}
         {data.ndvi_imagens?.length > 0 && <ReportNDVI data={data} />}
         {(data.nicking_marcos?.length > 0 || data.nicking_observacoes?.length > 0) && <ReportNicking data={data} />}
         {(data.despendoamento?.length > 0 || data.plantio?.length > 0) && <ReportDespendoamento data={data} />}
         {data.pragas?.length > 0 && <ReportPragas data={data} />}
+        {(data.roguing_avaliacoes?.length > 0 || data.roguing_solicitacoes?.length > 0 || data.roguing_execucoes?.length > 0) && <ReportRoguing data={data} />}
         {(data.irrigacao?.length > 0 || data.chuva?.length > 0 || data.clima?.length > 0) && <ReportAgua data={data} />}
         {data.umidade?.length > 0 && <ReportUmidade data={data} />}
         {data.estimativa && <ReportEstimativa data={data} />}

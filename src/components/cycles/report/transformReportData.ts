@@ -358,6 +358,61 @@ export function transformReportData(data: ReportData, cycle: any): any {
       })),
     })),
 
+    // ── CV% Semeadura (planting_cv_records) ──
+    cv_semeadura: data.plantingCvRecords.map((r: any) => ({
+      tipo: parent(r.type),
+      cv_percent: r.cv_percent,
+    })),
+
+    // ── CV% Stand (stand_cv_records) ──
+    cv_stand_records: data.standCvRecords.map((r: any) => ({
+      tipo: parent(r.type),
+      cv_percent: r.cv_percent,
+      plants_per_meter: r.plants_per_meter,
+    })),
+
+    // ── Roguing ──
+    roguing_avaliacoes: data.roguingEvaluations.map((e: any) => ({
+      data: fmtD(e.evaluation_date),
+      avaliador: e.evaluator_name,
+      estagio: e.growth_stage,
+      dap: e.dap,
+      parental: parent(e.parent_evaluated),
+      condicao: e.overall_condition,
+      conclusao: e.auto_conclusion,
+      mensagem: e.auto_conclusion_message,
+      voluntarias: e.has_volunteers,
+      voluntarias_freq: e.volunteers_frequency,
+      offtype: e.has_offtype,
+      offtype_freq: e.offtype_frequency,
+      offtype_tipos: e.offtype_types,
+      doentes: e.has_diseased,
+      doentes_freq: e.diseased_frequency,
+      doentes_tipos: e.diseased_types,
+      femea_macho: e.has_female_in_male,
+      femea_macho_freq: e.female_in_male_frequency,
+    })),
+    roguing_solicitacoes: data.roguingRequests.map((r: any) => ({
+      numero: r.request_number,
+      data: fmtD(r.request_date),
+      prioridade: r.priority,
+      parental: parent(r.parent_target),
+      tipos: r.occurrence_types,
+      resumo: r.occurrence_summary,
+      status: r.status,
+    })),
+    roguing_execucoes: data.roguingExecutions.map((x: any) => ({
+      data: fmtD(x.execution_date),
+      equipe: x.team_size,
+      horas: x.hours_spent,
+      voluntarias: x.volunteers_removed,
+      offtype: x.offtype_removed,
+      doentes: x.diseased_removed,
+      femea_macho: x.female_in_male_removed,
+      total: x.total_plants_removed,
+      eficacia: x.efficacy,
+    })),
+
     // ── Fotos (collected from all sources) ──
     _fotos: collectAllPhotos(data),
   };
