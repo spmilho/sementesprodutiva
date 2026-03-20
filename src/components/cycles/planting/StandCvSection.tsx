@@ -256,7 +256,7 @@ export default function StandCvSection({ cycleId, orgId, femaleMaleRatio }: Prop
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>{editingId ? "Editar" : "Registrar"} CV% de Stand Final</DialogTitle>
           </DialogHeader>
