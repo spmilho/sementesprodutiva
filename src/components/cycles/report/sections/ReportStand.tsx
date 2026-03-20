@@ -12,59 +12,66 @@ export default function ReportStand({ data }: { data: any }) {
   const avgPop = data.stand.filter((s: any) => s.pop_plha).reduce((sum: number, s: any) => sum + s.pop_plha, 0) /
     (data.stand.filter((s: any) => s.pop_plha).length || 1);
 
+  const hasStandCounts = data.stand?.length > 0;
+
   return (
     <div className="report-section">
       <div className="section-title">🌿 Stand / Estande</div>
-      <div className="kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-value">{data.stand.length}</div>
-          <div className="kpi-label">Contagens realizadas</div>
-        </div>
-        <div className="kpi-card blue">
-          <div className="kpi-value">{avgPop > 0 ? Math.round(avgPop).toLocaleString("pt-BR") : "—"}</div>
-          <div className="kpi-label">Pop. média (pl/ha)</div>
-        </div>
-      </div>
 
-      {chartData.length > 0 && (
-        <div className="chart-container">
-          <div className="chart-title">População por Gleba (pl/ha)</div>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
-              <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-20} textAnchor="end" height={60} />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Bar dataKey="Pop. pl/ha" fill="#2E7D32" radius={[4, 4, 0, 0]} />
-              {avgPop > 0 && <ReferenceLine y={avgPop} stroke="#EF6C00" strokeDasharray="5 5" label={{ value: "Média", fontSize: 10 }} />}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+      {hasStandCounts && (
+        <>
+          <div className="kpi-grid">
+            <div className="kpi-card">
+              <div className="kpi-value">{data.stand.length}</div>
+              <div className="kpi-label">Contagens realizadas</div>
+            </div>
+            <div className="kpi-card blue">
+              <div className="kpi-value">{avgPop > 0 ? Math.round(avgPop).toLocaleString("pt-BR") : "—"}</div>
+              <div className="kpi-label">Pop. média (pl/ha)</div>
+            </div>
+          </div>
+
+          {chartData.length > 0 && (
+            <div className="chart-container">
+              <div className="chart-title">População por Gleba (pl/ha)</div>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
+                  <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-20} textAnchor="end" height={60} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Bar dataKey="Pop. pl/ha" fill="#2E7D32" radius={[4, 4, 0, 0]} />
+                  {avgPop > 0 && <ReferenceLine y={avgPop} stroke="#EF6C00" strokeDasharray="5 5" label={{ value: "Média", fontSize: 10 }} />}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          <table className="report-table">
+            <thead>
+              <tr>
+                <th>Data</th><th>Tipo</th><th>Parental</th><th>Gleba</th>
+                <th>DAP</th><th>Pontos</th><th>Pop (pl/ha)</th><th>CV%</th><th>Emerg. %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.stand.map((s: any, i: number) => (
+                <tr key={i}>
+                  <td>{s.data || "—"}</td>
+                  <td>{s.tipo_contagem || "—"}</td>
+                  <td><span className={`badge ${s.parental === "Fêmea" ? "badge-green" : "badge-blue"}`}>{s.parental}</span></td>
+                  <td>{s.gleba}</td>
+                  <td>{s.dap ?? "—"}</td>
+                  <td>{s.pontos ?? "—"}</td>
+                  <td>{s.pop_plha ? Math.round(s.pop_plha).toLocaleString("pt-BR") : "—"}</td>
+                  <td>{s.cv_stand != null ? `${s.cv_stand.toFixed(1)}%` : "—"}</td>
+                  <td>{s.emergencia != null ? `${s.emergencia.toFixed(0)}%` : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
-
-      <table className="report-table">
-        <thead>
-          <tr>
-            <th>Data</th><th>Tipo</th><th>Parental</th><th>Gleba</th>
-            <th>DAP</th><th>Pontos</th><th>Pop (pl/ha)</th><th>CV%</th><th>Emerg. %</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.stand.map((s: any, i: number) => (
-            <tr key={i}>
-              <td>{s.data || "—"}</td>
-              <td>{s.tipo_contagem || "—"}</td>
-              <td><span className={`badge ${s.parental === "Fêmea" ? "badge-green" : "badge-blue"}`}>{s.parental}</span></td>
-              <td>{s.gleba}</td>
-              <td>{s.dap ?? "—"}</td>
-              <td>{s.pontos ?? "—"}</td>
-              <td>{s.pop_plha ? Math.round(s.pop_plha).toLocaleString("pt-BR") : "—"}</td>
-              <td>{s.cv_stand != null ? `${s.cv_stand.toFixed(1)}%` : "—"}</td>
-              <td>{s.emergencia != null ? `${s.emergencia.toFixed(0)}%` : "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
 
       {/* CV% Stand Final from dedicated records */}
       {cvStandRecs.length > 0 && (
