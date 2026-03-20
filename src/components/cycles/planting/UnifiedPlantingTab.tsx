@@ -122,6 +122,16 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
     },
   });
 
+  const { data: standCvRecords = [] } = useQuery({
+    queryKey: ["stand_cv_records", cycleId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("stand_cv_records").select("*").eq("cycle_id", cycleId).is("deleted_at", null).order("type");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
   const isLoading = plansLoading || actualsLoading || standLoading;
 
   if (isLoading) {
