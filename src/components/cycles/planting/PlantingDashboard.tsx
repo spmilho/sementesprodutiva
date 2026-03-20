@@ -100,7 +100,7 @@ function getBaseSpacing(actuals: any[]): number {
   return getWeightedActualAverage(actuals, (a) => a.row_spacing);
 }
 
-export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords, standCounts, standPoints, glebas, femaleArea, maleArea }: Props) {
+export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords, standCvRecords, standCounts, standPoints, glebas, femaleArea, maleArea }: Props) {
   // CV% planting per type — prefer manual cvRecords, fallback to cvPoints
   const cvPlantingStats = useMemo(() => {
     const result: Record<string, { cv: number; mean: number; n: number }> = {};
