@@ -508,6 +508,7 @@ export default function ReportTab({ cycleId, orgId, cycle }: ReportTabProps) {
         {(data.nicking_marcos?.length > 0 || data.nicking_observacoes?.length > 0) && <ReportNicking data={data} />}
         {(data.despendoamento?.length > 0 || data.plantio?.length > 0) && <ReportDespendoamento data={data} />}
         {data.pragas?.length > 0 && <ReportPragas data={data} />}
+        {(data.roguing_avaliacoes?.length > 0 || data.roguing_solicitacoes?.length > 0 || data.roguing_execucoes?.length > 0) && <ReportRoguing data={data} />}
         {(data.irrigacao?.length > 0 || data.chuva?.length > 0 || data.clima?.length > 0) && <ReportAgua data={data} />}
         {data.umidade?.length > 0 && <ReportUmidade data={data} />}
         {data.estimativa && <ReportEstimativa data={data} />}

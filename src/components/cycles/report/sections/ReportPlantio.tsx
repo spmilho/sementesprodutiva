@@ -121,6 +121,12 @@ export default function ReportPlantio({ data }: { data: any }) {
     };
   });
 
+  // CV% semeadura from dedicated records
+  const cvSem = data.cv_semeadura || [];
+  const cvSemF = cvSem.find((c: any) => c.tipo === "Fêmea")?.cv_percent;
+  const cvSemM1 = cvSem.find((c: any) => c.tipo === "Macho 1" || c.tipo === "Macho")?.cv_percent;
+  const cvSemM2 = hasMale2 ? cvSem.find((c: any) => c.tipo === "Macho 2")?.cv_percent : null;
+
   return (
     <div className="report-section">
       <div className="section-title">🚜 Plantio Realizado</div>
@@ -144,6 +150,36 @@ export default function ReportPlantio({ data }: { data: any }) {
           <div className="kpi-label">Área total do ciclo</div>
         </div>
       </div>
+
+      {/* CV% Semeadura section */}
+      {cvSem.length > 0 && (
+        <div style={{ marginTop: 12, marginBottom: 12 }}>
+          <div className="chart-title">CV% de Semeadura (registrado)</div>
+          <div className="kpi-grid">
+            {cvSemF != null && (
+              <div className="kpi-card" style={{ borderLeft: `4px solid ${cvSemF <= 20 ? "#4CAF50" : cvSemF <= 25 ? "#FF9800" : "#F44336"}` }}>
+                <div className="kpi-value">{cvSemF.toFixed(1)}%</div>
+                <div className="kpi-label">CV% Semeadura Fêmea</div>
+                <div className="kpi-sub">{cvSemF <= 20 ? "Excelente" : cvSemF <= 25 ? "Bom" : cvSemF <= 30 ? "Aceitável" : "Insatisfatório"}</div>
+              </div>
+            )}
+            {cvSemM1 != null && (
+              <div className="kpi-card" style={{ borderLeft: `4px solid ${cvSemM1 <= 20 ? "#4CAF50" : cvSemM1 <= 25 ? "#FF9800" : "#F44336"}` }}>
+                <div className="kpi-value">{cvSemM1.toFixed(1)}%</div>
+                <div className="kpi-label">CV% Semeadura Macho 1</div>
+                <div className="kpi-sub">{cvSemM1 <= 20 ? "Excelente" : cvSemM1 <= 25 ? "Bom" : cvSemM1 <= 30 ? "Aceitável" : "Insatisfatório"}</div>
+              </div>
+            )}
+            {cvSemM2 != null && (
+              <div className="kpi-card" style={{ borderLeft: `4px solid ${cvSemM2 <= 20 ? "#4CAF50" : cvSemM2 <= 25 ? "#FF9800" : "#F44336"}` }}>
+                <div className="kpi-value">{cvSemM2.toFixed(1)}%</div>
+                <div className="kpi-label">CV% Semeadura Macho 2</div>
+                <div className="kpi-sub">{cvSemM2 <= 20 ? "Excelente" : cvSemM2 <= 25 ? "Bom" : cvSemM2 <= 30 ? "Aceitável" : "Insatisfatório"}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {chartData.length > 1 && (
         <div className="chart-container">
