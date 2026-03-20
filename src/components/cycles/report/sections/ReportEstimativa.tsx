@@ -3,6 +3,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 export default function ReportEstimativa({ data }: { data: any }) {
   const est = data.estimativa;
   if (!est) return null;
+  // Only show section when there are actual sample points (real estimates)
+  if (!est.pontos || est.pontos.length === 0) return null;
 
   const chartData = (est.pontos || []).map((p: any) => ({
     name: `P${p.ponto}`,
