@@ -297,22 +297,36 @@ export function transformReportData(data: ReportData, cycle: any): any {
     })),
 
     // ── Estimativa ──
-    estimativa:
-      data.yieldEstimates.length > 0
-        ? {
-            pontos: data.yieldSamplePoints.map((p: any) => ({
-              ponto: p.point_number,
-              gleba: p.gleba_name || "",
-              espigas_ha: p.ears_count,
-              graos_espiga: p.kernels_per_ear,
-              umidade: p.moisture_pct,
-              prod_bruta: p.gross_yield_kg_ha,
-            })),
-            prod_liquida_kgha: data.yieldEstimates[0]?.net_yield_kg_ha,
-            prod_total_ton: data.yieldEstimates[0]?.total_production_tons,
-            sc_ha: data.yieldEstimates[0]?.bags_per_ha,
-          }
-        : null,
+    estimativa: (() => {
+      const targetYield = c.expected_productivity ?? null; // ton/ha
+      const totalArea = c.total_area ?? 0;
+      if (data.yieldEstimates.length > 0) {
+        return {
+          pontos: data.yieldSamplePoints.map((p: any) => ({
+            ponto: p.point_number,
+            gleba: p.gleba_name || "",
+            espigas_ha: p.ears_count,
+            graos_espiga: p.kernels_per_ear,
+            umidade: p.moisture_pct,
+            prod_bruta: p.gross_yield_kg_ha,
+          })),
+          prod_liquida_kgha: data.yieldEstimates[0]?.net_yield_kg_ha,
+          prod_total_ton: data.yieldEstimates[0]?.total_production_tons,
+          sc_ha: data.yieldEstimates[0]?.bags_per_ha,
+          target_yield_ton_ha: targetYield,
+          target_yield_total_ton: targetYield && totalArea ? targetYield * totalArea : null,
+        };
+      }
+      // Always show section with target yield even without sample points
+      return targetYield ? {
+        pontos: [],
+        prod_liquida_kgha: null,
+        prod_total_ton: null,
+        sc_ha: null,
+        target_yield_ton_ha: targetYield,
+        target_yield_total_ton: targetYield * totalArea,
+      } : null;
+    })(),
 
     // ── Colheita ──
     colheita: data.harvestRecords.map((h: any) => ({
