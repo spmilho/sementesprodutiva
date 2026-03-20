@@ -171,27 +171,43 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
     return result;
   }, [actuals, plans, standCounts, standPoints]);
 
-  // Stand stats per type
+  // Stand stats per type — use stand_counts first, fallback to stand_cv_records
   const standStats = useMemo(() => {
     const result: Record<string, { avgPlantsHa: number; avgPlantsPerMeter: number; cv: number; emergPct: number; n: number }> = {};
     for (const type of ["female", "male"] as const) {
       const counts = standCounts.filter((s: any) => s.parent_type === type);
-      if (counts.length === 0) {
-        result[type] = { avgPlantsHa: 0, avgPlantsPerMeter: 0, cv: 0, emergPct: 0, n: 0 };
+      if (counts.length > 0) {
+        const latest = counts[0];
+        const pts = standPoints.filter((p: any) => p.stand_count_id === latest.id);
+        result[type] = {
+          avgPlantsHa: latest.avg_plants_per_ha ?? 0,
+          avgPlantsPerMeter: latest.avg_plants_per_meter ?? 0,
+          cv: latest.cv_stand_pct ?? 0,
+          emergPct: latest.emergence_pct ?? 0,
+          n: pts.length || 1,
+        };
         continue;
       }
-      const latest = counts[0];
-      const pts = standPoints.filter((p: any) => p.stand_count_id === latest.id);
-      result[type] = {
-        avgPlantsHa: latest.avg_plants_per_ha ?? 0,
-        avgPlantsPerMeter: latest.avg_plants_per_meter ?? 0,
-        cv: latest.cv_stand_pct ?? 0,
-        emergPct: latest.emergence_pct ?? 0,
-        n: pts.length,
-      };
+      // Fallback: stand_cv_records
+      const scvRecords = standCvRecords.filter((r: any) =>
+        type === "female" ? r.type === "female" : (r.type === "male" || r.type === "male_1" || r.type === "male_2")
+      );
+      if (scvRecords.length > 0) {
+        const avgCv = scvRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / scvRecords.length;
+        const avgPpm = scvRecords.filter((r: any) => r.plantas_por_metro != null).reduce((s: number, r: any) => s + Number(r.plantas_por_metro), 0) / (scvRecords.filter((r: any) => r.plantas_por_metro != null).length || 1);
+        result[type] = {
+          avgPlantsHa: 0,
+          avgPlantsPerMeter: avgPpm,
+          cv: avgCv,
+          emergPct: 0,
+          n: scvRecords.length,
+        };
+        continue;
+      }
+      result[type] = { avgPlantsHa: 0, avgPlantsPerMeter: 0, cv: 0, emergPct: 0, n: 0 };
     }
     return result;
-  }, [standCounts, standPoints]);
+  }, [standCounts, standPoints, standCvRecords]);
 
   // Chart data by gleba
   const glebaChartData = useMemo(() => {
