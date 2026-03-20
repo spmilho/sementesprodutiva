@@ -616,8 +616,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs">Gleba</TableHead>
-                  <TableHead className="text-xs">Parental</TableHead>
+                   <TableHead className="text-xs">Parental</TableHead>
                   <TableHead className="text-xs text-right">Área(ha)</TableHead>
                   <TableHead className="text-xs text-right">Sem/m Plan.</TableHead>
                   <TableHead className="text-xs text-right">Sem/m Real</TableHead>
@@ -639,7 +638,6 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
 
                   return (
                     <TableRow key={i}>
-                      <TableCell className="text-sm">{r.gleba}</TableCell>
                       <TableCell className="text-sm">{r.parental}</TableCell>
                       <TableCell className="text-sm text-right">{r.area}</TableCell>
                       <TableCell className="text-sm text-right font-mono text-muted-foreground">{r.seedsPerMeterPlan}</TableCell>
