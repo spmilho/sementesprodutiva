@@ -242,13 +242,35 @@ export default function WaterTab({ cycleId, orgId, contractNumber, pivotName, hy
     e.target.value = "";
     try {
       const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array", cellDates: true });
-      const parsed = wb.SheetNames
-        .map((sheetName) => extractWeatherSheetData(wb.Sheets[sheetName]))
-        .find((sheet) => sheet && sheet.rows.length > 0);
+      const wb = XLSX.read(buf, { type: "array", cellDates: true, raw: false });
+      console.log("[WeatherImport] Sheets found:", wb.SheetNames);
+      
+      let parsed: { headers: string[]; rows: any[][] } | null = null;
+      for (const sheetName of wb.SheetNames) {
+        console.log("[WeatherImport] Trying sheet:", sheetName);
+        const result = extractWeatherSheetData(wb.Sheets[sheetName]);
+        if (result && result.rows.length > 0) {
+          parsed = result;
+          console.log("[WeatherImport] Using sheet:", sheetName, "headers:", result.headers.length, "rows:", result.rows.length);
+          break;
+        }
+      }
 
       if (!parsed) {
-        toast.error("Planilha vazia ou sem linhas válidas");
+        // Try again without cellDates for edge cases
+        const wb2 = XLSX.read(buf, { type: "array", cellDates: false });
+        for (const sheetName of wb2.SheetNames) {
+          const result = extractWeatherSheetData(wb2.Sheets[sheetName]);
+          if (result && result.rows.length > 0) {
+            parsed = result;
+            console.log("[WeatherImport] Using sheet (no cellDates):", sheetName);
+            break;
+          }
+        }
+      }
+
+      if (!parsed) {
+        toast.error("Planilha vazia ou sem linhas válidas. Verifique se a aba contém dados meteorológicos.");
         return;
       }
 
