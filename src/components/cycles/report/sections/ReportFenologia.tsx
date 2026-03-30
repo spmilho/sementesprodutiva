@@ -1,6 +1,6 @@
 import CornPlantSvg from "@/components/cycles/phenology/CornPlantSvg";
 
-const STAGES = ["VE", "V1", "V2", "V4", "V6", "V10", "V12", "V14/Vn", "VT", "R1", "R2", "R3", "R4", "R5", "R6"];
+const STAGES = ["VE", "V1", "V2", "V4", "V6", "V8", "V10", "V12", "V14/Vn", "VT", "R1", "R2", "R3", "R4", "R5", "R6"];
 
 function parseBrDate(value: string | null | undefined): Date | null {
   if (!value) return null;

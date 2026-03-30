@@ -29,6 +29,7 @@ const STAGE_CONFIG: Record<string, {
   V2:  { h: 40, leaves: 3, stalkW: 2.5 },
   V4:  { h: 50, leaves: 4, stalkW: 3 },
   V6:  { h: 60, leaves: 5, stalkW: 3.5 },
+  V8:  { h: 68, leaves: 6, stalkW: 3.8 },
   V10: { h: 75, leaves: 6, stalkW: 4 },
   V12: { h: 85, leaves: 7, stalkW: 4.5 },
   "V14/Vn": { h: 95, leaves: 8, stalkW: 5 },

@@ -14,6 +14,7 @@ const STAGE_DESCRIPTIONS: Record<string, string> = {
   V2: "Segunda folha com colar visível",
   V4: "Quarta folha — definição de produção",
   V6: "Sexta folha — ponto de crescimento acima do solo",
+  V8: "Oitava folha — crescimento acelerado",
   V10: "Crescimento rápido do colmo",
   V12: "Determinação do número de fileiras de grãos",
   "V14/Vn": "Última folha antes do pendoamento",
