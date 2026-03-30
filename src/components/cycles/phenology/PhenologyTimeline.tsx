@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CheckCircle2 } from "lucide-react";
 import CornPlantSvg from "./CornPlantSvg";
 
-const ALL_STAGES = ["VE", "V1", "V2", "V4", "V6", "V10", "V12", "V14/Vn", "VT", "R1", "R2", "R3", "R4", "R5", "R6"] as const;
+const ALL_STAGES = ["VE", "V1", "V2", "V4", "V6", "V8", "V10", "V12", "V14/Vn", "VT", "R1", "R2", "R3", "R4", "R5", "R6"] as const;
 
 const STAGE_DESCRIPTIONS: Record<string, string> = {
   VE: "Emergência — coleóptilo visível",
@@ -14,6 +14,7 @@ const STAGE_DESCRIPTIONS: Record<string, string> = {
   V2: "Segunda folha com colar visível",
   V4: "Quarta folha — definição de produção",
   V6: "Sexta folha — ponto de crescimento acima do solo",
+  V8: "Oitava folha — crescimento acelerado",
   V10: "Crescimento rápido do colmo",
   V12: "Determinação do número de fileiras de grãos",
   "V14/Vn": "Última folha antes do pendoamento",
