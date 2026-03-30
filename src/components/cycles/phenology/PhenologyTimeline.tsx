@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CheckCircle2 } from "lucide-react";
 import CornPlantSvg from "./CornPlantSvg";
 
-const ALL_STAGES = ["VE", "V1", "V2", "V4", "V6", "V10", "V12", "V14/Vn", "VT", "R1", "R2", "R3", "R4", "R5", "R6"] as const;
+const ALL_STAGES = ["VE", "V1", "V2", "V4", "V6", "V8", "V10", "V12", "V14/Vn", "VT", "R1", "R2", "R3", "R4", "R5", "R6"] as const;
 
 const STAGE_DESCRIPTIONS: Record<string, string> = {
   VE: "Emergência — coleóptilo visível",
