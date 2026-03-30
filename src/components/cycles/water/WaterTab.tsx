@@ -97,6 +97,10 @@ function formatCellValue(cell: any) {
   return val;
 }
 
+function hasAnyContent(row: any[]): boolean {
+  return row.some((v) => v !== null && v !== undefined && v !== "" && String(v).trim() !== "");
+}
+
 function extractWeatherSheetData(ws: XLSX.WorkSheet) {
   const ref = ws["!ref"];
   let grid: any[][] = [];
@@ -134,25 +138,69 @@ function extractWeatherSheetData(ws: XLSX.WorkSheet) {
       .filter((row) => row.some(isFilledWeatherCell));
   }
 
-  const populatedRows = grid.filter((row) => row.some(isFilledWeatherCell));
+  // Keep rows that have at least one non-empty cell (including numeric 0)
+  const populatedRows = grid.filter(hasAnyContent);
+
+  console.log("[WeatherImport] Total grid rows:", grid.length, "Populated rows:", populatedRows.length);
+  if (populatedRows.length > 0) {
+    console.log("[WeatherImport] First row sample:", populatedRows[0]?.slice(0, 6));
+    if (populatedRows.length > 1) {
+      console.log("[WeatherImport] Second row sample:", populatedRows[1]?.slice(0, 6));
+    }
+  }
 
   if (populatedRows.length === 0) return null;
 
-  // Find the header row: the one with the most filled cells or dates
-  const headerIndex = populatedRows.findIndex((row) => {
-    const filledCount = row.filter(isFilledWeatherCell).length;
+  // Find the header row: prioritize rows with text labels, then date-like values, then most filled cells
+  let headerIndex = -1;
+
+  // Strategy 1: row with at least 2 date-like headers (transposed format)
+  headerIndex = populatedRows.findIndex((row) => {
     const dateLikeCount = row.filter(isDateLikeHeader).length;
-    return dateLikeCount >= 2 || filledCount >= 3;
+    return dateLikeCount >= 2;
   });
+
+  // Strategy 2: row with at least 3 non-numeric filled cells (text labels)
+  if (headerIndex < 0) {
+    headerIndex = populatedRows.findIndex((row) => {
+      const textCells = row.filter((v) => {
+        if (!isFilledWeatherCell(v)) return false;
+        return typeof v === "string" && isNaN(Number(v));
+      });
+      return textCells.length >= 2;
+    });
+  }
+
+  // Strategy 3: row with at least 3 filled cells
+  if (headerIndex < 0) {
+    headerIndex = populatedRows.findIndex((row) => {
+      return row.filter(isFilledWeatherCell).length >= 3;
+    });
+  }
 
   const safeHeaderIndex = headerIndex >= 0 ? headerIndex : 0;
   const headerRow = populatedRows[safeHeaderIndex] || [];
-  const rows = populatedRows.slice(safeHeaderIndex + 1).filter((row) => row.some(isFilledWeatherCell));
+  const rows = populatedRows.slice(safeHeaderIndex + 1);
 
-  if (headerRow.filter(isFilledWeatherCell).length === 0) return null;
+  console.log("[WeatherImport] Header index:", safeHeaderIndex, "Header:", headerRow.slice(0, 6), "Data rows:", rows.length);
+
+  if (headerRow.filter(isFilledWeatherCell).length === 0 && rows.length === 0) return null;
+
+  // If no data rows but we have populated rows, try using first row as header and rest as data
+  if (rows.length === 0 && populatedRows.length >= 2) {
+    return {
+      headers: populatedRows[0].map((cell: any, index: number) => {
+        const label = String(cell ?? "").trim();
+        return label || `Coluna ${index + 1}`;
+      }),
+      rows: populatedRows.slice(1),
+    };
+  }
+
+  if (rows.length === 0) return null;
 
   return {
-    headers: headerRow.map((cell, index) => {
+    headers: headerRow.map((cell: any, index: number) => {
       const label = String(cell ?? "").trim();
       return label || `Coluna ${index + 1}`;
     }),
