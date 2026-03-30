@@ -74,11 +74,22 @@ function normalizeTemperatureTriplet(
   tempMax: number | null,
   tempMin: number | null,
   tempAvg: number | null,
-): { tempMax: number | null; tempMin: number | null; tempAvg: number | null } {
+  humidityAvg: number | null,
+): { tempMax: number | null; tempMin: number | null; tempAvg: number | null; humidityAvg: number | null } {
+  // Detect humidity value stored as temp_avg (e.g. temp_avg=89.9 when temp_max=28)
+  if (tempMax != null && tempAvg != null && tempAvg > 40 && tempMax < 45) {
+    const realHumAvg = humidityAvg ?? tempAvg; // preserve if humidity already set
+    const derivedAvg = tempMin != null ? (tempMax + tempMin) / 2 : null;
+    return {
+      tempMax,
+      tempMin,
+      tempAvg: derivedAvg,
+      humidityAvg: humidityAvg == null ? tempAvg : humidityAvg,
+    };
+  }
   // Detect humidity value stored as temp_min (e.g. 79 when temp_max is 25)
   if (tempMax != null && tempMin != null && tempAvg != null && tempMin > 40 && tempMax < 40) {
-    // temp_min is actually humidity — derive real min from avg
-    return { tempMax, tempMin: 2 * tempAvg - tempMax, tempAvg };
+    return { tempMax, tempMin: 2 * tempAvg - tempMax, tempAvg, humidityAvg };
   }
   // Handles known imported rotation pattern: [avg, max, min]
   if (tempMax != null && tempMin != null && tempAvg != null && tempMax < tempMin) {
@@ -86,9 +97,10 @@ function normalizeTemperatureTriplet(
       tempMax: tempMin,
       tempMin: tempAvg,
       tempAvg: tempMax,
+      humidityAvg,
     };
   }
-  return { tempMax, tempMin, tempAvg };
+  return { tempMax, tempMin, tempAvg, humidityAvg };
 }
 
 function buildPhenologyMap(records: PhenologyRecord[]): Map<string, string> {
@@ -217,13 +229,14 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
       .map((r) => {
         const normalizedDate = normalizeDateKey(r.record_date);
         const safeDate = normalizedDate || r.record_date;
-        const normalizedTemps = normalizeTemperatureTriplet(r.temp_max_c, r.temp_min_c, r.temp_avg_c);
+        const normalizedTemps = normalizeTemperatureTriplet(r.temp_max_c, r.temp_min_c, r.temp_avg_c, r.humidity_avg_pct);
 
         return {
           ...r,
           temp_max_c: normalizedTemps.tempMax,
           temp_min_c: normalizedTemps.tempMin,
           temp_avg_c: normalizedTemps.tempAvg,
+          humidity_avg_pct: normalizedTemps.humidityAvg,
           record_date: safeDate,
           dateLabel: normalizedDate ? toDateLabel(normalizedDate) : String(r.record_date),
           _sortTs: normalizedDate ? dateKeyToTimestamp(normalizedDate) : Number.POSITIVE_INFINITY,

@@ -31,16 +31,28 @@ function normalizeTemperatureTriplet(
   tempMax: number | null,
   tempMin: number | null,
   tempAvg: number | null,
-): { tempMax: number | null; tempMin: number | null; tempAvg: number | null } {
+  humidityAvg?: number | null,
+): { tempMax: number | null; tempMin: number | null; tempAvg: number | null; humidityAvg?: number | null } {
+  // Detect humidity value stored as temp_avg (e.g. temp_avg=89.9 when temp_max=28)
+  if (tempMax != null && tempAvg != null && tempAvg > 40 && tempMax < 45) {
+    const derivedAvg = tempMin != null ? (tempMax + tempMin) / 2 : null;
+    return {
+      tempMax,
+      tempMin,
+      tempAvg: derivedAvg,
+      humidityAvg: humidityAvg == null ? tempAvg : humidityAvg,
+    };
+  }
   // Corrige padrão de rotação conhecido do import: [média, máx, mín]
   if (tempMax != null && tempMin != null && tempAvg != null && tempMax < tempMin) {
     return {
       tempMax: tempMin,
       tempMin: tempAvg,
       tempAvg: tempMax,
+      humidityAvg,
     };
   }
-  return { tempMax, tempMin, tempAvg };
+  return { tempMax, tempMin, tempAvg, humidityAvg };
 }
 
 function normalizeDateKey(value: string | null | undefined): string | null {
@@ -141,12 +153,14 @@ export default function ReportAgua({ data }: { data: any }) {
       toNullableNumber(r.temp_max),
       toNullableNumber(r.temp_min),
       toNullableNumber(r.temp_media),
+      toNullableNumber(r.umidade_media),
     );
     return {
       ...r,
       temp_max: temps.tempMax,
       temp_min: temps.tempMin,
       temp_media: temps.tempAvg,
+      umidade_media: temps.humidityAvg ?? r.umidade_media,
     };
   });
 
