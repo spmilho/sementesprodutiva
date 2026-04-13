@@ -28,7 +28,7 @@ function buildStageMap(records: any[]) {
     }
     const currentDate = parseBrDate(current.data)?.getTime() || 0;
     const nextDate = parseBrDate(r.data)?.getTime() || 0;
-    if (nextDate < currentDate) map.set(stage, r);
+    if (nextDate > currentDate) map.set(stage, r);
   });
   return map;
 }
