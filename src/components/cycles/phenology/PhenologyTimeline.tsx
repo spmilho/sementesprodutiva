@@ -52,7 +52,7 @@ function buildStageInfos(records: any[], filter: string, plantingDate?: string |
   const stageMap = new Map<string, any>();
   for (const r of filtered) {
     const existing = stageMap.get(r.stage);
-    if (!existing || r.observation_date < existing.observation_date) {
+    if (!existing || r.observation_date > existing.observation_date) {
       stageMap.set(r.stage, r);
     }
   }
