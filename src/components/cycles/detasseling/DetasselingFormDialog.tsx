@@ -92,10 +92,25 @@ export default function DetasselingFormDialog({ open, onOpenChange, cycleId, org
     }
     setSaving(true);
     try {
+      // Resolve org_id from the user's profile (RLS expects org_id = user_org_id())
+      let effectiveOrgId = orgId;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setSaving(false);
+        return toast.error("Sessão expirada. Faça login novamente.");
+      }
+      const { data: profile } = await (supabase as any)
+        .from("profiles")
+        .select("org_id")
+        .eq("id", user.id)
+        .single();
+      if (profile?.org_id) effectiveOrgId = profile.org_id;
+
       const area = parseFloat(areaWorked);
       const { error } = await addRecord("detasseling_records", {
         cycle_id: cycleId,
-        org_id: orgId,
+        org_id: effectiveOrgId,
+        created_by: user.id,
         operation_date: date,
         pass_type: passType,
         shift: shift || null,
