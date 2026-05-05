@@ -43,6 +43,7 @@ export default function Detasseling({ cycleId, orgId, contractNumber, pivotName,
         .from("detasseling_records")
         .select("*")
         .eq("cycle_id", cycleId)
+        .is("deleted_at", null)
         .order("operation_date", { ascending: true });
       if (error) throw error;
       return data || [];
