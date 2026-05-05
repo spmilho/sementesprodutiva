@@ -270,7 +270,7 @@ export default function Dashboard() {
       // Detasseling remaining >1%
       const detRecs = detasseling.filter((d: any) => d.cycle_id === c.id);
       if (detRecs.length > 0) {
-        const lastRec = detRecs[detRecs.length - 1];
+        const lastRec = [...detRecs].sort((a: any, b: any) => String(a.operation_date || "").localeCompare(String(b.operation_date || ""))).at(-1);
         if (lastRec.pct_remaining_after > 1) {
           list.push({ type: "error", message: `${c.contract_number || c.field_name}: remanescente despend. ${lastRec.pct_remaining_after}% (>1%)` });
         }

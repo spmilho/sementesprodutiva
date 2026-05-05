@@ -94,8 +94,9 @@ export function useDashboardData(filters: {
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("detasseling_records")
-        .select("cycle_id, area_worked_ha, pass_type, pct_remaining_after")
-        .is("deleted_at", null);
+        .select("cycle_id, operation_date, area_worked_ha, pass_type, pct_remaining_after")
+        .is("deleted_at", null)
+        .order("operation_date", { ascending: true });
       return data || [];
     },
     staleTime: 60_000,
