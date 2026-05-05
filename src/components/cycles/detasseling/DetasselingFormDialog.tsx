@@ -134,6 +134,8 @@ export default function DetasselingFormDialog({ open, onOpenChange, cycleId, org
       if (error) throw error;
       toast.success("Operação registrada!");
       qc.invalidateQueries({ queryKey: ["detasseling", cycleId] });
+      qc.invalidateQueries({ queryKey: ["forecast-det-records-v2", cycleId] });
+      qc.invalidateQueries({ queryKey: ["dashboard-detasseling"] });
       onOpenChange(false);
       // Reset form
       setAreaWorked(""); setMethod(""); setTeamSize(""); setMachineId(""); setMachineHours("");
