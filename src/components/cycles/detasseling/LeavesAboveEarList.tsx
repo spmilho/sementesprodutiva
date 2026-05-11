@@ -84,9 +84,15 @@ export default function LeavesAboveEarList({ cycleId }: Props) {
         {evaluations.map((e: any) => (
           <div key={e.id} className="border rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-3 text-sm flex-wrap">
                 <span className="font-medium">{format(new Date(e.evaluation_date + "T12:00:00"), "dd/MM/yyyy")}</span>
+                {e.planting_scheme && (
+                  <span className="text-muted-foreground">Esquema {e.planting_scheme} ({e.female_rows} fêmeas)</span>
+                )}
                 <span className="text-muted-foreground">{e.points_sampled} pontos</span>
+                {e.total_plants_sampled != null && (
+                  <span className="text-muted-foreground">{e.total_plants_sampled} plantas</span>
+                )}
                 <span className="font-bold text-primary">Média: {e.avg_leaves}</span>
               </div>
               <Button variant="ghost" size="sm" className="text-destructive h-7 text-xs" onClick={() => deleteMutation.mutate(e.id)}>
@@ -95,24 +101,52 @@ export default function LeavesAboveEarList({ cycleId }: Props) {
             </div>
             {e.notes && <p className="text-xs text-muted-foreground">{e.notes}</p>}
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="p-1.5">Ponto</th>
-                    <th className="p-1.5">Folhas</th>
-                    <th className="p-1.5">Foto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(e.leaves_above_ear_points || []).sort((a: any, b: any) => a.point_number - b.point_number).map((p: any) => (
-                    <tr key={p.id} className="border-b">
-                      <td className="p-1.5">#{p.point_number}</td>
-                      <td className="p-1.5 font-medium">{p.leaves_count}</td>
-                      <td className="p-1.5">{p.photo_url ? <PhotoThumb path={p.photo_url} /> : <span className="text-muted-foreground">—</span>}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {(() => {
+                const pts: any[] = (e.leaves_above_ear_points || []).slice().sort(
+                  (a: any, b: any) => (a.point_number - b.point_number) || ((a.row_number ?? 1) - (b.row_number ?? 1))
+                );
+                const grouped = new Map<number, any[]>();
+                pts.forEach((p) => {
+                  const arr = grouped.get(p.point_number) ?? [];
+                  arr.push(p);
+                  grouped.set(p.point_number, arr);
+                });
+                return (
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b text-left text-muted-foreground">
+                        <th className="p-1.5">Ponto</th>
+                        <th className="p-1.5">Linhas fêmea (folhas)</th>
+                        <th className="p-1.5">Média</th>
+                        <th className="p-1.5">Foto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from(grouped.entries()).map(([pn, rows]) => {
+                        const vals = rows.map((r) => Number(r.leaves_count)).filter((n) => !isNaN(n));
+                        const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+                        const photo = rows.find((r) => r.photo_url)?.photo_url || null;
+                        return (
+                          <tr key={pn} className="border-b align-top">
+                            <td className="p-1.5 font-medium">#{pn}</td>
+                            <td className="p-1.5">
+                              <div className="flex flex-wrap gap-1">
+                                {rows.map((r) => (
+                                  <span key={r.id} className="px-1.5 py-0.5 rounded bg-muted text-[11px]">
+                                    F{r.row_number ?? 1}: <b>{r.leaves_count}</b>
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="p-1.5 font-semibold text-primary">{avg.toFixed(2)}</td>
+                            <td className="p-1.5">{photo ? <PhotoThumb path={photo} /> : <span className="text-muted-foreground">—</span>}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                );
+              })()}
             </div>
           </div>
         ))}
