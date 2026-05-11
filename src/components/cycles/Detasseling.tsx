@@ -14,6 +14,8 @@ import { ptBR } from "date-fns/locale";
 import DetasselingFormDialog from "./detasseling/DetasselingFormDialog";
 import DetasselingCharts from "./detasseling/DetasselingCharts";
 import DetasselingForecast from "./detasseling/DetasselingForecast";
+import LeavesAboveEarDialog from "./detasseling/LeavesAboveEarDialog";
+import LeavesAboveEarList from "./detasseling/LeavesAboveEarList";
 import {
   PASS_TYPES, getPassLabel, getMethodLabel, getShiftLabel,
   getPassBadgeColor, getMethodBadgeColor,
