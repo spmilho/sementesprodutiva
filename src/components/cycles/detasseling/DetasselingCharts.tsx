@@ -128,8 +128,8 @@ export default function DetasselingCharts({ records, femaleArea }: Props) {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="label" tick={{ fontSize: 11 }} />
               <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} />
-              <Bar dataKey="avg" name="% Tirado Médio" label={{ position: "inside", fontSize: 11, fill: "#fff" }}>
+              <Tooltip formatter={(v: number) => `${Number(v).toFixed(2)}%`} />
+              <Bar dataKey="avg" name="% Tirado Médio" label={{ position: "inside", fontSize: 11, fill: "#fff", formatter: (v: number) => Number(v).toFixed(2) }}>
                 {passSummary.map((entry, i) => (
                   <rect key={i} fill={entry.fill} />
                 ))}
