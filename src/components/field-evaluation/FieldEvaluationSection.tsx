@@ -25,6 +25,7 @@ export default function FieldEvaluationSection({ cycleId, orgId }: Props) {
         .select("*")
         .eq("cycle_id", cycleId)
         .eq("org_id", orgId)
+        .is("deleted_at", null)
         .order("visit_date", { ascending: false });
       if (error) throw error;
       return data;
