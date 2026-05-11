@@ -4,8 +4,177 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Bar,
+  Line,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+  Cell,
+} from "recharts";
+
+const ROW_COLORS = [
+  "hsl(217 91% 60%)",
+  "hsl(142 71% 45%)",
+  "hsl(38 92% 50%)",
+  "hsl(280 65% 55%)",
+  "hsl(199 89% 48%)",
+  "hsl(346 77% 50%)",
+  "hsl(173 58% 39%)",
+  "hsl(43 74% 49%)",
+  "hsl(262 52% 47%)",
+  "hsl(12 76% 61%)",
+  "hsl(197 37% 24%)",
+  "hsl(120 40% 40%)",
+];
+
+function LeavesChart({ evaluation }: { evaluation: any }) {
+  const { perPointData, perRowData, overallAvg, femaleRows } = useMemo(() => {
+    const pts: any[] = (evaluation.leaves_above_ear_points || [])
+      .slice()
+      .sort(
+        (a: any, b: any) =>
+          a.point_number - b.point_number || (a.row_number ?? 1) - (b.row_number ?? 1)
+      );
+
+    const grouped = new Map<number, any[]>();
+    pts.forEach((p) => {
+      const arr = grouped.get(p.point_number) ?? [];
+      arr.push(p);
+      grouped.set(p.point_number, arr);
+    });
+
+    const fr =
+      evaluation.female_rows ??
+      Math.max(1, ...pts.map((p: any) => p.row_number ?? 1));
+
+    const perPointData = Array.from(grouped.entries()).map(([pn, rows]) => {
+      const row: any = { name: `P${pn}` };
+      let sum = 0,
+        n = 0;
+      rows.forEach((r: any) => {
+        const v = Number(r.leaves_count);
+        if (!isNaN(v)) {
+          row[`F${r.row_number ?? 1}`] = v;
+          sum += v;
+          n += 1;
+        }
+      });
+      row.media = n ? +(sum / n).toFixed(2) : 0;
+      return row;
+    });
+
+    const perRowAgg = new Map<number, number[]>();
+    pts.forEach((p) => {
+      const v = Number(p.leaves_count);
+      if (isNaN(v)) return;
+      const r = p.row_number ?? 1;
+      if (!perRowAgg.has(r)) perRowAgg.set(r, []);
+      perRowAgg.get(r)!.push(v);
+    });
+    const perRowData = Array.from({ length: fr }, (_, i) => {
+      const r = i + 1;
+      const arr = perRowAgg.get(r) ?? [];
+      const avg = arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+      return { name: `Fêmea ${r}`, media: +avg.toFixed(2) };
+    });
+
+    const allVals = pts.map((p: any) => Number(p.leaves_count)).filter((n: number) => !isNaN(n));
+    const overallAvg = allVals.length
+      ? +(allVals.reduce((a: number, b: number) => a + b, 0) / allVals.length).toFixed(2)
+      : 0;
+
+    return { perPointData, perRowData, overallAvg, femaleRows: fr };
+  }, [evaluation]);
+
+  if (perPointData.length === 0) return null;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 pt-2">
+      <div className="border rounded-md p-2">
+        <div className="text-xs font-medium mb-1 text-muted-foreground">
+          Folhas por ponto e linha (média geral:{" "}
+          <b className="text-primary">{overallAvg}</b>)
+        </div>
+        <ResponsiveContainer width="100%" height={240}>
+          <ComposedChart data={perPointData} margin={{ top: 8, right: 40, left: -16, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} domain={[0, "auto"]} />
+            <Tooltip contentStyle={{ fontSize: 12 }} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            {Array.from({ length: femaleRows }, (_, i) => (
+              <Bar
+                key={i}
+                dataKey={`F${i + 1}`}
+                fill={ROW_COLORS[i % ROW_COLORS.length]}
+                radius={[2, 2, 0, 0]}
+              />
+            ))}
+            <Line
+              type="monotone"
+              dataKey="media"
+              stroke="hsl(var(--foreground))"
+              strokeWidth={2}
+              dot={{ r: 3 }}
+              name="Média do ponto"
+            />
+            <ReferenceLine
+              y={overallAvg}
+              stroke="hsl(var(--destructive))"
+              strokeDasharray="6 4"
+              strokeWidth={2}
+              label={{
+                value: `Média ${overallAvg}`,
+                position: "right",
+                fontSize: 10,
+                fill: "hsl(var(--destructive))",
+              }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="border rounded-md p-2">
+        <div className="text-xs font-medium mb-1 text-muted-foreground">
+          Média por linha de fêmea
+        </div>
+        <ResponsiveContainer width="100%" height={240}>
+          <ComposedChart data={perRowData} margin={{ top: 8, right: 40, left: -16, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} domain={[0, "auto"]} />
+            <Tooltip contentStyle={{ fontSize: 12 }} />
+            <Bar dataKey="media" radius={[4, 4, 0, 0]} name="Média de folhas">
+              {perRowData.map((_, i) => (
+                <Cell key={i} fill={ROW_COLORS[i % ROW_COLORS.length]} />
+              ))}
+            </Bar>
+            <ReferenceLine
+              y={overallAvg}
+              stroke="hsl(var(--destructive))"
+              strokeDasharray="6 4"
+              strokeWidth={2}
+              label={{
+                value: `Média ${overallAvg}`,
+                position: "right",
+                fontSize: 10,
+                fill: "hsl(var(--destructive))",
+              }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   cycleId: string;
