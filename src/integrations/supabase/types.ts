@@ -2108,6 +2108,83 @@ export type Database = {
           },
         ]
       }
+      leaves_above_ear_evaluations: {
+        Row: {
+          avg_leaves: number | null
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          deleted_at: string | null
+          evaluation_date: string
+          id: string
+          notes: string | null
+          org_id: string
+          points_sampled: number
+          updated_at: string
+        }
+        Insert: {
+          avg_leaves?: number | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          deleted_at?: string | null
+          evaluation_date: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          points_sampled: number
+          updated_at?: string
+        }
+        Update: {
+          avg_leaves?: number | null
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          deleted_at?: string | null
+          evaluation_date?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          points_sampled?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      leaves_above_ear_points: {
+        Row: {
+          created_at: string
+          evaluation_id: string
+          id: string
+          leaves_count: number
+          photo_url: string | null
+          point_number: number
+        }
+        Insert: {
+          created_at?: string
+          evaluation_id: string
+          id?: string
+          leaves_count: number
+          photo_url?: string | null
+          point_number: number
+        }
+        Update: {
+          created_at?: string
+          evaluation_id?: string
+          id?: string
+          leaves_count?: number
+          photo_url?: string | null
+          point_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaves_above_ear_points_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "leaves_above_ear_evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       moisture_samples: {
         Row: {
           created_at: string

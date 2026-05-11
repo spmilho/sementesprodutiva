@@ -27,13 +27,12 @@ import {
   MALE_TASSEL_STAGES, FEMALE_SILK_STAGES, POLLEN_INTENSITY, POLLINATION_EVIDENCE,
   WATER_STRESS_OPTIONS, SYNC_OPTIONS,
 } from "./nicking/constants";
-import FloweringCurvesChart from "./nicking/FloweringCurvesChart";
-import GanttChart from "./nicking/GanttChart";
 import MilestonesSection from "./nicking/MilestonesSection";
 import ObservationHistory from "./nicking/ObservationHistory";
 import FixedPointsMap from "./nicking/FixedPointsMap";
 import NickingExport from "./nicking/NickingExport";
-import InspectionImport from "./nicking/InspectionImport";
+import LeavesAboveEarDialog from "./nicking/LeavesAboveEarDialog";
+import LeavesAboveEarList from "./nicking/LeavesAboveEarList";
 
 // ═══════════════════════════════════
 // TYPES & HELPERS
@@ -96,6 +95,7 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
   const [capturingGps, setCapturingGps] = useState(false);
   const [fpGps, setFpGps] = useState<{ lat: number; lng: number } | null>(null);
   const [fpPhotoFile, setFpPhotoFile] = useState<File | null>(null);
+  const [leavesDialogOpen, setLeavesDialogOpen] = useState(false);
 
   const floweringChartRef = useRef<HTMLDivElement>(null);
   const ganttChartRef = useRef<HTMLDivElement>(null);
@@ -390,12 +390,7 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
         />
       </div>
 
-      {/* 1.5. IMPORTAÇÃO DE RELATÓRIO DE INSPEÇÃO */}
-      <InspectionImport cycleId={cycleId} orgId={orgId} />
-
-      {/* 2. SEMÁFORO + KPI CARDS */}
-      <SyncSemaphore status={latestStatus} />
-
+      {/* 2. KPI CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card><CardContent className="p-3"><p className="text-[10px] text-muted-foreground">Pontos Fixos</p><p className="text-xl font-bold">{fixedPoints.length}</p></CardContent></Card>
         <Card><CardContent className="p-3"><p className="text-[10px] text-muted-foreground">Observações</p><p className="text-xl font-bold">{observations.length}</p></CardContent></Card>
@@ -416,7 +411,6 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
           </CardContent>
         </Card>
       </div>
-
       {/* 3. ALERTAS */}
       {latestStatus === "critical_gap" && (
         <div className="rounded-lg border-2 border-[#F44336]/50 bg-red-50 dark:bg-red-950/30 p-4 flex items-center gap-3">
@@ -434,20 +428,6 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
         </div>
       )}
 
-      {/* 4. GRÁFICO CURVAS DE FLORESCIMENTO */}
-      <FloweringCurvesChart
-        ref={floweringChartRef}
-        observations={observations} allReadings={allReadings}
-        activeParentTypes={activeParentTypes} femalePlantingDate={femalePlantingDate}
-      />
-
-      {/* 5. GRÁFICO GANTT */}
-      <GanttChart
-        ref={ganttChartRef}
-        milestones={milestones} fixedPoints={fixedPoints}
-        femalePlantingDate={femalePlantingDate} malePlantingDates={malePlantingDates}
-      />
-
       {/* 6. MARCOS + TIMELINE */}
       <MilestonesSection milestones={milestones} fixedPoints={fixedPoints} />
 
@@ -462,8 +442,14 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
         <Button className="gap-2" onClick={() => { resetObsForm(); setObsDialogOpen(true); }} disabled={fixedPoints.length === 0}>
           <Plus className="h-4 w-4" /> Registrar Observação
         </Button>
+        <Button variant="secondary" className="gap-2" onClick={() => setLeavesDialogOpen(true)}>
+          <Plus className="h-4 w-4" /> Avaliar Folhas Acima da Espiga
+        </Button>
         {fixedPoints.length === 0 && <p className="text-xs text-muted-foreground self-center">Cadastre pontos fixos primeiro</p>}
       </div>
+
+      <LeavesAboveEarList cycleId={cycleId} />
+      <LeavesAboveEarDialog open={leavesDialogOpen} onOpenChange={setLeavesDialogOpen} cycleId={cycleId} orgId={orgId} />
 
       {/* PONTOS FIXOS TABLE */}
       {fixedPoints.length > 0 && (

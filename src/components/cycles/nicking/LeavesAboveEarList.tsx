@@ -1,0 +1,122 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+interface Props {
+  cycleId: string;
+}
+
+function PhotoThumb({ path }: { path: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+
+  const load = async () => {
+    if (url) return;
+    const { data } = await supabase.storage.from("cycle-media").createSignedUrl(path, 3600);
+    if (data?.signedUrl) setUrl(data.signedUrl);
+  };
+
+  return (
+    <>
+      <Button
+        variant="link"
+        size="sm"
+        className="h-auto p-0 text-xs"
+        onClick={async () => { await load(); setOpen(true); }}
+      >
+        Ver foto
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Foto do ponto</DialogTitle></DialogHeader>
+          {url ? <img src={url} alt="Ponto" className="w-full rounded" /> : <p className="text-sm">Carregando...</p>}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+export default function LeavesAboveEarList({ cycleId }: Props) {
+  const queryClient = useQueryClient();
+
+  const { data: evaluations = [] } = useQuery({
+    queryKey: ["leaves_above_ear", cycleId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("leaves_above_ear_evaluations")
+        .select("*, leaves_above_ear_points(*)")
+        .eq("cycle_id", cycleId)
+        .is("deleted_at", null)
+        .order("evaluation_date", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).rpc("soft_delete_record", {
+        _table_name: "leaves_above_ear_evaluations",
+        _record_id: id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leaves_above_ear", cycleId] });
+      toast.success("Avaliação removida");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  if (evaluations.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">🌿 Folhas Acima da Espiga</CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 pt-0 space-y-4">
+        {evaluations.map((e: any) => (
+          <div key={e.id} className="border rounded-lg p-3 space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-3 text-sm">
+                <span className="font-medium">{format(new Date(e.evaluation_date + "T12:00:00"), "dd/MM/yyyy")}</span>
+                <span className="text-muted-foreground">{e.points_sampled} pontos</span>
+                <span className="font-bold text-primary">Média: {e.avg_leaves}</span>
+              </div>
+              <Button variant="ghost" size="sm" className="text-destructive h-7 text-xs" onClick={() => deleteMutation.mutate(e.id)}>
+                Remover
+              </Button>
+            </div>
+            {e.notes && <p className="text-xs text-muted-foreground">{e.notes}</p>}
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b text-left text-muted-foreground">
+                    <th className="p-1.5">Ponto</th>
+                    <th className="p-1.5">Folhas</th>
+                    <th className="p-1.5">Foto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(e.leaves_above_ear_points || []).sort((a: any, b: any) => a.point_number - b.point_number).map((p: any) => (
+                    <tr key={p.id} className="border-b">
+                      <td className="p-1.5">#{p.point_number}</td>
+                      <td className="p-1.5 font-medium">{p.leaves_count}</td>
+                      <td className="p-1.5">{p.photo_url ? <PhotoThumb path={p.photo_url} /> : <span className="text-muted-foreground">—</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
