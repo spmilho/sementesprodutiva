@@ -39,6 +39,7 @@ export default function FieldEvaluationList() {
         .from("field_visits")
         .select("*")
         .eq("cycle_id", cycleId!)
+        .is("deleted_at", null)
         .order("visit_date", { ascending: false });
       if (error) throw error;
       return data;
