@@ -389,33 +389,6 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
         />
       </div>
 
-      {/* 1.5. IMPORTAÇÃO DE RELATÓRIO DE INSPEÇÃO */}
-      <InspectionImport cycleId={cycleId} orgId={orgId} />
-
-      {/* 2. SEMÁFORO + KPI CARDS */}
-      <SyncSemaphore status={latestStatus} />
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Card><CardContent className="p-3"><p className="text-[10px] text-muted-foreground">Pontos Fixos</p><p className="text-xl font-bold">{fixedPoints.length}</p></CardContent></Card>
-        <Card><CardContent className="p-3"><p className="text-[10px] text-muted-foreground">Observações</p><p className="text-xl font-bold">{observations.length}</p></CardContent></Card>
-        <Card><CardContent className="p-3"><p className="text-[10px] text-muted-foreground">GDU Acumulado</p><p className="text-xl font-bold">{latest?.gdu_accumulated ?? "—"}</p></CardContent></Card>
-        <Card><CardContent className="p-3"><p className="text-[10px] text-muted-foreground">Macho(s)</p><p className="text-xl font-bold">{fixedPoints.filter((fp: any) => fp.parent_type.startsWith("male")).length} pts</p></CardContent></Card>
-        <Card><CardContent className="p-3"><p className="text-[10px] text-muted-foreground">Fêmea</p><p className="text-xl font-bold">{fixedPoints.filter((fp: any) => fp.parent_type === "female").length} pts</p></CardContent></Card>
-        <Card className={cn(daysSinceObs != null && daysSinceObs > 3 ? "border-[#F44336]/50" : "")}>
-          <CardContent className="p-3">
-            <p className="text-[10px] text-muted-foreground">Última Obs.</p>
-            {latest ? (
-              <>
-                <p className="text-sm font-medium">{format(new Date(latest.observation_date + "T12:00:00"), "dd/MM")}</p>
-                {daysSinceObs != null && daysSinceObs > 3 && (
-                  <p className="text-[10px] font-medium" style={{ color: "#F44336" }}><AlertTriangle className="h-3 w-3 inline" /> {daysSinceObs}d sem avaliação</p>
-                )}
-              </>
-            ) : <p className="text-sm text-muted-foreground">—</p>}
-          </CardContent>
-        </Card>
-      </div>
-
       {/* 3. ALERTAS */}
       {latestStatus === "critical_gap" && (
         <div className="rounded-lg border-2 border-[#F44336]/50 bg-red-50 dark:bg-red-950/30 p-4 flex items-center gap-3">
@@ -432,20 +405,6 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
           <p className="text-sm text-amber-800 dark:text-amber-200">{daysSinceObs} dias sem avaliação de nicking. Durante o florescimento, avalie a cada 1-2 dias.</p>
         </div>
       )}
-
-      {/* 4. GRÁFICO CURVAS DE FLORESCIMENTO */}
-      <FloweringCurvesChart
-        ref={floweringChartRef}
-        observations={observations} allReadings={allReadings}
-        activeParentTypes={activeParentTypes} femalePlantingDate={femalePlantingDate}
-      />
-
-      {/* 5. GRÁFICO GANTT */}
-      <GanttChart
-        ref={ganttChartRef}
-        milestones={milestones} fixedPoints={fixedPoints}
-        femalePlantingDate={femalePlantingDate} malePlantingDates={malePlantingDates}
-      />
 
       {/* 6. MARCOS + TIMELINE */}
       <MilestonesSection milestones={milestones} fixedPoints={fixedPoints} />
