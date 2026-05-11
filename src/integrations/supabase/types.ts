@@ -2116,10 +2116,14 @@ export type Database = {
           cycle_id: string
           deleted_at: string | null
           evaluation_date: string
+          female_rows: number | null
           id: string
           notes: string | null
           org_id: string
+          planting_scheme: string | null
+          plants_per_female_row: number | null
           points_sampled: number
+          total_plants_sampled: number | null
           updated_at: string
         }
         Insert: {
@@ -2129,10 +2133,14 @@ export type Database = {
           cycle_id: string
           deleted_at?: string | null
           evaluation_date: string
+          female_rows?: number | null
           id?: string
           notes?: string | null
           org_id: string
+          planting_scheme?: string | null
+          plants_per_female_row?: number | null
           points_sampled: number
+          total_plants_sampled?: number | null
           updated_at?: string
         }
         Update: {
@@ -2142,10 +2150,14 @@ export type Database = {
           cycle_id?: string
           deleted_at?: string | null
           evaluation_date?: string
+          female_rows?: number | null
           id?: string
           notes?: string | null
           org_id?: string
+          planting_scheme?: string | null
+          plants_per_female_row?: number | null
           points_sampled?: number
+          total_plants_sampled?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -2158,6 +2170,7 @@ export type Database = {
           leaves_count: number
           photo_url: string | null
           point_number: number
+          row_number: number | null
         }
         Insert: {
           created_at?: string
@@ -2166,6 +2179,7 @@ export type Database = {
           leaves_count: number
           photo_url?: string | null
           point_number: number
+          row_number?: number | null
         }
         Update: {
           created_at?: string
@@ -2174,6 +2188,7 @@ export type Database = {
           leaves_count?: number
           photo_url?: string | null
           point_number?: number
+          row_number?: number | null
         }
         Relationships: [
           {
