@@ -35,6 +35,7 @@ interface Props {
 export default function Detasseling({ cycleId, orgId, contractNumber, pivotName, hybridName, cooperatorName, femaleArea, detasselingDap }: Props) {
   const qc = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
+  const [leavesDialogOpen, setLeavesDialogOpen] = useState(false);
   const [filterPass, setFilterPass] = useState("all");
   const [filterMethod, setFilterMethod] = useState("all");
 
