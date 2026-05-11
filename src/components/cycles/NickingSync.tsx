@@ -31,8 +31,6 @@ import MilestonesSection from "./nicking/MilestonesSection";
 import ObservationHistory from "./nicking/ObservationHistory";
 import FixedPointsMap from "./nicking/FixedPointsMap";
 import NickingExport from "./nicking/NickingExport";
-import LeavesAboveEarDialog from "./nicking/LeavesAboveEarDialog";
-import LeavesAboveEarList from "./nicking/LeavesAboveEarList";
 
 // ═══════════════════════════════════
 // TYPES & HELPERS
