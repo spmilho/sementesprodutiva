@@ -27,13 +27,12 @@ import {
   MALE_TASSEL_STAGES, FEMALE_SILK_STAGES, POLLEN_INTENSITY, POLLINATION_EVIDENCE,
   WATER_STRESS_OPTIONS, SYNC_OPTIONS,
 } from "./nicking/constants";
-import FloweringCurvesChart from "./nicking/FloweringCurvesChart";
-import GanttChart from "./nicking/GanttChart";
 import MilestonesSection from "./nicking/MilestonesSection";
 import ObservationHistory from "./nicking/ObservationHistory";
 import FixedPointsMap from "./nicking/FixedPointsMap";
 import NickingExport from "./nicking/NickingExport";
-import InspectionImport from "./nicking/InspectionImport";
+import LeavesAboveEarDialog from "./nicking/LeavesAboveEarDialog";
+import LeavesAboveEarList from "./nicking/LeavesAboveEarList";
 
 // ═══════════════════════════════════
 // TYPES & HELPERS
