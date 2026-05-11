@@ -317,6 +317,7 @@ export default function LeavesAboveEarList({ cycleId }: Props) {
                 );
               })()}
             </div>
+            <LeavesChart evaluation={e} />
           </div>
         ))}
       </CardContent>
