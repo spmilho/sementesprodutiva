@@ -95,6 +95,7 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
   const [capturingGps, setCapturingGps] = useState(false);
   const [fpGps, setFpGps] = useState<{ lat: number; lng: number } | null>(null);
   const [fpPhotoFile, setFpPhotoFile] = useState<File | null>(null);
+  const [leavesDialogOpen, setLeavesDialogOpen] = useState(false);
 
   const floweringChartRef = useRef<HTMLDivElement>(null);
   const ganttChartRef = useRef<HTMLDivElement>(null);
