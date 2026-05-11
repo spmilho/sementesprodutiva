@@ -112,7 +112,7 @@ export default function DetasselingCharts({ records, femaleArea }: Props) {
               <Bar yAxisId="left" dataKey="third_pass" stackId="a" fill="#f97316" name="3ª Passada" />
               <Bar yAxisId="left" dataKey="repass" stackId="a" fill="#eab308" name="Repasses" />
               <Line yAxisId="right" dataKey="accumulated" stroke="#9ca3af" strokeDasharray="5 5" name="Acumulado" dot={false} />
-              <ReferenceLine yAxisId="right" y={femaleArea} stroke="#ef4444" strokeDasharray="3 3" label={{ value: `Área total: ${femaleArea}ha`, fontSize: 10 }} />
+              {/* Linha de área total removida a pedido do usuário */}
               <Legend />
             </ComposedChart>
           </ResponsiveContainer>
