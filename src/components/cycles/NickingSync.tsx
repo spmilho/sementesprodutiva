@@ -442,8 +442,14 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
         <Button className="gap-2" onClick={() => { resetObsForm(); setObsDialogOpen(true); }} disabled={fixedPoints.length === 0}>
           <Plus className="h-4 w-4" /> Registrar Observação
         </Button>
+        <Button variant="secondary" className="gap-2" onClick={() => setLeavesDialogOpen(true)}>
+          <Plus className="h-4 w-4" /> Avaliar Folhas Acima da Espiga
+        </Button>
         {fixedPoints.length === 0 && <p className="text-xs text-muted-foreground self-center">Cadastre pontos fixos primeiro</p>}
       </div>
+
+      <LeavesAboveEarList cycleId={cycleId} />
+      <LeavesAboveEarDialog open={leavesDialogOpen} onOpenChange={setLeavesDialogOpen} cycleId={cycleId} orgId={orgId} />
 
       {/* PONTOS FIXOS TABLE */}
       {fixedPoints.length > 0 && (
