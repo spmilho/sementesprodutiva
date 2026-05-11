@@ -14,6 +14,8 @@ import { ptBR } from "date-fns/locale";
 import DetasselingFormDialog from "./detasseling/DetasselingFormDialog";
 import DetasselingCharts from "./detasseling/DetasselingCharts";
 import DetasselingForecast from "./detasseling/DetasselingForecast";
+import LeavesAboveEarDialog from "./detasseling/LeavesAboveEarDialog";
+import LeavesAboveEarList from "./detasseling/LeavesAboveEarList";
 import {
   PASS_TYPES, getPassLabel, getMethodLabel, getShiftLabel,
   getPassBadgeColor, getMethodBadgeColor,
@@ -33,6 +35,7 @@ interface Props {
 export default function Detasseling({ cycleId, orgId, contractNumber, pivotName, hybridName, cooperatorName, femaleArea, detasselingDap }: Props) {
   const qc = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
+  const [leavesDialogOpen, setLeavesDialogOpen] = useState(false);
   const [filterPass, setFilterPass] = useState("all");
   const [filterMethod, setFilterMethod] = useState("all");
 
@@ -257,12 +260,20 @@ export default function Detasseling({ cycleId, orgId, contractNumber, pivotName,
       )}
 
       {/* Register Button */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <h3 className="text-lg font-semibold">Operações</h3>
-        <Button onClick={() => setFormOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Registrar Operação
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="secondary" onClick={() => setLeavesDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Avaliar Folhas Acima da Espiga
+          </Button>
+          <Button onClick={() => setFormOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Registrar Operação
+          </Button>
+        </div>
       </div>
+
+      <LeavesAboveEarList cycleId={cycleId} />
+      <LeavesAboveEarDialog open={leavesDialogOpen} onOpenChange={setLeavesDialogOpen} cycleId={cycleId} orgId={orgId} />
 
       {/* Filters */}
       {records.length > 0 && (

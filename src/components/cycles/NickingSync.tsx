@@ -31,8 +31,6 @@ import MilestonesSection from "./nicking/MilestonesSection";
 import ObservationHistory from "./nicking/ObservationHistory";
 import FixedPointsMap from "./nicking/FixedPointsMap";
 import NickingExport from "./nicking/NickingExport";
-import LeavesAboveEarDialog from "./nicking/LeavesAboveEarDialog";
-import LeavesAboveEarList from "./nicking/LeavesAboveEarList";
 
 // ═══════════════════════════════════
 // TYPES & HELPERS
@@ -95,7 +93,7 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
   const [capturingGps, setCapturingGps] = useState(false);
   const [fpGps, setFpGps] = useState<{ lat: number; lng: number } | null>(null);
   const [fpPhotoFile, setFpPhotoFile] = useState<File | null>(null);
-  const [leavesDialogOpen, setLeavesDialogOpen] = useState(false);
+  
 
   const floweringChartRef = useRef<HTMLDivElement>(null);
   const ganttChartRef = useRef<HTMLDivElement>(null);
@@ -442,14 +440,8 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
         <Button className="gap-2" onClick={() => { resetObsForm(); setObsDialogOpen(true); }} disabled={fixedPoints.length === 0}>
           <Plus className="h-4 w-4" /> Registrar Observação
         </Button>
-        <Button variant="secondary" className="gap-2" onClick={() => setLeavesDialogOpen(true)}>
-          <Plus className="h-4 w-4" /> Avaliar Folhas Acima da Espiga
-        </Button>
         {fixedPoints.length === 0 && <p className="text-xs text-muted-foreground self-center">Cadastre pontos fixos primeiro</p>}
       </div>
-
-      <LeavesAboveEarList cycleId={cycleId} />
-      <LeavesAboveEarDialog open={leavesDialogOpen} onOpenChange={setLeavesDialogOpen} cycleId={cycleId} orgId={orgId} />
 
       {/* PONTOS FIXOS TABLE */}
       {fixedPoints.length > 0 && (
