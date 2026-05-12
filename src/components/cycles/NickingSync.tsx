@@ -435,6 +435,20 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
         </div>
       )}
 
+      {/* 4. GRÁFICO CURVAS DE FLORESCIMENTO */}
+      <FloweringCurvesChart
+        ref={floweringChartRef}
+        observations={observations} allReadings={allReadings}
+        activeParentTypes={activeParentTypes} femalePlantingDate={femalePlantingDate}
+      />
+
+      {/* 5. GRÁFICO GANTT */}
+      <GanttChart
+        ref={ganttChartRef}
+        milestones={milestones} fixedPoints={fixedPoints}
+        femalePlantingDate={femalePlantingDate} malePlantingDates={malePlantingDates}
+      />
+
       {/* 6. MARCOS + TIMELINE */}
       <MilestonesSection milestones={milestones} fixedPoints={fixedPoints} />
 
