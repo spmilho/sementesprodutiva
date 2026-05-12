@@ -919,7 +919,7 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
               <Card className="border-l-4 border-l-primary">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm">
-                    📋 Inspeção #{d.inspection_number} — {d.inspection_date ? format(new Date(d.inspection_date + "T12:00:00"), "dd/MM/yyyy") : "—"}
+                    📋 Inspeção #{d.inspection_number} — {fmtInspDate(d.inspection_date)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
