@@ -537,7 +537,7 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
   // ── Chart data ──
   const chartData = useMemo(() => {
     return inspectionData.map((d: any) => ({
-      date: d.inspection_date ? format(new Date(d.inspection_date + "T12:00:00"), "dd/MM") : `#${d.inspection_number}`,
+      date: (() => { const f = fmtInspDate(d.inspection_date, "dd/MM"); return f === "—" ? `#${d.inspection_number}` : f; })(),
       fullDate: d.inspection_date,
       insp: d.inspection_number,
       er: d.pct_stigma_receptive != null ? d.pct_stigma_receptive * 100 : null,
