@@ -887,7 +887,7 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
                               {d.inspection_number}
                             </span>
                           </td>
-                          <td className="p-2">{d.inspection_date ? format(new Date(d.inspection_date + "T12:00:00"), "dd/MM") : "—"}</td>
+                          <td className="p-2">{fmtInspDate(d.inspection_date, "dd/MM")}</td>
                           <td className="p-2">
                             <span className={cn("font-semibold", d.pct_detasseled >= 0.99 ? "text-green-600" : d.pct_detasseled >= 0.95 ? "text-amber-600" : "text-red-600")}>
                               {d.pct_detasseled != null ? `${(d.pct_detasseled * 100).toFixed(1)}` : "—"}
