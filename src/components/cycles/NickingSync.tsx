@@ -31,6 +31,9 @@ import MilestonesSection from "./nicking/MilestonesSection";
 import ObservationHistory from "./nicking/ObservationHistory";
 import FixedPointsMap from "./nicking/FixedPointsMap";
 import NickingExport from "./nicking/NickingExport";
+import InspectionImport from "./nicking/InspectionImport";
+import FloweringCurvesChart from "./nicking/FloweringCurvesChart";
+import GanttChart from "./nicking/GanttChart";
 
 // ═══════════════════════════════════
 // TYPES & HELPERS
@@ -388,6 +391,12 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
         />
       </div>
 
+      {/* 1.5. IMPORTAÇÃO DE RELATÓRIO DE INSPEÇÃO */}
+      <InspectionImport cycleId={cycleId} orgId={orgId} />
+
+      {/* 2. SEMÁFORO + KPI CARDS */}
+      <SyncSemaphore status={latestStatus} />
+
       {/* 2. KPI CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card><CardContent className="p-3"><p className="text-[10px] text-muted-foreground">Pontos Fixos</p><p className="text-xl font-bold">{fixedPoints.length}</p></CardContent></Card>
@@ -425,6 +434,20 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
           <p className="text-sm text-amber-800 dark:text-amber-200">{daysSinceObs} dias sem avaliação de nicking. Durante o florescimento, avalie a cada 1-2 dias.</p>
         </div>
       )}
+
+      {/* 4. GRÁFICO CURVAS DE FLORESCIMENTO */}
+      <FloweringCurvesChart
+        ref={floweringChartRef}
+        observations={observations} allReadings={allReadings}
+        activeParentTypes={activeParentTypes} femalePlantingDate={femalePlantingDate}
+      />
+
+      {/* 5. GRÁFICO GANTT */}
+      <GanttChart
+        ref={ganttChartRef}
+        milestones={milestones} fixedPoints={fixedPoints}
+        femalePlantingDate={femalePlantingDate} malePlantingDates={malePlantingDates}
+      />
 
       {/* 6. MARCOS + TIMELINE */}
       <MilestonesSection milestones={milestones} fixedPoints={fixedPoints} />
