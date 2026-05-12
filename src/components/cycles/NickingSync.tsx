@@ -31,6 +31,9 @@ import MilestonesSection from "./nicking/MilestonesSection";
 import ObservationHistory from "./nicking/ObservationHistory";
 import FixedPointsMap from "./nicking/FixedPointsMap";
 import NickingExport from "./nicking/NickingExport";
+import InspectionImport from "./nicking/InspectionImport";
+import FloweringCurvesChart from "./nicking/FloweringCurvesChart";
+import GanttChart from "./nicking/GanttChart";
 
 // ═══════════════════════════════════
 // TYPES & HELPERS
