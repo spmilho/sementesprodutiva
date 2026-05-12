@@ -98,9 +98,20 @@ interface CountingPoint {
 // ═══════════════════════════════════
 
 function excelDateToJS(serial: number): Date | null {
-  if (!serial || serial < 1) return null;
+  // Excel serial for 2000-01-01 ≈ 36526. Reject anything below to avoid 1899/1900 bogus dates.
+  if (!serial || serial < 30000) return null;
   const utcDays = Math.floor(serial - 25569);
   return new Date(utcDays * 86400 * 1000);
+}
+
+function isValidDate(d: Date | null | undefined): d is Date {
+  return !!d && !isNaN(d.getTime()) && d.getFullYear() >= 2000;
+}
+
+function fmtInspDate(s: string | null | undefined, pattern = "dd/MM/yyyy"): string {
+  if (!s) return "—";
+  const d = new Date(s + "T12:00:00");
+  return isValidDate(d) ? format(d, pattern) : "—";
 }
 
 function safeNum(val: any): number | null {
@@ -134,15 +145,18 @@ function parseExcel(workbook: XLSX.WorkBook): { header: ParsedHeader; inspection
       if (dateVal === "00:00:00" || dateVal === 0) continue;
       if (typeof dateVal === "number") {
         const d = excelDateToJS(dateVal);
-        if (d) dateStr = format(d, "yyyy-MM-dd");
+        if (isValidDate(d)) dateStr = format(d, "yyyy-MM-dd");
       } else if (dateVal instanceof Date) {
-        dateStr = format(dateVal, "yyyy-MM-dd");
+        if (isValidDate(dateVal)) dateStr = format(dateVal, "yyyy-MM-dd");
       } else if (typeof dateVal === "string" && dateVal.length >= 8) {
         // Try parsing dd/mm/yyyy or yyyy-mm-dd
         const parts = dateVal.split(/[\/\-]/);
         if (parts.length === 3) {
-          if (parts[0].length === 4) dateStr = dateVal;
-          else dateStr = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+          let candidate: string | null = null;
+          if (parts[0].length === 4) candidate = dateVal;
+          else candidate = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+          const yr = parseInt(candidate.slice(0, 4));
+          if (yr >= 2000) dateStr = candidate;
         }
       }
 
@@ -523,7 +537,7 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
   // ── Chart data ──
   const chartData = useMemo(() => {
     return inspectionData.map((d: any) => ({
-      date: d.inspection_date ? format(new Date(d.inspection_date + "T12:00:00"), "dd/MM") : `#${d.inspection_number}`,
+      date: (() => { const f = fmtInspDate(d.inspection_date, "dd/MM"); return f === "—" ? `#${d.inspection_number}` : f; })(),
       fullDate: d.inspection_date,
       insp: d.inspection_number,
       er: d.pct_stigma_receptive != null ? d.pct_stigma_receptive * 100 : null,
@@ -664,7 +678,7 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
                 {latestImport.technician && <div><p className="text-xs text-muted-foreground">Técnico</p><p className="font-semibold">{latestImport.technician}</p></div>}
                 {latestImport.leader && <div><p className="text-xs text-muted-foreground">Líder</p><p className="font-semibold">{latestImport.leader}</p></div>}
                 <div><p className="text-xs text-muted-foreground">Total Inspeções</p><p className="font-semibold">{latestImport.total_inspections}</p></div>
-                {latest?.inspection_date && <div><p className="text-xs text-muted-foreground">Última Inspeção</p><p className="font-semibold">{format(new Date(latest.inspection_date + "T12:00:00"), "dd/MM/yyyy")}</p></div>}
+                {latest?.inspection_date && fmtInspDate(latest.inspection_date) !== "—" && <div><p className="text-xs text-muted-foreground">Última Inspeção</p><p className="font-semibold">{fmtInspDate(latest.inspection_date)}</p></div>}
               </div>
             </CardContent>
           </Card>
@@ -873,7 +887,7 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
                               {d.inspection_number}
                             </span>
                           </td>
-                          <td className="p-2">{d.inspection_date ? format(new Date(d.inspection_date + "T12:00:00"), "dd/MM") : "—"}</td>
+                          <td className="p-2">{fmtInspDate(d.inspection_date, "dd/MM")}</td>
                           <td className="p-2">
                             <span className={cn("font-semibold", d.pct_detasseled >= 0.99 ? "text-green-600" : d.pct_detasseled >= 0.95 ? "text-amber-600" : "text-red-600")}>
                               {d.pct_detasseled != null ? `${(d.pct_detasseled * 100).toFixed(1)}` : "—"}
@@ -905,7 +919,7 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
               <Card className="border-l-4 border-l-primary">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm">
-                    📋 Inspeção #{d.inspection_number} — {d.inspection_date ? format(new Date(d.inspection_date + "T12:00:00"), "dd/MM/yyyy") : "—"}
+                    📋 Inspeção #{d.inspection_number} — {fmtInspDate(d.inspection_date)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
