@@ -108,6 +108,12 @@ function isValidDate(d: Date | null | undefined): d is Date {
   return !!d && !isNaN(d.getTime()) && d.getFullYear() >= 2000;
 }
 
+function fmtInspDate(s: string | null | undefined, pattern = "dd/MM/yyyy"): string {
+  if (!s) return "—";
+  const d = new Date(s + "T12:00:00");
+  return isValidDate(d) ? format(d, pattern) : "—";
+}
+
 function safeNum(val: any): number | null {
   if (val == null || val === "" || val === "00:00:00") return null;
   const n = Number(val);
