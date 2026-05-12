@@ -98,9 +98,14 @@ interface CountingPoint {
 // ═══════════════════════════════════
 
 function excelDateToJS(serial: number): Date | null {
-  if (!serial || serial < 1) return null;
+  // Excel serial for 2000-01-01 ≈ 36526. Reject anything below to avoid 1899/1900 bogus dates.
+  if (!serial || serial < 30000) return null;
   const utcDays = Math.floor(serial - 25569);
   return new Date(utcDays * 86400 * 1000);
+}
+
+function isValidDate(d: Date | null | undefined): d is Date {
+  return !!d && !isNaN(d.getTime()) && d.getFullYear() >= 2000;
 }
 
 function safeNum(val: any): number | null {
