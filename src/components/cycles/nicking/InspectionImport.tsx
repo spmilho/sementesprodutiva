@@ -678,7 +678,7 @@ export default function InspectionImport({ cycleId, orgId }: InspectionImportPro
                 {latestImport.technician && <div><p className="text-xs text-muted-foreground">Técnico</p><p className="font-semibold">{latestImport.technician}</p></div>}
                 {latestImport.leader && <div><p className="text-xs text-muted-foreground">Líder</p><p className="font-semibold">{latestImport.leader}</p></div>}
                 <div><p className="text-xs text-muted-foreground">Total Inspeções</p><p className="font-semibold">{latestImport.total_inspections}</p></div>
-                {latest?.inspection_date && <div><p className="text-xs text-muted-foreground">Última Inspeção</p><p className="font-semibold">{format(new Date(latest.inspection_date + "T12:00:00"), "dd/MM/yyyy")}</p></div>}
+                {latest?.inspection_date && fmtInspDate(latest.inspection_date) !== "—" && <div><p className="text-xs text-muted-foreground">Última Inspeção</p><p className="font-semibold">{fmtInspDate(latest.inspection_date)}</p></div>}
               </div>
             </CardContent>
           </Card>
