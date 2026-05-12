@@ -139,15 +139,18 @@ function parseExcel(workbook: XLSX.WorkBook): { header: ParsedHeader; inspection
       if (dateVal === "00:00:00" || dateVal === 0) continue;
       if (typeof dateVal === "number") {
         const d = excelDateToJS(dateVal);
-        if (d) dateStr = format(d, "yyyy-MM-dd");
+        if (isValidDate(d)) dateStr = format(d, "yyyy-MM-dd");
       } else if (dateVal instanceof Date) {
-        dateStr = format(dateVal, "yyyy-MM-dd");
+        if (isValidDate(dateVal)) dateStr = format(dateVal, "yyyy-MM-dd");
       } else if (typeof dateVal === "string" && dateVal.length >= 8) {
         // Try parsing dd/mm/yyyy or yyyy-mm-dd
         const parts = dateVal.split(/[\/\-]/);
         if (parts.length === 3) {
-          if (parts[0].length === 4) dateStr = dateVal;
-          else dateStr = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+          let candidate: string | null = null;
+          if (parts[0].length === 4) candidate = dateVal;
+          else candidate = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+          const yr = parseInt(candidate.slice(0, 4));
+          if (yr >= 2000) dateStr = candidate;
         }
       }
 
