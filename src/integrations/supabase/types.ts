@@ -5419,6 +5419,7 @@ export type Database = {
           total_production_bags: number | null
           total_production_tons: number | null
           total_sample_points: number | null
+          updated_at: string
         }
         Insert: {
           avg_ears_per_ha?: number | null
@@ -5444,6 +5445,7 @@ export type Database = {
           total_production_bags?: number | null
           total_production_tons?: number | null
           total_sample_points?: number | null
+          updated_at?: string
         }
         Update: {
           avg_ears_per_ha?: number | null
@@ -5469,6 +5471,7 @@ export type Database = {
           total_production_bags?: number | null
           total_production_tons?: number | null
           total_sample_points?: number | null
+          updated_at?: string
         }
         Relationships: [
           {
