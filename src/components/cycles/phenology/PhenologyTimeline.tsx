@@ -35,6 +35,8 @@ interface PhenologyTimelineProps {
   onClickPast?: (record: any) => void;
   plantingDate?: string | null;
   maleTypes?: string[];
+  maleCutStage?: string | null;
+  maleCutDate?: string | null;
 }
 
 interface StageInfo {
