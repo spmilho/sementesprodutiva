@@ -137,7 +137,9 @@ function SingleTimeline({
       <div className="relative overflow-x-auto pb-2">
         <div className="flex items-end gap-0 min-w-max px-2">
           {infos.map((info, i) => {
-            const isFuture = !info.isPast && !info.isCurrent;
+            const isEliminated = cutIdx >= 0 && i > cutIdx;
+            const isCutStage = cutIdx >= 0 && i === cutIdx;
+            const isFuture = !info.isPast && !info.isCurrent && !isEliminated;
             const isVegetative = i < VT_INDEX;
             const isReproductive = i >= VT_INDEX;
             const isFirstReproductive = i === VT_INDEX;
@@ -156,34 +158,47 @@ function SingleTimeline({
                         className={cn(
                           "flex flex-col items-center cursor-pointer transition-all duration-200 px-1 min-w-[52px] md:min-w-[60px]",
                           "rounded-lg py-1",
-                          isVegetative && !isFuture && "bg-emerald-50/50 dark:bg-emerald-950/20",
-                          isReproductive && !isFuture && "bg-amber-50/50 dark:bg-amber-950/20",
+                          isVegetative && !isFuture && !isEliminated && "bg-emerald-50/50 dark:bg-emerald-950/20",
+                          isReproductive && !isFuture && !isEliminated && "bg-amber-50/50 dark:bg-amber-950/20",
                           isFuture && "hover:bg-muted/50",
-                          info.isCurrent && "bg-amber-100/60 dark:bg-amber-900/30 ring-1 ring-amber-300 dark:ring-amber-700"
+                          isEliminated && "bg-rose-50/60 dark:bg-rose-950/30 ring-1 ring-rose-200 dark:ring-rose-900 opacity-80",
+                          info.isCurrent && !isEliminated && "bg-amber-100/60 dark:bg-amber-900/30 ring-1 ring-amber-300 dark:ring-amber-700"
                         )}
                         onClick={() => {
+                          if (isEliminated) return;
                           if (isFuture && onClickFuture) onClickFuture(info.stage);
                           else if (info.record && onClickPast) onClickPast(info.record);
                         }}
                       >
-                        <div className="flex items-end justify-center" style={{ height: 130 }}>
-                          <CornPlantSvg stage={info.stage} isFuture={isFuture} isCurrent={info.isCurrent} />
+                        <div className="flex items-end justify-center relative" style={{ height: 130 }}>
+                          <CornPlantSvg stage={info.stage} isFuture={isFuture || isEliminated} isCurrent={info.isCurrent && !isEliminated} />
+                          {isEliminated && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-[9px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100/90 dark:bg-rose-900/80 px-1.5 py-0.5 rounded rotate-[-12deg] border border-rose-300 dark:border-rose-700 shadow-sm">
+                                ELIMINADO
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <span className={cn(
                           "text-[10px] mt-1 leading-none",
-                          info.isCurrent && "font-bold text-foreground",
+                          info.isCurrent && !isEliminated && "font-bold text-foreground",
                           info.isPast && !info.isCurrent && "font-semibold text-foreground",
-                          isFuture && "text-muted-foreground/40"
+                          isFuture && "text-muted-foreground/40",
+                          isEliminated && "text-rose-600 dark:text-rose-400 font-semibold line-through"
                         )}>
                           {info.stage}
                         </span>
-                        {info.isCurrent && (
+                        {isCutStage && (
+                          <span className="text-[8px] text-rose-600 dark:text-rose-400 font-semibold mt-0.5">✂️ Corte</span>
+                        )}
+                        {info.isCurrent && !isEliminated && !isCutStage && (
                           <span className="text-[8px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">📍 Atual</span>
                         )}
-                        {info.isPast && !info.isCurrent && (
+                        {info.isPast && !info.isCurrent && !isEliminated && (
                           <CheckCircle2 className="h-3 w-3 text-emerald-500 mt-0.5" />
                         )}
-                        {info.date && (
+                        {info.date && !isEliminated && (
                           <span className="text-[8px] text-muted-foreground mt-0.5 leading-none">
                             {format(new Date(info.date + "T12:00:00"), "dd/MM")}
                           </span>
@@ -192,7 +207,11 @@ function SingleTimeline({
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-[220px] text-xs space-y-1">
                       <p className="font-semibold">{info.stage} — {STAGE_DESCRIPTIONS[info.stage]}</p>
-                      {info.date ? (
+                      {isEliminated ? (
+                        <p className="text-rose-600 dark:text-rose-400">
+                          Macho eliminado{cutDate ? ` em ${format(new Date(cutDate + "T12:00:00"), "dd/MM/yyyy")}` : ""}{cutStage ? ` (corte em ${cutStage})` : ""}
+                        </p>
+                      ) : info.date ? (
                         <>
                           <p>Registrado em {format(new Date(info.date + "T12:00:00"), "dd/MM/yyyy")}</p>
                           {info.dap != null && <p>{info.dap} DAP</p>}
