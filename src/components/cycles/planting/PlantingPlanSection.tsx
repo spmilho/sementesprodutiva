@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useOfflineSyncContext } from "@/components/Layout";
-import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType } from "./planting-utils";
+import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, getPlantingTypesForRatio } from "./planting-utils";
 
 interface Props {
   cycleId: string;
