@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import PhenologyTimeline from "@/components/cycles/phenology/PhenologyTimeline";
 
 const STAGES = ["VE", "V2", "V4", "V6", "V8", "V10", "V12", "VT", "R1", "R2", "R3", "R4", "R5", "R6"] as const;
+const CUT_STAGES = ["VT", "R1", "R2", "R3", "R4"] as const;
 
 interface PhenologyProps {
   cycleId: string;
