@@ -217,6 +217,7 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
         spacingFemaleFemaleCm={props.spacingFemaleFemaleCm}
         spacingFemaleMaleCm={props.spacingFemaleMaleCm}
         spacingMaleMaleCm={props.spacingMaleMaleCm}
+        femaleMaleRatio={props.femaleMaleRatio}
       />
 
       {/* Section 3 - Actual Planting + CV Points */}
