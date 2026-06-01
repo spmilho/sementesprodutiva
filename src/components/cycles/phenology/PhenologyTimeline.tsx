@@ -115,13 +115,18 @@ function SingleTimeline({
   badgeClass,
   onClickFuture,
   onClickPast,
+  cutStage,
+  cutDate,
 }: {
   infos: StageInfo[];
   label: string;
   badgeClass: string;
   onClickFuture?: (stage: string) => void;
   onClickPast?: (record: any) => void;
+  cutStage?: string | null;
+  cutDate?: string | null;
 }) {
+  const cutIdx = cutStage ? ALL_STAGES.indexOf(cutStage as any) : -1;
   const lastRegistered = infos.reduce((acc, s, i) => (s.isPast ? i : acc), -1);
 
   return (
