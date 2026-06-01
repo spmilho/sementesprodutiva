@@ -10,7 +10,7 @@ import ActualPlantingSection from "./ActualPlantingSection";
 import StandCvSection from "./StandCvSection";
 import PlantingComparative from "./PlantingComparative";
 import PlantingCvSection from "./PlantingCvSection";
-import { PLANTING_TYPES } from "./planting-utils";
+import { PLANTING_TYPES, getPlantingTypesForRatio } from "./planting-utils";
 
 export interface UnifiedPlantingTabProps {
   cycleId: string;
