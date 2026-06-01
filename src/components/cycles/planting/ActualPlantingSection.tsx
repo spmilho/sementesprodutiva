@@ -260,7 +260,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                 <Controller name="type" control={form.control} render={({ field }) => (
                   <Select value={field.value} onValueChange={(v) => handleTypeChange(v, field.onChange)}>
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                    <SelectContent>{PLANTING_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                    <SelectContent>{availableTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                   </Select>
                 )} />
               </div>
