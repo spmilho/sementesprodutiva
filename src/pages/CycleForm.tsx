@@ -47,6 +47,7 @@ function computeAreas(totalArea: number, ratio: string, fxf?: number, fxm?: numb
   const map: Record<string, [number, number]> = {
     "4F:2M": [4, 2],
     "6F:2M": [6, 2],
+    "6F:3M": [6, 3],
     "4F:1M": [4, 1],
     "3F:1M": [3, 1],
   };
