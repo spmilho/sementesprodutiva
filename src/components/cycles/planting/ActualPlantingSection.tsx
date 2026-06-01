@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useOfflineSyncContext } from "@/components/Layout";
-import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, getCvLabel } from "./planting-utils";
+import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, getCvLabel, getPlantingTypesForRatio } from "./planting-utils";
 
 interface Props {
   cycleId: string;
@@ -31,6 +31,7 @@ interface Props {
   seedLots: any[];
   spacingFemaleFemaleCm?: number | null;
   spacingMaleMaleCm?: number | null;
+  femaleMaleRatio?: string;
 }
 
 const schema = z.object({
@@ -51,7 +52,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, glebas, seedLots, spacingFemaleFemaleCm, spacingMaleMaleCm }: Props) {
+export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, glebas, seedLots, spacingFemaleFemaleCm, spacingMaleMaleCm, femaleMaleRatio }: Props) {
+  const availableTypes = getPlantingTypesForRatio(femaleMaleRatio);
   const queryClient = useQueryClient();
   const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
