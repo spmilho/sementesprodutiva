@@ -230,6 +230,7 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
         seedLots={seedLots}
         spacingFemaleFemaleCm={props.spacingFemaleFemaleCm}
         spacingMaleMaleCm={props.spacingMaleMaleCm}
+        femaleMaleRatio={props.femaleMaleRatio}
       />
 
       {/* Section 3.5 - CV% de Semeadura */}
