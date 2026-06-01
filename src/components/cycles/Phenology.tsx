@@ -129,6 +129,37 @@ export default function Phenology({
     enabled: !!cycleId,
   });
 
+  // Male cut date/stage (one per cycle, applies to all males)
+  const { data: cycleCut } = useQuery({
+    queryKey: ["cycle-male-cut", cycleId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("production_cycles")
+        .select("male_cut_date, male_cut_stage")
+        .eq("id", cycleId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { male_cut_date: string | null; male_cut_stage: string | null } | null;
+    },
+    enabled: !!cycleId,
+  });
+
+  const saveCutMutation = useMutation({
+    mutationFn: async (vals: { date: string | null; stage: string | null }) => {
+      const { error } = await (supabase as any)
+        .from("production_cycles")
+        .update({ male_cut_date: vals.date, male_cut_stage: vals.stage })
+        .eq("id", cycleId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cycle-male-cut", cycleId] });
+      toast.success("Corte do macho atualizado!");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { description: "" },
