@@ -251,6 +251,10 @@ function EstimateCard({
   const [localOther, setLocalOther] = useState(otherLoss);
   const [localBagWeight, setLocalBagWeight] = useState(bagWeight);
   const [localFinalPms, setLocalFinalPms] = useState(estimate.final_pms_g ? String(estimate.final_pms_g) : "");
+  const [localUbsYield, setLocalUbsYield] = useState<number>(() => {
+    const stored = typeof window !== "undefined" ? localStorage.getItem(`ubs-yield-${estimate.id}`) : null;
+    return stored ? parseFloat(stored) : 40;
+  });
 
   // Fetch sample points
   const { data: points = [] } = useQuery({
@@ -578,6 +582,12 @@ function EstimateCard({
               lostKgHa={aggregates.lostKgHa}
               pointCount={points.length}
               expectedProductivity={expectedProductivity}
+              ubsYieldPct={localUbsYield}
+              onUbsYieldChange={(v) => {
+                setLocalUbsYield(v);
+                try { localStorage.setItem(`ubs-yield-${estimate.id}`, String(v)); } catch {}
+              }}
+              onBagWeightChange={setLocalBagWeight}
             />
           )}
 
