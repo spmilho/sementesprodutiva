@@ -3755,6 +3755,8 @@ export type Database = {
           male_2_planting_finished: boolean | null
           male_3_planting_finished: boolean | null
           male_area: number
+          male_cut_date: string | null
+          male_cut_stage: string | null
           male_line: string
           male_planting_finished: boolean
           material_cycle_days: number | null
@@ -3795,6 +3797,8 @@ export type Database = {
           male_2_planting_finished?: boolean | null
           male_3_planting_finished?: boolean | null
           male_area: number
+          male_cut_date?: string | null
+          male_cut_stage?: string | null
           male_line: string
           male_planting_finished?: boolean
           material_cycle_days?: number | null
@@ -3835,6 +3839,8 @@ export type Database = {
           male_2_planting_finished?: boolean | null
           male_3_planting_finished?: boolean | null
           male_area?: number
+          male_cut_date?: string | null
+          male_cut_stage?: string | null
           male_line?: string
           male_planting_finished?: boolean
           material_cycle_days?: number | null
