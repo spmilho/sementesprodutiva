@@ -249,7 +249,7 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
                   }}>
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                     <SelectContent>
-                      {PLANTING_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                      {availableTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 )} />
