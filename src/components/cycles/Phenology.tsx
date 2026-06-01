@@ -289,6 +289,8 @@ export default function Phenology({
             records={records}
             plantingDate={plantingDate}
             maleTypes={maleTypes}
+            maleCutStage={cycleCut?.male_cut_stage ?? null}
+            maleCutDate={cycleCut?.male_cut_date ?? null}
             onClickFuture={(stage) => {
               setEditingId(null);
               setPhotoFile(null);
@@ -302,10 +304,88 @@ export default function Phenology({
         </CardContent>
       </Card>
 
+      {/* Male cut date/stage */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold">✂️ Corte do Macho</span>
+            <span className="text-xs text-muted-foreground">
+              (aplica-se a todos os machos do ciclo)
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Data do corte</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !cycleCut?.male_cut_date && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {cycleCut?.male_cut_date
+                      ? format(new Date(cycleCut.male_cut_date + "T12:00:00"), "dd/MM/yyyy")
+                      : "Selecionar data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={cycleCut?.male_cut_date ? new Date(cycleCut.male_cut_date + "T12:00:00") : undefined}
+                    onSelect={(d) =>
+                      saveCutMutation.mutate({
+                        date: d ? format(d, "yyyy-MM-dd") : null,
+                        stage: cycleCut?.male_cut_stage ?? null,
+                      })
+                    }
+                    locale={ptBR}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Estádio no corte</Label>
+              <Select
+                value={cycleCut?.male_cut_stage ?? ""}
+                onValueChange={(v) =>
+                  saveCutMutation.mutate({
+                    date: cycleCut?.male_cut_date ?? null,
+                    stage: v || null,
+                  })
+                }
+              >
+                <SelectTrigger><SelectValue placeholder="Selecionar estádio" /></SelectTrigger>
+                <SelectContent>
+                  {CUT_STAGES.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(cycleCut?.male_cut_date || cycleCut?.male_cut_stage) && (
+              <Button
+                variant="ghost"
+                className="text-destructive"
+                onClick={() => saveCutMutation.mutate({ date: null, stage: null })}
+              >
+                <Trash2 className="h-4 w-4 mr-2" /> Limpar corte
+              </Button>
+            )}
+          </div>
+          {cycleCut?.male_cut_stage && (
+            <p className="text-xs text-muted-foreground">
+              Estádios posteriores a <strong>{cycleCut.male_cut_stage}</strong> serão marcados como
+              <span className="mx-1 inline-block px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 font-semibold">ELIMINADO</span>
+              nos machos.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Add button */}
       <Button className="gap-2" onClick={openNew}>
         <Plus className="h-4 w-4" /> Registrar Estádio
       </Button>
+
 
       {/* Records list */}
       {isLoading ? (
