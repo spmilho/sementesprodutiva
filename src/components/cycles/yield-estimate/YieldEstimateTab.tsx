@@ -4,11 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useOfflineSyncContext } from "@/components/Layout";
 import { format } from "date-fns";
-import { Plus, Loader2, Trash2, FileSpreadsheet, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Loader2, Trash2, FileSpreadsheet, ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import * as XLSX from "xlsx-republish";
 import type { YieldEstimateProps, YieldEstimate, SamplePoint, EarSample } from "./types";
 import { calcPointGrossYield, calcNetYield, getPointColor, getReliability } from "./utils";
@@ -237,6 +241,9 @@ function EstimateCard({
 }: EstimateCardProps) {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editDate, setEditDate] = useState(estimate.estimate_date);
 
   const moistureRef = estimate.moisture_reference_pct ?? 13;
   const tgw = estimate.default_tgw_g ?? 300;
@@ -405,6 +412,22 @@ function EstimateCard({
     onError: (err: any) => toast.error(err.message),
   });
 
+  const updateEstimateDateMutation = useMutation({
+    mutationFn: async (newDate: string) => {
+      const { error } = await (supabase as any)
+        .from("yield_estimates")
+        .update({ estimate_date: newDate })
+        .eq("id", estimate.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["yield-estimates", cycleId] });
+      toast.success("Data atualizada!");
+      setEditOpen(false);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   return (
     <Card>
       {/* Collapsed header */}
@@ -425,14 +448,26 @@ function EstimateCard({
             <Button
               variant="ghost"
               size="icon"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditDate(estimate.estimate_date);
+                setEditOpen(true);
+              }}
+              title="Editar data"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={(e) => {
                 e.stopPropagation();
-                if (confirm("Excluir esta estimativa e todos os seus pontos?")) {
-                  deleteEstimateMutation.mutate();
-                }
+                setDeleteOpen(true);
               }}
               disabled={deleteEstimateMutation.isPending}
+              title="Excluir estimativa"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -440,6 +475,53 @@ function EstimateCard({
           </div>
         </div>
       </CardHeader>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir estimativa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá remover a {estimate.estimate_number}ª estimativa e todos os seus pontos de amostragem. Esta operação não pode ser desfeita facilmente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteEstimateMutation.mutate()}
+            >
+              {deleteEstimateMutation.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar {estimate.estimate_number}ª Estimativa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="edit-est-date">Data da estimativa</Label>
+            <Input
+              id="edit-est-date"
+              type="date"
+              value={editDate}
+              onChange={(e) => setEditDate(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => updateEstimateDateMutation.mutate(editDate)}
+              disabled={updateEstimateDateMutation.isPending || !editDate}
+            >
+              {updateEstimateDateMutation.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Expanded content */}
       {expanded && (
