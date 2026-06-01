@@ -178,7 +178,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
             <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              {PLANTING_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+              {availableTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
             </SelectContent>
           </Select>
           <Button className="gap-2" onClick={openNew}><Plus className="h-4 w-4" /> Registrar Plantio</Button>
