@@ -100,6 +100,11 @@ const PARENTAL_CONFIG: Record<string, { label: string; badgeClass: string; accen
     badgeClass: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400 dark:border-cyan-800",
     accent: "cyan",
   },
+  male_3: {
+    label: "🟣 Macho 3",
+    badgeClass: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800",
+    accent: "purple",
+  },
 };
 
 function SingleTimeline({
@@ -233,6 +238,12 @@ export default function PhenologyTimeline({ records, onClickFuture, onClickPast,
   const femaleInfos = useMemo(() => buildStageInfos(records, "female", plantingDate), [records, plantingDate]);
   const male1Infos = useMemo(() => buildStageInfos(records, "male_1", plantingDate), [records, plantingDate]);
   const male2Infos = useMemo(() => buildStageInfos(records, "male_2", plantingDate), [records, plantingDate]);
+  const male3Infos = useMemo(() => buildStageInfos(records, "male_3", plantingDate), [records, plantingDate]);
+
+  const hasMale3 = useMemo(
+    () => records.some((r: any) => r.parental_type === "male_3"),
+    [records]
+  );
 
   return (
     <div className="space-y-5">
@@ -257,6 +268,15 @@ export default function PhenologyTimeline({ records, onClickFuture, onClickPast,
         onClickFuture={onClickFuture}
         onClickPast={onClickPast}
       />
+      {hasMale3 && (
+        <SingleTimeline
+          infos={male3Infos}
+          label={PARENTAL_CONFIG.male_3.label}
+          badgeClass={PARENTAL_CONFIG.male_3.badgeClass}
+          onClickFuture={onClickFuture}
+          onClickPast={onClickPast}
+        />
+      )}
     </div>
   );
 }
