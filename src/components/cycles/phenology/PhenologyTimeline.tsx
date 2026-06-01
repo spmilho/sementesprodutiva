@@ -260,7 +260,7 @@ function SingleTimeline({
   );
 }
 
-export default function PhenologyTimeline({ records, onClickFuture, onClickPast, plantingDate }: PhenologyTimelineProps) {
+export default function PhenologyTimeline({ records, onClickFuture, onClickPast, plantingDate, maleCutStage, maleCutDate }: PhenologyTimelineProps) {
   const femaleInfos = useMemo(() => buildStageInfos(records, "female", plantingDate), [records, plantingDate]);
   const male1Infos = useMemo(() => buildStageInfos(records, "male_1", plantingDate), [records, plantingDate]);
   const male2Infos = useMemo(() => buildStageInfos(records, "male_2", plantingDate), [records, plantingDate]);
@@ -286,6 +286,8 @@ export default function PhenologyTimeline({ records, onClickFuture, onClickPast,
         badgeClass={PARENTAL_CONFIG.male_1.badgeClass}
         onClickFuture={onClickFuture}
         onClickPast={onClickPast}
+        cutStage={maleCutStage}
+        cutDate={maleCutDate}
       />
       <SingleTimeline
         infos={male2Infos}
@@ -293,6 +295,8 @@ export default function PhenologyTimeline({ records, onClickFuture, onClickPast,
         badgeClass={PARENTAL_CONFIG.male_2.badgeClass}
         onClickFuture={onClickFuture}
         onClickPast={onClickPast}
+        cutStage={maleCutStage}
+        cutDate={maleCutDate}
       />
       {hasMale3 && (
         <SingleTimeline
@@ -301,6 +305,8 @@ export default function PhenologyTimeline({ records, onClickFuture, onClickPast,
           badgeClass={PARENTAL_CONFIG.male_3.badgeClass}
           onClickFuture={onClickFuture}
           onClickPast={onClickPast}
+          cutStage={maleCutStage}
+          cutDate={maleCutDate}
         />
       )}
     </div>
