@@ -33,6 +33,7 @@ interface Props {
   spacingFemaleFemaleCm?: number | null;
   spacingFemaleMaleCm?: number | null;
   spacingMaleMaleCm?: number | null;
+  femaleMaleRatio?: string;
 }
 
 const schema = z.object({
@@ -51,7 +52,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, seedLots, femaleArea, maleArea, spacingFemaleFemaleCm, spacingFemaleMaleCm, spacingMaleMaleCm }: Props) {
+export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, seedLots, femaleArea, maleArea, spacingFemaleFemaleCm, spacingFemaleMaleCm, spacingMaleMaleCm, femaleMaleRatio }: Props) {
+  const availableTypes = getPlantingTypesForRatio(femaleMaleRatio);
   const queryClient = useQueryClient();
   const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
