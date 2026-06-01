@@ -582,6 +582,12 @@ function EstimateCard({
               lostKgHa={aggregates.lostKgHa}
               pointCount={points.length}
               expectedProductivity={expectedProductivity}
+              ubsYieldPct={localUbsYield}
+              onUbsYieldChange={(v) => {
+                setLocalUbsYield(v);
+                try { localStorage.setItem(`ubs-yield-${estimate.id}`, String(v)); } catch {}
+              }}
+              onBagWeightChange={setLocalBagWeight}
             />
           )}
 
