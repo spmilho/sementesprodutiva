@@ -168,7 +168,7 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
 
       {/* Planting completion toggles */}
       <div className="flex flex-wrap gap-2">
-        {PLANTING_TYPES.map(t => {
+        {availablePlantingTypes.map(t => {
           const finished = finishStatus[t.value] ?? false;
           return (
             <Button
