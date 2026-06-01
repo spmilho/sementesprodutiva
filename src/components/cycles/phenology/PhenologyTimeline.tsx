@@ -100,6 +100,11 @@ const PARENTAL_CONFIG: Record<string, { label: string; badgeClass: string; accen
     badgeClass: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400 dark:border-cyan-800",
     accent: "cyan",
   },
+  male_3: {
+    label: "🟣 Macho 3",
+    badgeClass: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800",
+    accent: "purple",
+  },
 };
 
 function SingleTimeline({
