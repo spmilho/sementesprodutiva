@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useOfflineSyncContext } from "@/components/Layout";
-import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType } from "./planting-utils";
+import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, getPlantingTypesForRatio } from "./planting-utils";
 
 interface Props {
   cycleId: string;
@@ -33,6 +33,7 @@ interface Props {
   spacingFemaleFemaleCm?: number | null;
   spacingFemaleMaleCm?: number | null;
   spacingMaleMaleCm?: number | null;
+  femaleMaleRatio?: string;
 }
 
 const schema = z.object({
@@ -51,7 +52,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, seedLots, femaleArea, maleArea, spacingFemaleFemaleCm, spacingFemaleMaleCm, spacingMaleMaleCm }: Props) {
+export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, seedLots, femaleArea, maleArea, spacingFemaleFemaleCm, spacingFemaleMaleCm, spacingMaleMaleCm, femaleMaleRatio }: Props) {
+  const availableTypes = getPlantingTypesForRatio(femaleMaleRatio);
   const queryClient = useQueryClient();
   const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -247,7 +249,7 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
                   }}>
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                     <SelectContent>
-                      {PLANTING_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                      {availableTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 )} />

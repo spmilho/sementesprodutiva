@@ -28,6 +28,7 @@ function getAvailableTypes(ratio: string) {
   const types = [{ value: "female", label: "Fêmea", badge: "F" }];
   types.push({ value: "male_1", label: "Macho 1", badge: "M1" });
   if (maleCount >= 2) types.push({ value: "male_2", label: "Macho 2", badge: "M2" });
+  if (maleCount >= 3) types.push({ value: "male_3", label: "Macho 3", badge: "M3" });
   return types;
 }
 

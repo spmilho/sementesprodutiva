@@ -10,7 +10,7 @@ import ActualPlantingSection from "./ActualPlantingSection";
 import StandCvSection from "./StandCvSection";
 import PlantingComparative from "./PlantingComparative";
 import PlantingCvSection from "./PlantingCvSection";
-import { PLANTING_TYPES } from "./planting-utils";
+import { PLANTING_TYPES, getPlantingTypesForRatio } from "./planting-utils";
 
 export interface UnifiedPlantingTabProps {
   cycleId: string;
@@ -144,7 +144,10 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
     female: props.femalePlantingFinished ?? false,
     male_1: props.male1PlantingFinished ?? props.malePlantingFinished ?? false,
     male_2: props.male2PlantingFinished ?? false,
+    male_3: props.male3PlantingFinished ?? false,
   };
+
+  const availablePlantingTypes = getPlantingTypesForRatio(props.femaleMaleRatio);
 
   return (
     <div className="space-y-8">
@@ -165,7 +168,7 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
 
       {/* Planting completion toggles */}
       <div className="flex flex-wrap gap-2">
-        {PLANTING_TYPES.map(t => {
+        {availablePlantingTypes.map(t => {
           const finished = finishStatus[t.value] ?? false;
           return (
             <Button
@@ -214,6 +217,7 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
         spacingFemaleFemaleCm={props.spacingFemaleFemaleCm}
         spacingFemaleMaleCm={props.spacingFemaleMaleCm}
         spacingMaleMaleCm={props.spacingMaleMaleCm}
+        femaleMaleRatio={props.femaleMaleRatio}
       />
 
       {/* Section 3 - Actual Planting + CV Points */}
@@ -226,6 +230,7 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
         seedLots={seedLots}
         spacingFemaleFemaleCm={props.spacingFemaleFemaleCm}
         spacingMaleMaleCm={props.spacingMaleMaleCm}
+        femaleMaleRatio={props.femaleMaleRatio}
       />
 
       {/* Section 3.5 - CV% de Semeadura */}

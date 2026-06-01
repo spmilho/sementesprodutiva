@@ -50,7 +50,24 @@ export const PLANTING_TYPES = [
   { value: "female", label: "Fêmea", badge: "F", badgeClass: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
   { value: "male_1", label: "Macho 1", badge: "M1", badgeClass: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
   { value: "male_2", label: "Macho 2", badge: "M2", badgeClass: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" },
+  { value: "male_3", label: "Macho 3", badge: "M3", badgeClass: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
 ] as const;
+
+export function parseMaleCountFromRatio(ratio?: string): number {
+  if (!ratio) return 2;
+  const m = ratio.match(/(\d+)\s*M/i);
+  return m ? parseInt(m[1], 10) : 2;
+}
+
+export function getPlantingTypesForRatio(ratio?: string) {
+  const maleCount = parseMaleCountFromRatio(ratio);
+  return PLANTING_TYPES.filter(t => {
+    if (t.value === "female" || t.value === "male_1") return true;
+    if (t.value === "male_2") return maleCount >= 2;
+    if (t.value === "male_3") return maleCount >= 3;
+    return false;
+  });
+}
 
 export function getPlantingTypeInfo(type: string) {
   // Handle legacy "male"/"female" values

@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const ratioOptions = ["4F:2M", "6F:2M", "4F:1M", "3F:1M", "custom"];
+const ratioOptions = ["4F:2M", "6F:2M", "6F:3M", "4F:1M", "3F:1M", "custom"];
 const materialSplitOptions = [
   "P, ½V2, ½V3", "P, V1, ½V2", "P, Palito, V1", "P, E, ½V1", "P, ¾E, Palito",
   "P, ½E, E", "P, ¼E, ¾E", "P, P, ¾E", "P, P, ½E", "P, P, ¼E", "P, P, P",
@@ -47,6 +47,7 @@ function computeAreas(totalArea: number, ratio: string, fxf?: number, fxm?: numb
   const map: Record<string, [number, number]> = {
     "4F:2M": [4, 2],
     "6F:2M": [6, 2],
+    "6F:3M": [6, 3],
     "4F:1M": [4, 1],
     "3F:1M": [3, 1],
   };

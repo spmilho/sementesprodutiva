@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useOfflineSyncContext } from "@/components/Layout";
-import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, getCvLabel } from "./planting-utils";
+import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, getCvLabel, getPlantingTypesForRatio } from "./planting-utils";
 
 interface Props {
   cycleId: string;
@@ -31,6 +31,7 @@ interface Props {
   seedLots: any[];
   spacingFemaleFemaleCm?: number | null;
   spacingMaleMaleCm?: number | null;
+  femaleMaleRatio?: string;
 }
 
 const schema = z.object({
@@ -51,7 +52,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, glebas, seedLots, spacingFemaleFemaleCm, spacingMaleMaleCm }: Props) {
+export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, glebas, seedLots, spacingFemaleFemaleCm, spacingMaleMaleCm, femaleMaleRatio }: Props) {
+  const availableTypes = getPlantingTypesForRatio(femaleMaleRatio);
   const queryClient = useQueryClient();
   const { addRecord } = useOfflineSyncContext();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -176,7 +178,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
             <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              {PLANTING_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+              {availableTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
             </SelectContent>
           </Select>
           <Button className="gap-2" onClick={openNew}><Plus className="h-4 w-4" /> Registrar Plantio</Button>
@@ -258,7 +260,7 @@ export default function ActualPlantingSection({ cycleId, orgId, actuals, plans, 
                 <Controller name="type" control={form.control} render={({ field }) => (
                   <Select value={field.value} onValueChange={(v) => handleTypeChange(v, field.onChange)}>
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                    <SelectContent>{PLANTING_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                    <SelectContent>{availableTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                   </Select>
                 )} />
               </div>
