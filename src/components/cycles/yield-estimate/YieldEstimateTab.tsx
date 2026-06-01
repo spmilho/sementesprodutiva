@@ -241,6 +241,9 @@ function EstimateCard({
 }: EstimateCardProps) {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editDate, setEditDate] = useState(estimate.estimate_date);
 
   const moistureRef = estimate.moisture_reference_pct ?? 13;
   const tgw = estimate.default_tgw_g ?? 300;
