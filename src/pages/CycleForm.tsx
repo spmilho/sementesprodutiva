@@ -24,6 +24,7 @@ const materialSplitOptions = [
   "¼E, P, ¼E", "½E, P, ½E", "½E, P, P", "¾E, P, ¾E", "¾E, P, ¼E",
   "E, P, ½E", "Palito, P, ½E", "½V1, P, ½E", "V1, P, ½E", "½V2, P, ½E",
   "V2, P, ½E", "½V3, P, ½E", "P, ¼E, ¾E", "Palito, P, ¾E",
+  "½V1, P, ¾E, Palito", "V1, P, ¾E, Palito",
 ];
 const irrigationLabels: Record<string, string> = {
   pivot: "Pivô Central",
