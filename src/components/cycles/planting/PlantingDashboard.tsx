@@ -366,16 +366,18 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
       }
 
       const baseSpacing = getBaseSpacing(actuals);
-      const germPct = getGermination(plans, actuals, config.key);
+      const germPct = getGermination(plans, actuals, config.key); // informational only
+      // Population estimate is based purely on seeds/m and row spacing.
+      // Germination % of basic seed is NOT applied — it's quality info only.
       const popEstimated = (seedsPerMeter > 0 && baseSpacing > 0)
-        ? Math.round((seedsPerMeter / (baseSpacing / 100)) * 10000 * (germPct / 100))
+        ? Math.round((seedsPerMeter / (baseSpacing / 100)) * 10000)
         : 0;
 
       const sc = standCounts.filter((s: any) => s.parent_type === config.standType);
       const latest = sc[0];
 
       const avgPlanPop = (seedsPerMeterPlan > 0 && baseSpacing > 0)
-        ? Math.round((seedsPerMeterPlan / (baseSpacing / 100)) * 10000 * (germPct / 100))
+        ? Math.round((seedsPerMeterPlan / (baseSpacing / 100)) * 10000)
         : getWeightedPlanAverage(filteredPlans, (p) => p.target_population);
 
       const popReal = latest?.avg_plants_per_ha
