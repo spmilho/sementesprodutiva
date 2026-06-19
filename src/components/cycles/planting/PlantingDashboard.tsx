@@ -21,7 +21,7 @@ interface Props {
   maleArea?: number;
 }
 
-type ParentGroup = "female" | "male" | "male_1" | "male_2";
+type ParentGroup = "female" | "male" | "male_1" | "male_2" | "male_3";
 
 const DEFAULT_GERMINATION = 90;
 
@@ -34,6 +34,7 @@ const getTypeMatcher = (type: ParentGroup) => {
   if (type === "female") return (value: string) => isFemaleType(value);
   if (type === "male_1") return (value: string) => value === "male" || value === "male_1";
   if (type === "male_2") return (value: string) => value === "male_2";
+  if (type === "male_3") return (value: string) => value === "male_3";
   return (value: string) => isMaleType(value);
 };
 
