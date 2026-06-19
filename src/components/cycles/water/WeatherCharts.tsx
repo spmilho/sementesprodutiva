@@ -338,6 +338,7 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
   const uniqueFemalePlantingDates = useMemo(() => dedup(femalePlantingDates), [femalePlantingDates]);
   const uniqueMale1PlantingDates = useMemo(() => dedup(male1PlantingDates), [male1PlantingDates]);
   const uniqueMale2PlantingDates = useMemo(() => dedup(male2PlantingDates), [male2PlantingDates]);
+  const uniqueMale3PlantingDates = useMemo(() => dedup(male3PlantingDates), [male3PlantingDates]);
 
   // Build daily GDU map once
   const dailyGduMap = useMemo(() => {
