@@ -224,6 +224,12 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
     enabled: !!cycleId,
   });
 
+  const { data: male3PlantingDates = [] } = useQuery({
+    queryKey: ["male3_planting_dates_for_gdu", cycleId],
+    queryFn: () => fetchPlantingDates("male_3"),
+    enabled: !!cycleId,
+  });
+
   const sortedData = useMemo(() => {
     const mapped = [...records]
       .map((r) => {
