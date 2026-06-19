@@ -458,6 +458,9 @@ export default function Dashboard() {
                   {/* Macho 2 */}
                   <Line type="monotone" dataKey="planM2" name="Plan. M2" stroke={CHART_COLORS.orange} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
                   <Line type="monotone" dataKey="realM2" name="Real M2" stroke={CHART_COLORS.orange} strokeWidth={2.5} dot={{ r: 3 }} />
+                  {/* Macho 3 */}
+                  <Line type="monotone" dataKey="planM3" name="Plan. M3" stroke="#8E24AA" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+                  <Line type="monotone" dataKey="realM3" name="Real M3" stroke="#8E24AA" strokeWidth={2.5} dot={{ r: 3 }} />
                 </ComposedChart>
               </ResponsiveContainer>
             ) : (
