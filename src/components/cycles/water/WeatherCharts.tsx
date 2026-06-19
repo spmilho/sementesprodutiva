@@ -325,6 +325,11 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
     "hsl(350 65% 50%)", "hsl(15 75% 55%)", "hsl(40 70% 50%)",
   ];
 
+  const MALE3_COLORS = [
+    "hsl(290 70% 50%)", "hsl(320 65% 50%)", "hsl(260 60% 55%)",
+    "hsl(310 70% 45%)", "hsl(275 65% 50%)", "hsl(330 60% 50%)",
+  ];
+
   const dedup = (dates: string[]) => {
     const seen = new Set<string>();
     return dates.filter(Boolean).filter((d) => { if (seen.has(d)) return false; seen.add(d); return true; });
