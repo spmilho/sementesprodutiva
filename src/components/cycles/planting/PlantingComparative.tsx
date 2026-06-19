@@ -18,16 +18,24 @@ interface Props {
 
 function isMale1(type: string) { return type === "male" || type === "male_1"; }
 function isMale2(type: string) { return type === "male_2"; }
+function isMale3(type: string) { return type === "male_3"; }
 
 export default function PlantingComparative({ plans, actuals, standCounts, glebas, femaleArea, maleArea }: Props) {
+  const hasM3 = useMemo(
+    () => plans.some(p => isMale3(p.type)) || actuals.some(a => isMale3(a.type)),
+    [plans, actuals]
+  );
+
   const totals = useMemo(() => {
     const planF = plans.filter(p => isFemaleType(p.type)).reduce((s, p) => s + (p.planned_area || 0), 0);
     const planM1 = plans.filter(p => isMale1(p.type)).reduce((s, p) => s + (p.planned_area || 0), 0);
     const planM2 = plans.filter(p => isMale2(p.type)).reduce((s, p) => s + (p.planned_area || 0), 0);
+    const planM3 = plans.filter(p => isMale3(p.type)).reduce((s, p) => s + (p.planned_area || 0), 0);
     const realF = actuals.filter(a => isFemaleType(a.type)).reduce((s, a) => s + (a.actual_area || 0), 0);
     const realM1 = actuals.filter(a => isMale1(a.type)).reduce((s, a) => s + (a.actual_area || 0), 0);
     const realM2 = actuals.filter(a => isMale2(a.type)).reduce((s, a) => s + (a.actual_area || 0), 0);
-    return { planF, planM1, planM2, realF, realM1, realM2 };
+    const realM3 = actuals.filter(a => isMale3(a.type)).reduce((s, a) => s + (a.actual_area || 0), 0);
+    return { planF, planM1, planM2, planM3, realF, realM1, realM2, realM3 };
   }, [plans, actuals]);
 
   // Accumulated chart data by date
@@ -36,6 +44,7 @@ export default function PlantingComparative({ plans, actuals, standCounts, gleba
       { key: "female", filterPlan: (t: string) => isFemaleType(t), filterActual: (t: string) => isFemaleType(t) },
       { key: "male_1", filterPlan: (t: string) => isMale1(t), filterActual: (t: string) => isMale1(t) },
       { key: "male_2", filterPlan: (t: string) => isMale2(t), filterActual: (t: string) => isMale2(t) },
+      { key: "male_3", filterPlan: (t: string) => isMale3(t), filterActual: (t: string) => isMale3(t) },
     ];
     const dateMap = new Map<string, Record<string, number>>();
     for (const g of typeGroups) {
@@ -55,7 +64,7 @@ export default function PlantingComparative({ plans, actuals, standCounts, gleba
       }
     }
     const sorted = [...dateMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-    const acc: Record<string, number> = { plan_female: 0, real_female: 0, plan_male_1: 0, real_male_1: 0, plan_male_2: 0, real_male_2: 0 };
+    const acc: Record<string, number> = { plan_female: 0, real_female: 0, plan_male_1: 0, real_male_1: 0, plan_male_2: 0, real_male_2: 0, plan_male_3: 0, real_male_3: 0 };
     return sorted.map(([date, v]) => {
       for (const k of Object.keys(acc)) acc[k] += v[k] || 0;
       const d = date.split("-");
@@ -67,6 +76,8 @@ export default function PlantingComparative({ plans, actuals, standCounts, gleba
         realM1: Math.round(acc.real_male_1 * 10) / 10,
         planM2: Math.round(acc.plan_male_2 * 10) / 10,
         realM2: Math.round(acc.real_male_2 * 10) / 10,
+        planM3: Math.round(acc.plan_male_3 * 10) / 10,
+        realM3: Math.round(acc.real_male_3 * 10) / 10,
       };
     });
   }, [plans, actuals]);
@@ -74,7 +85,8 @@ export default function PlantingComparative({ plans, actuals, standCounts, gleba
   const devF = totals.realF - totals.planF;
   const devM1 = totals.realM1 - totals.planM1;
   const devM2 = totals.realM2 - totals.planM2;
-  const devTotal = devF + devM1 + devM2;
+  const devM3 = totals.realM3 - totals.planM3;
+  const devTotal = devF + devM1 + devM2 + devM3;
 
   return (
     <div className="space-y-4">
@@ -112,6 +124,8 @@ export default function PlantingComparative({ plans, actuals, standCounts, gleba
               <Line type="monotone" dataKey="realM1" name="Real M1" stroke="#4CAF50" strokeWidth={2.5} dot={{ r: 3 }} />
               <Line type="monotone" dataKey="planM2" name="Plan. M2" stroke="#FF9800" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
               <Line type="monotone" dataKey="realM2" name="Real M2" stroke="#FF9800" strokeWidth={2.5} dot={{ r: 3 }} />
+              {hasM3 && <Line type="monotone" dataKey="planM3" name="Plan. M3" stroke="#8E24AA" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />}
+              {hasM3 && <Line type="monotone" dataKey="realM3" name="Real M3" stroke="#8E24AA" strokeWidth={2.5} dot={{ r: 3 }} />}
             </ComposedChart>
           </ResponsiveContainer>
         </CardContent></Card>

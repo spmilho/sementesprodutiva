@@ -224,6 +224,12 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
     enabled: !!cycleId,
   });
 
+  const { data: male3PlantingDates = [] } = useQuery({
+    queryKey: ["male3_planting_dates_for_gdu", cycleId],
+    queryFn: () => fetchPlantingDates("male_3"),
+    enabled: !!cycleId,
+  });
+
   const sortedData = useMemo(() => {
     const mapped = [...records]
       .map((r) => {
@@ -319,6 +325,11 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
     "hsl(350 65% 50%)", "hsl(15 75% 55%)", "hsl(40 70% 50%)",
   ];
 
+  const MALE3_COLORS = [
+    "hsl(290 70% 50%)", "hsl(320 65% 50%)", "hsl(260 60% 55%)",
+    "hsl(310 70% 45%)", "hsl(275 65% 50%)", "hsl(330 60% 50%)",
+  ];
+
   const dedup = (dates: string[]) => {
     const seen = new Set<string>();
     return dates.filter(Boolean).filter((d) => { if (seen.has(d)) return false; seen.add(d); return true; });
@@ -327,6 +338,7 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
   const uniqueFemalePlantingDates = useMemo(() => dedup(femalePlantingDates), [femalePlantingDates]);
   const uniqueMale1PlantingDates = useMemo(() => dedup(male1PlantingDates), [male1PlantingDates]);
   const uniqueMale2PlantingDates = useMemo(() => dedup(male2PlantingDates), [male2PlantingDates]);
+  const uniqueMale3PlantingDates = useMemo(() => dedup(male3PlantingDates), [male3PlantingDates]);
 
   // Build daily GDU map once
   const dailyGduMap = useMemo(() => {
@@ -372,6 +384,7 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
   const gduByPlantingData = useMemo(() => buildGduByPlanting(uniqueFemalePlantingDates, "gdu"), [sortedData, uniqueFemalePlantingDates, dailyGduMap]);
   const gduByMale1Data = useMemo(() => buildGduByPlanting(uniqueMale1PlantingDates, "gdu_m1"), [sortedData, uniqueMale1PlantingDates, dailyGduMap]);
   const gduByMale2Data = useMemo(() => buildGduByPlanting(uniqueMale2PlantingDates, "gdu_m2"), [sortedData, uniqueMale2PlantingDates, dailyGduMap]);
+  const gduByMale3Data = useMemo(() => buildGduByPlanting(uniqueMale3PlantingDates, "gdu_m3"), [sortedData, uniqueMale3PlantingDates, dailyGduMap]);
 
   const stats = useMemo(() => {
     if (sortedData.length === 0) return null;
@@ -677,6 +690,40 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
           </>
         );
       })()}
+
+      {/* HU Accumulated per Male 3 Planting Block — cards + chart */}
+      {hasGdu && uniqueMale3PlantingDates.length > 0 && gduByMale3Data.length > 0 && (() => {
+        const lastRow = gduByMale3Data[gduByMale3Data.length - 1];
+        return (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {uniqueMale3PlantingDates.map((plantDate, i) => (
+                <Card key={plantDate}><CardContent className="p-3 flex items-center gap-2">
+                  <Flame className="h-6 w-6 shrink-0" style={{ color: MALE3_COLORS[i % MALE3_COLORS.length] }} />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">HU Macho 3 {toDateLabel(plantDate)}</p>
+                    <p className="text-sm font-bold">{lastRow?.[`gdu_m3_${plantDate}`] ?? "—"}</p>
+                    <p className="text-[10px] text-muted-foreground">D+1 a partir de {toDateLabel(plantDate)}</p>
+                  </div>
+                </CardContent></Card>
+              ))}
+            </div>
+            <Card><CardContent className="p-4">
+              <h4 className="font-medium text-xs mb-2 flex items-center gap-1"><Flame className="h-3.5 w-3.5 text-purple-500" /> GDU Acumulado por Data de Plantio — Macho 3 (D+1)</h4>
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart data={gduByMale3Data}>
+                  <CartesianGrid strokeDasharray="3 3" /><XAxis {...chartXAxisProps} />
+                  <YAxis tick={{ fontSize: 9 }} label={{ value: "GDU acumulado", angle: -90, position: "insideLeft", fontSize: 10 }} />
+                  <Tooltip content={({ active, payload, label }) => { if (!active || !payload?.length) return null; return (<div className="bg-popover border rounded-md p-2 shadow-md text-xs space-y-1"><p className="font-medium">{label}</p>{payload.filter((p: any) => p.value != null).map((p: any) => (<p key={p.dataKey} style={{ color: p.color }}>{p.name}: {p.value}</p>))}</div>); }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  {uniqueMale3PlantingDates.map((plantDate, i) => (<Line key={plantDate} type="monotone" dataKey={`gdu_m3_${plantDate}`} name={`Macho 3 ${toDateLabel(plantDate)}`} stroke={MALE3_COLORS[i % MALE3_COLORS.length]} strokeWidth={2} dot={false} connectNulls={false} />))}
+                </ComposedChart>
+              </ResponsiveContainer>
+            </CardContent></Card>
+          </>
+        );
+      })()}
+
 
       {/* Temperature chart */}
       {hasTemp && (

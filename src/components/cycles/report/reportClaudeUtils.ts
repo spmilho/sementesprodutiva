@@ -6,6 +6,7 @@ const fmtD = (d: any) => (d ? new Date(d + "T12:00:00").toLocaleDateString("pt-B
 const parent = (t: any) => {
   if (!t) return "N/A";
   if (t.includes("female") || t === "Fêmea") return "Fêmea";
+  if (t.includes("male_3")) return "Macho 3";
   if (t.includes("male_2")) return "Macho 2";
   if (t.includes("male_1") || t === "male") return "Macho 1";
   if (t.includes("male")) return "Macho";

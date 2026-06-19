@@ -21,7 +21,7 @@ interface Props {
   maleArea?: number;
 }
 
-type ParentGroup = "female" | "male" | "male_1" | "male_2";
+type ParentGroup = "female" | "male" | "male_1" | "male_2" | "male_3";
 
 const DEFAULT_GERMINATION = 90;
 
@@ -34,6 +34,7 @@ const getTypeMatcher = (type: ParentGroup) => {
   if (type === "female") return (value: string) => isFemaleType(value);
   if (type === "male_1") return (value: string) => value === "male" || value === "male_1";
   if (type === "male_2") return (value: string) => value === "male_2";
+  if (type === "male_3") return (value: string) => value === "male_3";
   return (value: string) => isMaleType(value);
 };
 
@@ -287,6 +288,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
   const summaryRows = useMemo(() => {
     const rows: any[] = [];
     const hasMale2Data = actuals.some((a: any) => a.type === "male_2") || plans.some((p: any) => p.type === "male_2") || cvRecords.some((r: any) => r.type === "male_2");
+    const hasMale3Data = actuals.some((a: any) => a.type === "male_3") || plans.some((p: any) => p.type === "male_3") || cvRecords.some((r: any) => r.type === "male_3");
 
     const parentalConfigs: Array<{
       key: ParentGroup;
@@ -318,6 +320,15 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
             areaFallback: toPositiveNumber(maleArea),
           }]
         : []),
+      ...(hasMale3Data
+        ? [{
+            key: "male_3" as ParentGroup,
+            label: "Macho 3",
+            standType: "male" as const,
+            matches: (type: string) => type === "male_3",
+            areaFallback: toPositiveNumber(maleArea),
+          }]
+        : []),
     ];
 
     // No gleba grouping — single "Geral" row per parental
@@ -332,6 +343,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
       const manualCvRecords = cvRecords.filter((r: any) => {
         if (config.key === "female") return r.type === "female";
         if (config.key === "male_1") return r.type === "male" || r.type === "male_1";
+        if (config.key === "male_3") return r.type === "male_3";
         return r.type === "male_2";
       });
 
@@ -378,6 +390,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
         const scvRecs = standCvRecords.filter((r: any) => {
           if (config.key === "female") return r.type === "female";
           if (config.key === "male_1") return r.type === "male" || r.type === "male_1";
+          if (config.key === "male_3") return r.type === "male_3";
           return r.type === "male_2";
         });
         if (scvRecs.length > 0) {

@@ -13,9 +13,10 @@ function toNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function normalizeType(tipo: string | null | undefined): "Fêmea" | "Macho 1" | "Macho 2" | "N/A" {
+function normalizeType(tipo: string | null | undefined): "Fêmea" | "Macho 1" | "Macho 2" | "Macho 3" | "N/A" {
   const t = String(tipo || "").toLowerCase();
   if (t.includes("fêmea") || t.includes("femea") || t === "female") return "Fêmea";
+  if (t.includes("macho 3") || t === "male_3") return "Macho 3";
   if (t.includes("macho 2") || t === "male_2") return "Macho 2";
   if (t.includes("macho") || t === "male" || t === "male_1") return "Macho 1";
   return "N/A";
@@ -58,6 +59,7 @@ export default function ReportPlantio({ data }: { data: any }) {
     .sort((a: any, b: any) => (a.iso || "").localeCompare(b.iso || ""));
 
   const hasMale2 = plantio.some((p: any) => p.tipo === "Macho 2") || planejado.some((p: any) => p.tipo === "Macho 2");
+  const hasMale3 = plantio.some((p: any) => p.tipo === "Macho 3") || planejado.some((p: any) => p.tipo === "Macho 3");
 
   const sumByType = (arr: any[], type: string) =>
     arr.filter((p: any) => p.tipo === type).reduce((sum: number, p: any) => sum + (p.area || 0), 0);
@@ -69,14 +71,19 @@ export default function ReportPlantio({ data }: { data: any }) {
     return values.length > 0 ? values.reduce((a: number, b: number) => a + b, 0) / values.length : null;
   };
 
-  // Use cycle-level areas (female area and male area are distinct; male_1 and male_2 share the same physical area)
+  // Use cycle-level areas (female area and male area are distinct; male_1, male_2 and male_3 share the same physical area)
   const totalF = toNumber(data.area_femea) ?? sumByType(plantio, "Fêmea");
-  const totalMacho = toNumber(data.area_macho) ?? Math.max(sumByType(plantio, "Macho 1"), sumByType(plantio, "Macho 2"));
+  const totalMacho = toNumber(data.area_macho) ?? Math.max(
+    sumByType(plantio, "Macho 1"),
+    sumByType(plantio, "Macho 2"),
+    sumByType(plantio, "Macho 3"),
+  );
   const totalGeral = toNumber(data.area_total) ?? (totalF + totalMacho);
 
   const avgCvF = avgCvByType("Fêmea");
   const avgCvM1 = avgCvByType("Macho 1");
   const avgCvM2 = hasMale2 ? avgCvByType("Macho 2") : null;
+  const avgCvM3 = hasMale3 ? avgCvByType("Macho 3") : null;
 
   // Build accumulated chart: Planned x Realized per parental
   const dateMap = new Map<string, Record<string, number>>();
@@ -92,6 +99,7 @@ export default function ReportPlantio({ data }: { data: any }) {
     if (p.tipo === "Fêmea") addToMap(p.iso, "planF", p.area);
     else if (p.tipo === "Macho 1") addToMap(p.iso, "planM1", p.area);
     else if (p.tipo === "Macho 2") addToMap(p.iso, "planM2", p.area);
+    else if (p.tipo === "Macho 3") addToMap(p.iso, "planM3", p.area);
   });
 
   plantio.forEach((p: any) => {
@@ -99,10 +107,11 @@ export default function ReportPlantio({ data }: { data: any }) {
     if (p.tipo === "Fêmea") addToMap(p.iso, "realF", p.area);
     else if (p.tipo === "Macho 1") addToMap(p.iso, "realM1", p.area);
     else if (p.tipo === "Macho 2") addToMap(p.iso, "realM2", p.area);
+    else if (p.tipo === "Macho 3") addToMap(p.iso, "realM3", p.area);
   });
 
   const sorted = [...dateMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  const acc = { planF: 0, realF: 0, planM1: 0, realM1: 0, planM2: 0, realM2: 0 };
+  const acc = { planF: 0, realF: 0, planM1: 0, realM1: 0, planM2: 0, realM2: 0, planM3: 0, realM3: 0 };
 
   const chartData = sorted.map(([iso, v]) => {
     for (const k of Object.keys(acc) as (keyof typeof acc)[]) acc[k] += v[k] || 0;
@@ -118,6 +127,12 @@ export default function ReportPlantio({ data }: { data: any }) {
             "Real M2": Math.round(acc.realM2 * 10) / 10,
           }
         : {}),
+      ...(hasMale3
+        ? {
+            "Plan. M3": Math.round(acc.planM3 * 10) / 10,
+            "Real M3": Math.round(acc.realM3 * 10) / 10,
+          }
+        : {}),
     };
   });
 
@@ -126,6 +141,7 @@ export default function ReportPlantio({ data }: { data: any }) {
   const cvSemF = cvSem.find((c: any) => c.tipo === "Fêmea")?.cv_percent;
   const cvSemM1 = cvSem.find((c: any) => c.tipo === "Macho 1" || c.tipo === "Macho")?.cv_percent;
   const cvSemM2 = hasMale2 ? cvSem.find((c: any) => c.tipo === "Macho 2")?.cv_percent : null;
+  const cvSemM3 = hasMale3 ? cvSem.find((c: any) => c.tipo === "Macho 3")?.cv_percent : null;
 
   return (
     <div className="report-section">
@@ -140,9 +156,10 @@ export default function ReportPlantio({ data }: { data: any }) {
 
         <div className="kpi-card blue">
           <div className="kpi-value">{totalMacho.toFixed(1)} ha</div>
-          <div className="kpi-label">{hasMale2 ? "Macho 1 e 2 (mesma área)" : "Macho plantado"}</div>
+          <div className="kpi-label">{hasMale3 ? "Macho 1, 2 e 3 (mesma área)" : hasMale2 ? "Macho 1 e 2 (mesma área)" : "Macho plantado"}</div>
           {avgCvM1 != null && <div className="kpi-sub">CV% médio M1: {avgCvM1.toFixed(1)}%</div>}
           {avgCvM2 != null && <div className="kpi-sub">CV% médio M2: {avgCvM2.toFixed(1)}%</div>}
+          {avgCvM3 != null && <div className="kpi-sub">CV% médio M3: {avgCvM3.toFixed(1)}%</div>}
         </div>
 
         <div className="kpi-card orange">
@@ -177,6 +194,13 @@ export default function ReportPlantio({ data }: { data: any }) {
                 <div className="kpi-sub">{cvSemM2 <= 20 ? "Excelente" : cvSemM2 <= 25 ? "Bom" : cvSemM2 <= 30 ? "Aceitável" : "Insatisfatório"}</div>
               </div>
             )}
+            {cvSemM3 != null && (
+              <div className="kpi-card" style={{ borderLeft: `4px solid ${cvSemM3 <= 20 ? "#4CAF50" : cvSemM3 <= 25 ? "#FF9800" : "#F44336"}` }}>
+                <div className="kpi-value">{cvSemM3.toFixed(1)}%</div>
+                <div className="kpi-label">CV% Semeadura Macho 3</div>
+                <div className="kpi-sub">{cvSemM3 <= 20 ? "Excelente" : cvSemM3 <= 25 ? "Bom" : cvSemM3 <= 30 ? "Aceitável" : "Insatisfatório"}</div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -197,6 +221,8 @@ export default function ReportPlantio({ data }: { data: any }) {
               <Line type="monotone" dataKey="Real M1" stroke="#4CAF50" strokeWidth={2.5} dot={{ r: 3 }} />
               {hasMale2 && <Line type="monotone" dataKey="Plan. M2" stroke="#FF9800" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />}
               {hasMale2 && <Line type="monotone" dataKey="Real M2" stroke="#FF9800" strokeWidth={2.5} dot={{ r: 3 }} />}
+              {hasMale3 && <Line type="monotone" dataKey="Plan. M3" stroke="#8E24AA" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />}
+              {hasMale3 && <Line type="monotone" dataKey="Real M3" stroke="#8E24AA" strokeWidth={2.5} dot={{ r: 3 }} />}
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -218,9 +244,11 @@ export default function ReportPlantio({ data }: { data: any }) {
                   className={`badge ${
                     p.tipo === "Fêmea"
                       ? "badge-green"
-                      : p.tipo === "Macho 2"
-                        ? "badge-orange"
-                        : "badge-blue"
+                      : p.tipo === "Macho 3"
+                        ? "badge-purple"
+                        : p.tipo === "Macho 2"
+                          ? "badge-orange"
+                          : "badge-blue"
                   }`}
                 >
                   {p.tipo}
