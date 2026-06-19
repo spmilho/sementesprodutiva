@@ -99,13 +99,18 @@ export default function ReportFenologia({ data }: { data: any }) {
     const p = String(f.parental || "").toLowerCase();
     return p.includes("macho 2") || p === "male_2";
   });
+  const male3Records = (data.fenologia || []).filter((f: any) => {
+    const p = String(f.parental || "").toLowerCase();
+    return p.includes("macho 3") || p === "male_3";
+  });
 
   return (
     <div className="report-section">
       <div className="section-title">🌾 Fenologia</div>
       <TimelineBlock title="Parental Fêmea" records={femaleRecords} accent="#7E57C2" />
       <TimelineBlock title="Parental Macho 1" records={male1Records} accent="#1565C0" />
-      <TimelineBlock title="Parental Macho 2" records={male2Records} accent="#00838F" />
+      {male2Records.length > 0 && <TimelineBlock title="Parental Macho 2" records={male2Records} accent="#00838F" />}
+      {male3Records.length > 0 && <TimelineBlock title="Parental Macho 3" records={male3Records} accent="#8E24AA" />}
     </div>
   );
 }
