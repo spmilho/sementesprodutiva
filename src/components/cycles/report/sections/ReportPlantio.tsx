@@ -221,6 +221,8 @@ export default function ReportPlantio({ data }: { data: any }) {
               <Line type="monotone" dataKey="Real M1" stroke="#4CAF50" strokeWidth={2.5} dot={{ r: 3 }} />
               {hasMale2 && <Line type="monotone" dataKey="Plan. M2" stroke="#FF9800" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />}
               {hasMale2 && <Line type="monotone" dataKey="Real M2" stroke="#FF9800" strokeWidth={2.5} dot={{ r: 3 }} />}
+              {hasMale3 && <Line type="monotone" dataKey="Plan. M3" stroke="#8E24AA" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />}
+              {hasMale3 && <Line type="monotone" dataKey="Real M3" stroke="#8E24AA" strokeWidth={2.5} dot={{ r: 3 }} />}
             </ComposedChart>
           </ResponsiveContainer>
         </div>
