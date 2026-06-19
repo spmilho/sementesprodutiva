@@ -384,6 +384,7 @@ export default function WeatherCharts({ records, cycleId, orgId, pivotName, hybr
   const gduByPlantingData = useMemo(() => buildGduByPlanting(uniqueFemalePlantingDates, "gdu"), [sortedData, uniqueFemalePlantingDates, dailyGduMap]);
   const gduByMale1Data = useMemo(() => buildGduByPlanting(uniqueMale1PlantingDates, "gdu_m1"), [sortedData, uniqueMale1PlantingDates, dailyGduMap]);
   const gduByMale2Data = useMemo(() => buildGduByPlanting(uniqueMale2PlantingDates, "gdu_m2"), [sortedData, uniqueMale2PlantingDates, dailyGduMap]);
+  const gduByMale3Data = useMemo(() => buildGduByPlanting(uniqueMale3PlantingDates, "gdu_m3"), [sortedData, uniqueMale3PlantingDates, dailyGduMap]);
 
   const stats = useMemo(() => {
     if (sortedData.length === 0) return null;
