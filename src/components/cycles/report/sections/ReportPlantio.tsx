@@ -194,6 +194,13 @@ export default function ReportPlantio({ data }: { data: any }) {
                 <div className="kpi-sub">{cvSemM2 <= 20 ? "Excelente" : cvSemM2 <= 25 ? "Bom" : cvSemM2 <= 30 ? "Aceitável" : "Insatisfatório"}</div>
               </div>
             )}
+            {cvSemM3 != null && (
+              <div className="kpi-card" style={{ borderLeft: `4px solid ${cvSemM3 <= 20 ? "#4CAF50" : cvSemM3 <= 25 ? "#FF9800" : "#F44336"}` }}>
+                <div className="kpi-value">{cvSemM3.toFixed(1)}%</div>
+                <div className="kpi-label">CV% Semeadura Macho 3</div>
+                <div className="kpi-sub">{cvSemM3 <= 20 ? "Excelente" : cvSemM3 <= 25 ? "Bom" : cvSemM3 <= 30 ? "Aceitável" : "Insatisfatório"}</div>
+              </div>
+            )}
           </div>
         </div>
       )}
