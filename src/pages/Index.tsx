@@ -164,6 +164,7 @@ export default function Dashboard() {
       { key: "female", filter: (t: string) => t === "female" },
       { key: "male_1", filter: (t: string) => t === "male" || t === "male_1" },
       { key: "male_2", filter: (t: string) => t === "male_2" },
+      { key: "male_3", filter: (t: string) => t === "male_3" },
     ];
     const dateMap = new Map<string, Record<string, number>>();
     for (const g of typeGroups) {
@@ -183,7 +184,7 @@ export default function Dashboard() {
       }
     }
     const sorted = [...dateMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-    const acc: Record<string, number> = { plan_female: 0, real_female: 0, plan_male_1: 0, real_male_1: 0, plan_male_2: 0, real_male_2: 0 };
+    const acc: Record<string, number> = { plan_female: 0, real_female: 0, plan_male_1: 0, real_male_1: 0, plan_male_2: 0, real_male_2: 0, plan_male_3: 0, real_male_3: 0 };
     return sorted.map(([date, v]) => {
       for (const k of Object.keys(acc)) acc[k] += v[k] || 0;
       return {
@@ -194,6 +195,8 @@ export default function Dashboard() {
         realM1: Math.round(acc.real_male_1 * 10) / 10,
         planM2: Math.round(acc.plan_male_2 * 10) / 10,
         realM2: Math.round(acc.real_male_2 * 10) / 10,
+        planM3: Math.round(acc.plan_male_3 * 10) / 10,
+        realM3: Math.round(acc.real_male_3 * 10) / 10,
       };
     });
   }, [plantingPlans, plantingActuals, cycleIds]);
