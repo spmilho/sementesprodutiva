@@ -167,22 +167,28 @@ export default function UnifiedPlantingTab(props: UnifiedPlantingTabProps) {
       </div>
 
       {/* Planting completion toggles */}
-      <div className="flex flex-wrap gap-2">
-        {availablePlantingTypes.map(t => {
-          const finished = finishStatus[t.value] ?? false;
-          return (
-            <Button
-              key={t.value}
-              variant={finished ? "default" : "outline"}
-              size="sm"
-              className={`gap-1.5 text-xs ${finished ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
-              onClick={() => props.onFinishToggle?.(t.value, !finished)}
-            >
-              {finished && <CheckCircle2 className="h-3.5 w-3.5" />}
-              {t.label} {finished ? "✓ Finalizado" : "— Em andamento"}
-            </Button>
-          );
-        })}
+      <div className="rounded-lg border bg-card p-4 space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold">Status do Plantio</h3>
+          <p className="text-xs text-muted-foreground">Clique em cada parental para alternar entre "Em andamento" e "Finalizado".</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {availablePlantingTypes.map(t => {
+            const finished = finishStatus[t.value] ?? false;
+            return (
+              <Button
+                key={t.value}
+                variant={finished ? "default" : "outline"}
+                size="sm"
+                className={`gap-1.5 text-xs ${finished ? "bg-green-600 hover:bg-green-700 text-white" : "border-amber-400 text-amber-700 hover:bg-amber-50 dark:text-amber-400"}`}
+                onClick={() => props.onFinishToggle?.(t.value, !finished)}
+              >
+                {finished ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Loader2 className="h-3.5 w-3.5" />}
+                {t.label}: {finished ? "Finalizado ✓" : "Em andamento — marcar como finalizado"}
+              </Button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Section 1 - Dashboard */}
