@@ -13,9 +13,10 @@ function toNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function normalizeType(tipo: string | null | undefined): "Fêmea" | "Macho 1" | "Macho 2" | "N/A" {
+function normalizeType(tipo: string | null | undefined): "Fêmea" | "Macho 1" | "Macho 2" | "Macho 3" | "N/A" {
   const t = String(tipo || "").toLowerCase();
   if (t.includes("fêmea") || t.includes("femea") || t === "female") return "Fêmea";
+  if (t.includes("macho 3") || t === "male_3") return "Macho 3";
   if (t.includes("macho 2") || t === "male_2") return "Macho 2";
   if (t.includes("macho") || t === "male" || t === "male_1") return "Macho 1";
   return "N/A";
