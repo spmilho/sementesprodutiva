@@ -157,13 +157,15 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
         continue;
       }
 
-      // PRIORITY 2: Estimated from seeds_per_meter_actual + base spacing (ff) + germination
+      // PRIORITY 2: Estimated from seeds_per_meter_actual + base spacing (ff)
+      // NOTE: Germination % of basic seed is informational only and MUST NOT
+      // adjust the field population estimate — field reality can diverge.
       const spm = getSeedsPerMeterActual(actuals, type);
       const spacingCm = getBaseSpacing(actuals);
-      const germPct = getGermination(plans, actuals, type);
+      const germPct = getGermination(plans, actuals, type); // kept for display only
 
       if (spm > 0 && spacingCm > 0) {
-        const popPerHa = Math.round((spm / (spacingCm / 100)) * 10000 * (germPct / 100));
+        const popPerHa = Math.round((spm / (spacingCm / 100)) * 10000);
         result[type] = { popPerHa, source: "estimated", seedsPerMeter: spm, spacingCm, germPct };
       } else {
         result[type] = { popPerHa: 0, source: "none", seedsPerMeter: 0, spacingCm: 0, germPct: 0 };
@@ -364,16 +366,18 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
       }
 
       const baseSpacing = getBaseSpacing(actuals);
-      const germPct = getGermination(plans, actuals, config.key);
+      const germPct = getGermination(plans, actuals, config.key); // informational only
+      // Population estimate is based purely on seeds/m and row spacing.
+      // Germination % of basic seed is NOT applied — it's quality info only.
       const popEstimated = (seedsPerMeter > 0 && baseSpacing > 0)
-        ? Math.round((seedsPerMeter / (baseSpacing / 100)) * 10000 * (germPct / 100))
+        ? Math.round((seedsPerMeter / (baseSpacing / 100)) * 10000)
         : 0;
 
       const sc = standCounts.filter((s: any) => s.parent_type === config.standType);
       const latest = sc[0];
 
       const avgPlanPop = (seedsPerMeterPlan > 0 && baseSpacing > 0)
-        ? Math.round((seedsPerMeterPlan / (baseSpacing / 100)) * 10000 * (germPct / 100))
+        ? Math.round((seedsPerMeterPlan / (baseSpacing / 100)) * 10000)
         : getWeightedPlanAverage(filteredPlans, (p) => p.target_population);
 
       const popReal = latest?.avg_plants_per_ha
