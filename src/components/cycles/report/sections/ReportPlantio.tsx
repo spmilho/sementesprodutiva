@@ -156,9 +156,10 @@ export default function ReportPlantio({ data }: { data: any }) {
 
         <div className="kpi-card blue">
           <div className="kpi-value">{totalMacho.toFixed(1)} ha</div>
-          <div className="kpi-label">{hasMale2 ? "Macho 1 e 2 (mesma área)" : "Macho plantado"}</div>
+          <div className="kpi-label">{hasMale3 ? "Macho 1, 2 e 3 (mesma área)" : hasMale2 ? "Macho 1 e 2 (mesma área)" : "Macho plantado"}</div>
           {avgCvM1 != null && <div className="kpi-sub">CV% médio M1: {avgCvM1.toFixed(1)}%</div>}
           {avgCvM2 != null && <div className="kpi-sub">CV% médio M2: {avgCvM2.toFixed(1)}%</div>}
+          {avgCvM3 != null && <div className="kpi-sub">CV% médio M3: {avgCvM3.toFixed(1)}%</div>}
         </div>
 
         <div className="kpi-card orange">
