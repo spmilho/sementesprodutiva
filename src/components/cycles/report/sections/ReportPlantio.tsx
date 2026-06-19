@@ -59,6 +59,7 @@ export default function ReportPlantio({ data }: { data: any }) {
     .sort((a: any, b: any) => (a.iso || "").localeCompare(b.iso || ""));
 
   const hasMale2 = plantio.some((p: any) => p.tipo === "Macho 2") || planejado.some((p: any) => p.tipo === "Macho 2");
+  const hasMale3 = plantio.some((p: any) => p.tipo === "Macho 3") || planejado.some((p: any) => p.tipo === "Macho 3");
 
   const sumByType = (arr: any[], type: string) =>
     arr.filter((p: any) => p.tipo === type).reduce((sum: number, p: any) => sum + (p.area || 0), 0);
@@ -70,14 +71,19 @@ export default function ReportPlantio({ data }: { data: any }) {
     return values.length > 0 ? values.reduce((a: number, b: number) => a + b, 0) / values.length : null;
   };
 
-  // Use cycle-level areas (female area and male area are distinct; male_1 and male_2 share the same physical area)
+  // Use cycle-level areas (female area and male area are distinct; male_1, male_2 and male_3 share the same physical area)
   const totalF = toNumber(data.area_femea) ?? sumByType(plantio, "Fêmea");
-  const totalMacho = toNumber(data.area_macho) ?? Math.max(sumByType(plantio, "Macho 1"), sumByType(plantio, "Macho 2"));
+  const totalMacho = toNumber(data.area_macho) ?? Math.max(
+    sumByType(plantio, "Macho 1"),
+    sumByType(plantio, "Macho 2"),
+    sumByType(plantio, "Macho 3"),
+  );
   const totalGeral = toNumber(data.area_total) ?? (totalF + totalMacho);
 
   const avgCvF = avgCvByType("Fêmea");
   const avgCvM1 = avgCvByType("Macho 1");
   const avgCvM2 = hasMale2 ? avgCvByType("Macho 2") : null;
+  const avgCvM3 = hasMale3 ? avgCvByType("Macho 3") : null;
 
   // Build accumulated chart: Planned x Realized per parental
   const dateMap = new Map<string, Record<string, number>>();
@@ -93,6 +99,7 @@ export default function ReportPlantio({ data }: { data: any }) {
     if (p.tipo === "Fêmea") addToMap(p.iso, "planF", p.area);
     else if (p.tipo === "Macho 1") addToMap(p.iso, "planM1", p.area);
     else if (p.tipo === "Macho 2") addToMap(p.iso, "planM2", p.area);
+    else if (p.tipo === "Macho 3") addToMap(p.iso, "planM3", p.area);
   });
 
   plantio.forEach((p: any) => {
@@ -100,10 +107,11 @@ export default function ReportPlantio({ data }: { data: any }) {
     if (p.tipo === "Fêmea") addToMap(p.iso, "realF", p.area);
     else if (p.tipo === "Macho 1") addToMap(p.iso, "realM1", p.area);
     else if (p.tipo === "Macho 2") addToMap(p.iso, "realM2", p.area);
+    else if (p.tipo === "Macho 3") addToMap(p.iso, "realM3", p.area);
   });
 
   const sorted = [...dateMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  const acc = { planF: 0, realF: 0, planM1: 0, realM1: 0, planM2: 0, realM2: 0 };
+  const acc = { planF: 0, realF: 0, planM1: 0, realM1: 0, planM2: 0, realM2: 0, planM3: 0, realM3: 0 };
 
   const chartData = sorted.map(([iso, v]) => {
     for (const k of Object.keys(acc) as (keyof typeof acc)[]) acc[k] += v[k] || 0;
@@ -119,6 +127,12 @@ export default function ReportPlantio({ data }: { data: any }) {
             "Real M2": Math.round(acc.realM2 * 10) / 10,
           }
         : {}),
+      ...(hasMale3
+        ? {
+            "Plan. M3": Math.round(acc.planM3 * 10) / 10,
+            "Real M3": Math.round(acc.realM3 * 10) / 10,
+          }
+        : {}),
     };
   });
 
@@ -127,6 +141,7 @@ export default function ReportPlantio({ data }: { data: any }) {
   const cvSemF = cvSem.find((c: any) => c.tipo === "Fêmea")?.cv_percent;
   const cvSemM1 = cvSem.find((c: any) => c.tipo === "Macho 1" || c.tipo === "Macho")?.cv_percent;
   const cvSemM2 = hasMale2 ? cvSem.find((c: any) => c.tipo === "Macho 2")?.cv_percent : null;
+  const cvSemM3 = hasMale3 ? cvSem.find((c: any) => c.tipo === "Macho 3")?.cv_percent : null;
 
   return (
     <div className="report-section">
