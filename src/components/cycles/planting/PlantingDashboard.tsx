@@ -390,6 +390,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
         const scvRecs = standCvRecords.filter((r: any) => {
           if (config.key === "female") return r.type === "female";
           if (config.key === "male_1") return r.type === "male" || r.type === "male_1";
+          if (config.key === "male_3") return r.type === "male_3";
           return r.type === "male_2";
         });
         if (scvRecs.length > 0) {
