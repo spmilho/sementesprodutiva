@@ -244,9 +244,11 @@ export default function ReportPlantio({ data }: { data: any }) {
                   className={`badge ${
                     p.tipo === "Fêmea"
                       ? "badge-green"
-                      : p.tipo === "Macho 2"
-                        ? "badge-orange"
-                        : "badge-blue"
+                      : p.tipo === "Macho 3"
+                        ? "badge-purple"
+                        : p.tipo === "Macho 2"
+                          ? "badge-orange"
+                          : "badge-blue"
                   }`}
                 >
                   {p.tipo}
