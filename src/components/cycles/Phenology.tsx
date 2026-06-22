@@ -125,6 +125,15 @@ export default function Phenology({
           allTypes.add(r.type === "male" ? "male_1" : r.type);
         }
       }
+      if (allTypes.size === 0) {
+        const { data: cycleData } = await (supabase as any)
+          .from("production_cycles")
+          .select("female_male_ratio")
+          .eq("id", cycleId)
+          .maybeSingle();
+        const maleCount = Math.max(1, Math.min(3, Number(String(cycleData?.female_male_ratio || "").match(/(\d+)\s*M/i)?.[1] || 2)));
+        for (let i = 1; i <= maleCount; i++) allTypes.add(`male_${i}`);
+      }
       // Sort: male_1, male_2, male_3
       return Array.from(allTypes).sort();
     },
