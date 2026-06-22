@@ -681,7 +681,7 @@ export default function SementeBasica({
                   <TableRow key={i}>
                     <TableCell>
                       <Badge variant="outline" className={cn("text-[10px]", p.parentType === "female" ? "border-pink-400 text-pink-700" : "border-green-400 text-green-700")}>
-                        {p.parentType === "female" ? "Fêmea" : "Macho"}
+                        {getParentLabel(p.parentType, p.designatedMalePlanting)}
                       </Badge>
                     </TableCell>
                     <TableCell className="font-mono text-xs">{p.lotNumber}</TableCell>
