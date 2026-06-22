@@ -15,6 +15,14 @@ function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+function parentBadge(parentType: string | null | undefined, designatedMale?: string | null): string {
+  if (parentType === "female") return "F";
+  if (designatedMale === "male_1" || parentType === "male_1" || parentType === "male") return "M1";
+  if (designatedMale === "male_2" || parentType === "male_2") return "M2";
+  if (designatedMale === "male_3" || parentType === "male_3") return "M3";
+  return "M";
+}
+
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -110,7 +118,7 @@ export function buildFallbackReport(data: ReportData): string {
   // Seed Lots
   if (data.seedLots.length) {
     const rows = data.seedLots.map((l: any) => `<tr>
-      <td><span class="badge ${l.parent_type === 'female' ? 'bg-green' : 'bg-blue'}">${l.parent_type === 'female' ? 'F' : 'M'}</span></td>
+      <td><span class="badge ${l.parent_type === 'female' ? 'bg-green' : 'bg-blue'}">${parentBadge(l.parent_type, l.designated_male_planting)}</span></td>
       <td>${esc(l.lot_number)}</td><td>${fmtNum(l.quantity_kg || l.quantity)} kg</td>
       <td>${fmtNum(l.germination_pct)}%</td><td>${fmtNum(l.thousand_seed_weight_g)} g</td>
     </tr>`).join('');
