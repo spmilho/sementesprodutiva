@@ -482,25 +482,31 @@ export default function SeedTreatment({
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Determine how many male plantings exist
+  // Determine how many male plantings exist, including split parentals (male_1/2/3)
   const { data: malePlantings } = useQuery({
     queryKey: ["planting-plan-males", cycleId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("planting_plan")
-        .select("planting_order")
+        .select("type, planting_order")
         .eq("cycle_id", cycleId)
-        .eq("type", "male")
+        .in("type", ["male", "male_1", "male_2", "male_3"])
         .is("deleted_at", null)
         .order("planting_order");
       if (error) throw error;
-      return data as { planting_order: number }[];
+      return data as { type: string; planting_order: number }[];
     },
   });
 
   const maleCount = useMemo(() => {
     if (!malePlantings?.length) return 1;
-    return Math.max(...malePlantings.map((m: any) => m.planting_order), 1);
+    return Math.max(
+      ...malePlantings.map((m: any) => {
+        const suffix = String(m.type || "").match(/male_(\d+)/)?.[1];
+        return suffix ? Number(suffix) : Number(m.planting_order || 1);
+      }),
+      1,
+    );
   }, [malePlantings]);
 
   const parentTypes = useMemo(() => {
