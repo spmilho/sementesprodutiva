@@ -454,7 +454,7 @@ export default function SementeBasica({
       const lot = lots.find((l: any) => l.id === t.seed_lot_id);
       if (!lot || !t.seed_lot_treatment_products) return;
       t.seed_lot_treatment_products.forEach((p: any) => {
-        result.push({ ...p, parentType: lot.parent_type, lotNumber: lot.lot_number, originSeason: lot.origin_season, treatmentOrigin: t.treatment_origin });
+        result.push({ ...p, parentType: lot.parent_type, designatedMalePlanting: lot.designated_male_planting, lotNumber: lot.lot_number, originSeason: lot.origin_season, treatmentOrigin: t.treatment_origin });
       });
     });
     return result;
