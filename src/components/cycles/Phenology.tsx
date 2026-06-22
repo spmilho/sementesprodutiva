@@ -121,7 +121,9 @@ export default function Phenology({
       ]);
       const allTypes = new Set<string>();
       for (const r of [...(actualRes.data || []), ...(planRes.data || [])]) {
-        if (r.type && r.type.startsWith("male")) allTypes.add(r.type);
+        if (r.type && String(r.type).startsWith("male")) {
+          allTypes.add(r.type === "male" ? "male_1" : r.type);
+        }
       }
       // Sort: male_1, male_2, male_3
       return Array.from(allTypes).sort();
