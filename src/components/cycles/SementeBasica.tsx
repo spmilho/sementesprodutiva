@@ -431,7 +431,7 @@ export default function SementeBasica({
 
   // ─── COMPUTED ───
   const femaleLots = useMemo(() => lots.filter((l: any) => l.parent_type === "female"), [lots]);
-  const maleLots = useMemo(() => lots.filter((l: any) => l.parent_type === "male"), [lots]);
+  const maleLots = useMemo(() => lots.filter((l: any) => l.parent_type !== "female"), [lots]);
 
   const treatmentByLotId = useMemo(() => {
     const map: Record<string, any> = {};
@@ -548,6 +548,7 @@ export default function SementeBasica({
                               <div className="flex items-center gap-2">
                                 <span className="font-mono text-sm font-semibold">{lot.lot_number}</span>
                                 <Badge variant="outline" className={cn("text-[10px]", statusInfo.color)}>{statusInfo.label}</Badge>
+                                {lot.parent_type !== "female" && <Badge variant="secondary" className="text-[10px]">{getParentLabel(lot.parent_type, lot.designated_male_planting)}</Badge>}
                                 <Badge variant="outline" className={cn("text-[10px]", tsBadge.color)}>{tsBadge.emoji} {tsBadge.label}</Badge>
                               </div>
                               <div className="flex items-center gap-2">
