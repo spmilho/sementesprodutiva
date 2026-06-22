@@ -176,10 +176,17 @@ export default function CycleMapTab({ cycleId, orgId, pivotId }: CycleMapTabProp
   const center: [number, number] = hasCoords ? [pivot.latitude, pivot.longitude] : [-15.8, -47.9];
 
   const nickingParentColors: Record<string, string> = {
-    male1: "#22c55e",
-    male2: "#f97316",
-    male3: "#8b5cf6",
+    male_1: "#22c55e",
+    male_2: "#f97316",
+    male_3: "#8b5cf6",
     female: "#3b82f6",
+  };
+
+  const nickingParentLabels: Record<string, string> = {
+    female: "Fêmea",
+    male_1: "Macho 1",
+    male_2: "Macho 2",
+    male_3: "Macho 3",
   };
 
   if (!hasCoords) {
@@ -271,7 +278,7 @@ export default function CycleMapTab({ cycleId, orgId, pivotId }: CycleMapTabProp
                   <Popup>
                     <div className="text-xs space-y-0.5">
                       <div className="font-bold">🌺 {p.name}</div>
-                      <div>Tipo: {p.parent_type}</div>
+                      <div>Tipo: {nickingParentLabels[p.parent_type] || p.parent_type}</div>
                     </div>
                   </Popup>
                 </Marker>
@@ -362,7 +369,7 @@ export default function CycleMapTab({ cycleId, orgId, pivotId }: CycleMapTabProp
                     <span className="border-l border-border pl-2 font-semibold text-muted-foreground">Nicking:</span>
                     {Object.entries(nickingParentColors).map(([k, c]) => (
                       <span key={k} className="inline-flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full" style={{ background: c }} />{k}
+                        <span className="w-2 h-2 rounded-full" style={{ background: c }} />{nickingParentLabels[k] || k}
                       </span>
                     ))}
                   </>
