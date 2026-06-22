@@ -84,6 +84,20 @@ const TS_BADGES: Record<string, { label: string; emoji: string; color: string }>
   pending: { label: "TS pendente", emoji: "⏳", color: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300" },
 };
 
+const PARENT_LABELS: Record<string, string> = {
+  female: "Fêmea",
+  male: "Macho",
+  male_1: "Macho 1",
+  male_2: "Macho 2",
+  male_3: "Macho 3",
+};
+
+const getParentLabel = (parentType?: string | null, designatedMale?: string | null) => {
+  if (parentType === "female") return "Fêmea";
+  if (designatedMale && designatedMale !== "any") return PARENT_LABELS[designatedMale] || "Macho";
+  return PARENT_LABELS[parentType || ""] || "Macho";
+};
+
 const PRODUCT_TYPES = [
   { value: "fungicide", label: "Fungicida" },
   { value: "insecticide", label: "Inseticida" },
@@ -417,7 +431,7 @@ export default function SementeBasica({
 
   // ─── COMPUTED ───
   const femaleLots = useMemo(() => lots.filter((l: any) => l.parent_type === "female"), [lots]);
-  const maleLots = useMemo(() => lots.filter((l: any) => l.parent_type === "male"), [lots]);
+  const maleLots = useMemo(() => lots.filter((l: any) => l.parent_type !== "female"), [lots]);
 
   const treatmentByLotId = useMemo(() => {
     const map: Record<string, any> = {};
@@ -440,7 +454,7 @@ export default function SementeBasica({
       const lot = lots.find((l: any) => l.id === t.seed_lot_id);
       if (!lot || !t.seed_lot_treatment_products) return;
       t.seed_lot_treatment_products.forEach((p: any) => {
-        result.push({ ...p, parentType: lot.parent_type, lotNumber: lot.lot_number, originSeason: lot.origin_season, treatmentOrigin: t.treatment_origin });
+        result.push({ ...p, parentType: lot.parent_type, designatedMalePlanting: lot.designated_male_planting, lotNumber: lot.lot_number, originSeason: lot.origin_season, treatmentOrigin: t.treatment_origin });
       });
     });
     return result;
@@ -534,6 +548,7 @@ export default function SementeBasica({
                               <div className="flex items-center gap-2">
                                 <span className="font-mono text-sm font-semibold">{lot.lot_number}</span>
                                 <Badge variant="outline" className={cn("text-[10px]", statusInfo.color)}>{statusInfo.label}</Badge>
+                                {lot.parent_type !== "female" && <Badge variant="secondary" className="text-[10px]">{getParentLabel(lot.parent_type, lot.designated_male_planting)}</Badge>}
                                 <Badge variant="outline" className={cn("text-[10px]", tsBadge.color)}>{tsBadge.emoji} {tsBadge.label}</Badge>
                               </div>
                               <div className="flex items-center gap-2">
@@ -666,7 +681,7 @@ export default function SementeBasica({
                   <TableRow key={i}>
                     <TableCell>
                       <Badge variant="outline" className={cn("text-[10px]", p.parentType === "female" ? "border-pink-400 text-pink-700" : "border-green-400 text-green-700")}>
-                        {p.parentType === "female" ? "Fêmea" : "Macho"}
+                        {getParentLabel(p.parentType, p.designatedMalePlanting)}
                       </Badge>
                     </TableCell>
                     <TableCell className="font-mono text-xs">{p.lotNumber}</TableCell>

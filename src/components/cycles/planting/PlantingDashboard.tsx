@@ -107,7 +107,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
     const result: Record<string, { cv: number; mean: number; n: number }> = {};
     for (const type of ["female", "male"] as const) {
       const manualRecords = cvRecords.filter((r: any) =>
-        type === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
+        type === "female" ? r.type === "female" : isMaleType(String(r.type || ""))
       );
       if (manualRecords.length > 0) {
         const avgCv = manualRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / manualRecords.length;
@@ -193,7 +193,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
       }
       // Fallback: stand_cv_records
       const scvRecords = standCvRecords.filter((r: any) =>
-        type === "female" ? r.type === "female" : (r.type === "male" || r.type === "male_1" || r.type === "male_2")
+        type === "female" ? r.type === "female" : isMaleType(String(r.type || ""))
       );
       if (scvRecords.length > 0) {
         const avgCv = scvRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / scvRecords.length;
@@ -218,7 +218,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
 
     for (const type of ["female", "male"] as const) {
       const manualRecords = cvRecords.filter((r: any) =>
-        type === "female" ? r.type === "female" : (r.type === "male_1" || r.type === "male_2" || r.type === "male")
+        type === "female" ? r.type === "female" : isMaleType(String(r.type || ""))
       );
       if (manualRecords.length > 0) {
         const avgCv = manualRecords.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / manualRecords.length;
@@ -258,7 +258,7 @@ export default function PlantingDashboard({ plans, actuals, cvPoints, cvRecords,
       } else {
         // Fallback to stand_cv_records
         const scvRecs = standCvRecords.filter((r: any) =>
-          type === "female" ? r.type === "female" : (r.type === "male" || r.type === "male_1" || r.type === "male_2")
+          type === "female" ? r.type === "female" : isMaleType(String(r.type || ""))
         );
         if (scvRecs.length > 0) {
           const avgCv = scvRecs.reduce((s: number, r: any) => s + Number(r.cv_percent), 0) / scvRecs.length;

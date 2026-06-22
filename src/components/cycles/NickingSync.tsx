@@ -113,13 +113,25 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
     },
   });
 
-  const malePlans = allPlans.filter((p: any) => p.type === "male");
+  const malePlans = allPlans.filter((p: any) => String(p.type || "").startsWith("male"));
   const femalePlans = allPlans.filter((p: any) => p.type === "female");
-  const maleCount = Math.max(1, Math.min(3, malePlans.length));
+  const maleCount = malePlans.length > 0 ? Math.max(
+    1,
+    Math.min(
+      3,
+      ...malePlans.map((p: any) => {
+        const suffix = String(p.type || "").match(/male_(\d+)/)?.[1];
+        return suffix ? Number(suffix) : Number(p.planting_order || 1);
+      }),
+    ),
+  ) : 1;
   const femalePlantingDate = femalePlans.length > 0 ? femalePlans[0].planned_date : null;
   const malePlantingDates = useMemo(() => {
     const map: Record<string, string> = {};
-    malePlans.forEach((p: any, i: number) => { map[`male_${i + 1}`] = p.planned_date; });
+    malePlans.forEach((p: any, i: number) => {
+      const key = p.type === "male" ? `male_${p.planting_order || i + 1}` : p.type;
+      map[key] = p.planned_date;
+    });
     return map;
   }, [malePlans]);
 

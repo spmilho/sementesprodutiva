@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useOfflineSyncContext } from "@/components/Layout";
-import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, getPlantingTypesForRatio } from "./planting-utils";
+import { PLANTING_TYPES, getPlantingTypeInfo, isFemaleType, isMaleType, getPlantingTypesForRatio } from "./planting-utils";
 
 interface Props {
   cycleId: string;
@@ -70,13 +70,16 @@ export default function PlantingPlanSection({ cycleId, orgId, plans, glebas, see
   const filteredLots = useMemo(() => {
     if (!watchType) return [];
     const isFem = isFemaleType(watchType);
-    return seedLots.filter((l: any) => isFem ? l.parent_type === "female" : l.parent_type === "male");
+    return seedLots.filter((l: any) => {
+      if (isFem) return l.parent_type === "female";
+      return isMaleType(String(l.parent_type || "")) && (!l.designated_male_planting || l.designated_male_planting === "any" || l.designated_male_planting === watchType);
+    });
   }, [watchType, seedLots]);
 
   const filteredGlebas = useMemo(() => {
     if (!watchType) return glebas;
     const isFem = isFemaleType(watchType);
-    return glebas.filter((g: any) => isFem ? g.parent_type === "female" || !g.parent_type : g.parent_type === "male" || !g.parent_type);
+    return glebas.filter((g: any) => isFem ? g.parent_type === "female" || !g.parent_type : isMaleType(String(g.parent_type || "")) || !g.parent_type);
   }, [watchType, glebas]);
 
   const handleLotChange = (lotId: string) => {

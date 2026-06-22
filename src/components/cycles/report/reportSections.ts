@@ -18,6 +18,14 @@ function fmtNum(n: number | null | undefined, dec = 1): string {
   return n.toFixed(dec).replace(".", ",");
 }
 
+function typeLabel(t: string | null | undefined): string {
+  if (t === "female") return "Fêmea";
+  if (t === "male_1" || t === "male") return "Macho 1";
+  if (t === "male_2") return "Macho 2";
+  if (t === "male_3") return "Macho 3";
+  return t || "—";
+}
+
 function drawHeader(doc: jsPDF, data: ReportData) {
   const c = data.cycle;
   const s = data.orgSettings;
@@ -352,14 +360,6 @@ export function drawPlanting(doc: jsPDF, data: ReportData) {
   drawHeader(doc, data);
   let y = sectionTitle(doc, "Plantio Realizado", MARGIN.top);
 
-  const typeLabel = (t: string) => {
-    if (t === "female") return "Fêmea";
-    if (t === "male_1" || t === "male") return "Macho 1";
-    if (t === "male_2") return "Macho 2";
-    if (t === "male_3") return "Macho 3";
-    return t;
-  };
-
   const body = data.plantingActual.map((p: any) => {
     const glebaName = p.pivot_glebas?.name || "—";
     const cv = p.cv_percent;
@@ -418,7 +418,7 @@ export function drawPlanting(doc: jsPDF, data: ReportData) {
     y = subTitle(doc, "Stand de Plantas", y);
 
     const scBody = data.standCounts.map((sc: any) => [
-      sc.parent_type === "female" ? "Fêmea" : "Macho",
+      typeLabel(sc.parent_type),
       sc.pivot_glebas?.name || "—",
       sc.count_type || "—",
       fmtDate(sc.count_date),
@@ -523,7 +523,7 @@ export function drawNicking(doc: jsPDF, data: ReportData) {
   if (data.nickingMilestones.length > 0) {
     const body = data.nickingMilestones.map((m: any) => {
       const fp = m.nicking_fixed_points;
-      const parentLabel = fp?.parent_type === "female" ? "Fêmea" : "Macho";
+      const parentLabel = typeLabel(fp?.parent_type || m.parent_type || "");
       const rows: string[][] = [];
       if (m.anthesis_start_date) rows.push([parentLabel, "Início Antese", fmtDate(m.anthesis_start_date), "—", fp?.name || "—"]);
       if (m.anthesis_50pct_date) rows.push([parentLabel, "50% Antese", fmtDate(m.anthesis_50pct_date), "—", fp?.name || "—"]);
