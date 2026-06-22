@@ -18,6 +18,14 @@ function fmtNum(n: number | null | undefined, dec = 1): string {
   return n.toFixed(dec).replace(".", ",");
 }
 
+function typeLabel(t: string | null | undefined): string {
+  if (t === "female") return "Fêmea";
+  if (t === "male_1" || t === "male") return "Macho 1";
+  if (t === "male_2") return "Macho 2";
+  if (t === "male_3") return "Macho 3";
+  return t || "—";
+}
+
 function drawHeader(doc: jsPDF, data: ReportData) {
   const c = data.cycle;
   const s = data.orgSettings;
