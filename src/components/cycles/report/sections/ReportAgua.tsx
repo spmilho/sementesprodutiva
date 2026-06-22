@@ -136,9 +136,10 @@ function fmtDateFromIso(iso: string | null | undefined): string {
   return `${d}/${m}`;
 }
 
-function normalizeParent(tipo: string): "Fêmea" | "Macho 1" | "Macho 2" | "other" {
+function normalizeParent(tipo: string): "Fêmea" | "Macho 1" | "Macho 2" | "Macho 3" | "other" {
   const t = tipo.toLowerCase();
   if (t.includes("fêmea") || t.includes("femea")) return "Fêmea";
+  if (t.includes("macho 3") || t.includes("male_3")) return "Macho 3";
   if (t.includes("macho 2")) return "Macho 2";
   if (t.includes("macho")) return "Macho 1";
   return "other";
