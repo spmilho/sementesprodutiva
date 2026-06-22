@@ -418,7 +418,7 @@ export function drawPlanting(doc: jsPDF, data: ReportData) {
     y = subTitle(doc, "Stand de Plantas", y);
 
     const scBody = data.standCounts.map((sc: any) => [
-      sc.parent_type === "female" ? "Fêmea" : "Macho",
+      typeLabel(sc.parent_type),
       sc.pivot_glebas?.name || "—",
       sc.count_type || "—",
       fmtDate(sc.count_date),
@@ -523,7 +523,7 @@ export function drawNicking(doc: jsPDF, data: ReportData) {
   if (data.nickingMilestones.length > 0) {
     const body = data.nickingMilestones.map((m: any) => {
       const fp = m.nicking_fixed_points;
-      const parentLabel = fp?.parent_type === "female" ? "Fêmea" : "Macho";
+      const parentLabel = typeLabel(fp?.parent_type || m.parent_type || "");
       const rows: string[][] = [];
       if (m.anthesis_start_date) rows.push([parentLabel, "Início Antese", fmtDate(m.anthesis_start_date), "—", fp?.name || "—"]);
       if (m.anthesis_50pct_date) rows.push([parentLabel, "50% Antese", fmtDate(m.anthesis_50pct_date), "—", fp?.name || "—"]);
