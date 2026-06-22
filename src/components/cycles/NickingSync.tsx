@@ -115,7 +115,7 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
 
   const malePlans = allPlans.filter((p: any) => String(p.type || "").startsWith("male"));
   const femalePlans = allPlans.filter((p: any) => p.type === "female");
-  const maleCount = Math.max(
+  const maleCount = malePlans.length > 0 ? Math.max(
     1,
     Math.min(
       3,
@@ -124,7 +124,7 @@ export default function NickingSync({ cycleId, orgId, contractNumber, pivotName,
         return suffix ? Number(suffix) : Number(p.planting_order || 1);
       }),
     ),
-  );
+  ) : 1;
   const femalePlantingDate = femalePlans.length > 0 ? femalePlans[0].planned_date : null;
   const malePlantingDates = useMemo(() => {
     const map: Record<string, string> = {};
