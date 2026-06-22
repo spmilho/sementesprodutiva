@@ -360,14 +360,6 @@ export function drawPlanting(doc: jsPDF, data: ReportData) {
   drawHeader(doc, data);
   let y = sectionTitle(doc, "Plantio Realizado", MARGIN.top);
 
-  const typeLabel = (t: string) => {
-    if (t === "female") return "Fêmea";
-    if (t === "male_1" || t === "male") return "Macho 1";
-    if (t === "male_2") return "Macho 2";
-    if (t === "male_3") return "Macho 3";
-    return t;
-  };
-
   const body = data.plantingActual.map((p: any) => {
     const glebaName = p.pivot_glebas?.name || "—";
     const cv = p.cv_percent;
