@@ -14,6 +14,14 @@ import { PivotGleba, METHOD_LABELS, POSITION_LABELS, GROWTH_STAGE_LABELS } from 
 import { getMoistureStatusLabel } from "./utils";
 import { toast } from "sonner";
 
+const parentLabel = (type?: string | null) => {
+  if (type === "female") return "Fêmea";
+  if (type === "male_1" || type === "male") return "Macho 1";
+  if (type === "male_2") return "Macho 2";
+  if (type === "male_3") return "Macho 3";
+  return "Macho";
+};
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -149,7 +157,7 @@ export default function MoistureSampleForm({ open, onOpenChange, glebas, target,
                 <SelectContent>
                   {glebas.map((g) => (
                     <SelectItem key={g.id} value={g.id}>
-                      {g.name} — {g.area_ha ?? "?"} ha — {g.parent_type === "female" ? "Fêmea" : "Macho"}
+                      {g.name} — {g.area_ha ?? "?"} ha — {parentLabel(g.parent_type)}
                     </SelectItem>
                   ))}
                   <SelectItem value="__none__">Área geral (sem gleba específica)</SelectItem>
