@@ -84,6 +84,20 @@ const TS_BADGES: Record<string, { label: string; emoji: string; color: string }>
   pending: { label: "TS pendente", emoji: "⏳", color: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300" },
 };
 
+const PARENT_LABELS: Record<string, string> = {
+  female: "Fêmea",
+  male: "Macho",
+  male_1: "Macho 1",
+  male_2: "Macho 2",
+  male_3: "Macho 3",
+};
+
+const getParentLabel = (parentType?: string | null, designatedMale?: string | null) => {
+  if (parentType === "female") return "Fêmea";
+  if (designatedMale && designatedMale !== "any") return PARENT_LABELS[designatedMale] || "Macho";
+  return PARENT_LABELS[parentType || ""] || "Macho";
+};
+
 const PRODUCT_TYPES = [
   { value: "fungicide", label: "Fungicida" },
   { value: "insecticide", label: "Inseticida" },
