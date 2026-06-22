@@ -407,7 +407,13 @@ export default function ReportAgua({ data }: { data: any }) {
             <div className="kpi-label">GDU Macho 2</div>
           </div>
         )}
-        {gduFemaleTotal == null && gduMale1Total == null && gduMale2Total == null && (
+        {gduMale3Total != null && (
+          <div className="kpi-card purple">
+            <div className="kpi-value">{gduMale3Total}</div>
+            <div className="kpi-label">GDU Macho 3</div>
+          </div>
+        )}
+        {gduFemaleTotal == null && gduMale1Total == null && gduMale2Total == null && gduMale3Total == null && (
           <div className="kpi-card orange">
             <div className="kpi-value">{totalGdu ?? "—"}</div>
             <div className="kpi-label">GDU acumulado</div>
@@ -501,6 +507,7 @@ export default function ReportAgua({ data }: { data: any }) {
       {renderGduChart("GDU Acumulado — Fêmea", gduFemaleData, femaleDates, "gdu_f", FEMALE_COLORS)}
       {renderGduChart("GDU Acumulado — Macho 1", gduMale1Data, male1Dates, "gdu_m1", MALE1_COLORS)}
       {renderGduChart("GDU Acumulado — Macho 2", gduMale2Data, male2Dates, "gdu_m2", MALE2_COLORS)}
+      {renderGduChart("GDU Acumulado — Macho 3", gduMale3Data, male3Dates, "gdu_m3", MALE3_COLORS)}
 
       {hasRadiation && (
         <div className="chart-container">
