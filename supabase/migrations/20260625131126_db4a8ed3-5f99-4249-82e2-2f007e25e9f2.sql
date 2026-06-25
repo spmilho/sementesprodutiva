@@ -1,0 +1,2 @@
+ALTER TABLE public.planting_cv_records DROP CONSTRAINT IF EXISTS planting_cv_records_type_check;
+ALTER TABLE public.planting_cv_records ADD CONSTRAINT planting_cv_records_type_check CHECK (type = ANY (ARRAY['female'::text, 'male'::text, 'male_1'::text, 'male_2'::text, 'male_3'::text]));
