@@ -157,7 +157,8 @@ export default function ActualHarvest({ cycleId, orgId, femaleArea, glebas, sche
   // Dashboard stats
   const stats = useMemo(() => {
     const totalArea = records.reduce((s, r) => s + Number(r.area_harvested_ha), 0);
-    const totalTons = records.reduce((s, r) => s + Number(r.total_weight_tons), 0);
+    const totalKg = records.reduce((s, r) => s + Number(r.total_weight_tons), 0);
+    const totalTons = totalKg / 1000;
     const totalLoads = records.reduce((s, r) => s + r.loads_count, 0);
     const avgTonPerLoad = totalLoads > 0 ? totalTons / totalLoads : 0;
     const progressPct = femaleArea > 0 ? (totalArea / femaleArea) * 100 : 0;
