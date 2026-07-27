@@ -119,6 +119,17 @@ export function useManejoMutations(cycleId: string, orgId: string) {
     onSuccess: () => invalidate(),
   });
 
+  const updateInput = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<CropInput> }) => {
+      const { error } = await (supabase as any)
+        .from("crop_inputs")
+        .update(patch)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => invalidate(),
+  });
+
   const deleteInput = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any)
@@ -172,5 +183,5 @@ export function useManejoMutations(cycleId: string, orgId: string) {
     onSuccess: () => invalidate(),
   });
 
-  return { upsertInputs, insertManual, deleteInput, saveImportRecord, deleteImportRecord, deleteAllInputs };
+  return { upsertInputs, insertManual, updateInput, deleteInput, saveImportRecord, deleteImportRecord, deleteAllInputs };
 }

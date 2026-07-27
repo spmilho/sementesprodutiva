@@ -1,17 +1,21 @@
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Pencil, Trash2 } from "lucide-react";
 import { CropInput, INPUT_TYPE_CONFIG, STATUS_CONFIG } from "./types";
 import { format, parseISO } from "date-fns";
 
 interface Props {
   inputs: CropInput[];
+  onEdit?: (input: CropInput) => void;
+  onDelete?: (input: CropInput) => void;
 }
 
-export default function ManejoTable({ inputs }: Props) {
+export default function ManejoTable({ inputs, onEdit, onDelete }: Props) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -66,6 +70,7 @@ export default function ManejoTable({ inputs }: Props) {
               <TableHead className="text-xs">Apl.</TableHead>
               <TableHead className="text-xs">Evento</TableHead>
               <TableHead className="text-xs">Status</TableHead>
+              <TableHead className="text-xs text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -94,12 +99,26 @@ export default function ManejoTable({ inputs }: Props) {
                       {statusCfg.icon} {statusCfg.label}
                     </Badge>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      {onEdit && (
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onEdit(r)} title="Editar">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {onDelete && (
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(r)} title="Excluir">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
               );
             })}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-sm text-muted-foreground py-8">
+                <TableCell colSpan={11} className="text-center text-sm text-muted-foreground py-8">
                   Nenhum registro encontrado.
                 </TableCell>
               </TableRow>
