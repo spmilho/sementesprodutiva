@@ -183,5 +183,5 @@ export function useManejoMutations(cycleId: string, orgId: string) {
     onSuccess: () => invalidate(),
   });
 
-  return { upsertInputs, insertManual, deleteInput, saveImportRecord, deleteImportRecord, deleteAllInputs };
+  return { upsertInputs, insertManual, updateInput, deleteInput, saveImportRecord, deleteImportRecord, deleteAllInputs };
 }
