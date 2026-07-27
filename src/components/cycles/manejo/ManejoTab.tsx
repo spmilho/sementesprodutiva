@@ -27,10 +27,11 @@ export default function ManejoTab({
   const { data: inputs = [], isLoading } = useCropInputs(cycleId);
   const { data: imports = [] } = useCropInputImports(cycleId);
   const { data: plantingDate } = usePlantingDate(cycleId);
-  const { upsertInputs, insertManual, saveImportRecord, deleteImportRecord, deleteAllInputs } = useManejoMutations(cycleId, orgId);
+  const { upsertInputs, insertManual, updateInput, deleteInput, saveImportRecord, deleteImportRecord, deleteAllInputs } = useManejoMutations(cycleId, orgId);
 
   const [importOpen, setImportOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
+  const [editing, setEditing] = useState<CropInput | null>(null);
   const [rawData, setRawData] = useState<any[][]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [fileName, setFileName] = useState("");
