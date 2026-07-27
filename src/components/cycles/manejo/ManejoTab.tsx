@@ -112,16 +112,35 @@ export default function ManejoTab({
         input.growth_stage_at_application = getDapRange(dap);
       }
     }
-    input.created_by = user?.id;
 
     try {
-      await insertManual.mutateAsync(input);
-      toast.success("Registro salvo!");
+      if (editing) {
+        await updateInput.mutateAsync({ id: editing.id, patch: input });
+        toast.success("Registro atualizado!");
+      } else {
+        input.created_by = user?.id;
+        await insertManual.mutateAsync(input);
+        toast.success("Registro salvo!");
+      }
       setManualOpen(false);
+      setEditing(null);
     } catch (err: any) {
       toast.error(err.message);
     }
-  }, [plantingDate, user, insertManual]);
+  }, [plantingDate, user, insertManual, updateInput, editing]);
+
+  const handleEdit = useCallback((input: CropInput) => {
+    setEditing(input);
+    setManualOpen(true);
+  }, []);
+
+  const handleDelete = useCallback((input: CropInput) => {
+    if (!confirm(`Excluir "${input.product_name}"?`)) return;
+    deleteInput.mutate(input.id, {
+      onSuccess: () => toast.success("Registro excluído"),
+      onError: (err: any) => toast.error(err.message || "Erro ao excluir"),
+    });
+  }, [deleteInput]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
