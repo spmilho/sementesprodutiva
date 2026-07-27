@@ -207,7 +207,7 @@ export default function ManejoTab({
             <ManejoOperationsView inputs={inputs} plantingDate={plantingDate} />
           </TabsContent>
           <TabsContent value="tabela">
-            <ManejoTable inputs={inputs} />
+            <ManejoTable inputs={inputs} onEdit={handleEdit} onDelete={handleDelete} />
           </TabsContent>
           <TabsContent value="graficos">
             <ManejoCharts inputs={inputs} />
