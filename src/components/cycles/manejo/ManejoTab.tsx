@@ -239,9 +239,10 @@ export default function ManejoTab({
       {manualOpen && (
         <ManejoManualDialog
           open={manualOpen}
-          onClose={() => setManualOpen(false)}
+          onClose={() => { setManualOpen(false); setEditing(null); }}
           onSave={handleManualSave}
-          saving={insertManual.isPending}
+          saving={insertManual.isPending || updateInput.isPending}
+          initial={editing}
         />
       )}
     </div>
