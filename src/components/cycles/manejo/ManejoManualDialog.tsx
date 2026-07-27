@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,22 +12,48 @@ interface Props {
   onClose: () => void;
   onSave: (input: Partial<CropInput>) => void;
   saving: boolean;
+  initial?: CropInput | null;
 }
 
-export default function ManejoManualDialog({ open, onClose, onSave, saving }: Props) {
-  const [form, setForm] = useState({
-    execution_date: new Date().toISOString().split("T")[0],
-    input_type: "insecticide",
-    product_name: "",
-    active_ingredient: "",
-    dose_per_ha: "",
-    unit: "L",
-    qty_recommended: "",
-    qty_applied: "",
-    event_type: "",
-    status: "applied" as "applied" | "recommended" | "in_progress",
-    notes: "",
-  });
+const emptyForm = {
+  execution_date: new Date().toISOString().split("T")[0],
+  input_type: "insecticide",
+  product_name: "",
+  active_ingredient: "",
+  dose_per_ha: "",
+  unit: "L",
+  qty_recommended: "",
+  qty_applied: "",
+  event_type: "",
+  status: "applied" as "applied" | "recommended" | "in_progress",
+  notes: "",
+};
+
+export default function ManejoManualDialog({ open, onClose, onSave, saving, initial }: Props) {
+  const [form, setForm] = useState(emptyForm);
+
+  useEffect(() => {
+    if (!open) return;
+    if (initial) {
+      setForm({
+        execution_date: initial.execution_date || initial.recommendation_date || new Date().toISOString().split("T")[0],
+        input_type: initial.input_type || "insecticide",
+        product_name: initial.product_name || "",
+        active_ingredient: initial.active_ingredient || "",
+        dose_per_ha: initial.dose_per_ha != null ? String(initial.dose_per_ha) : "",
+        unit: initial.unit || "L",
+        qty_recommended: initial.qty_recommended != null ? String(initial.qty_recommended) : "",
+        qty_applied: initial.qty_applied != null ? String(initial.qty_applied) : "",
+        event_type: initial.event_type || "",
+        status: (initial.status as any) || "applied",
+        notes: initial.notes || "",
+      });
+    } else {
+      setForm(emptyForm);
+    }
+  }, [open, initial]);
+
+  const isEdit = !!initial;
 
   const handleSave = () => {
     if (!form.product_name || !form.execution_date) return;
@@ -43,7 +69,7 @@ export default function ManejoManualDialog({ open, onClose, onSave, saving }: Pr
       event_type: form.event_type || null,
       status: form.status,
       notes: form.notes || null,
-      source: "manual",
+      ...(isEdit ? {} : { source: "manual" }),
     });
   };
 
@@ -51,7 +77,7 @@ export default function ManejoManualDialog({ open, onClose, onSave, saving }: Pr
     <Dialog open={open} onOpenChange={() => !saving && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Registro Manual de Insumo</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar Insumo" : "Registro Manual de Insumo"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
