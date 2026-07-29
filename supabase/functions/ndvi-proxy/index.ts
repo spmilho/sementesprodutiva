@@ -61,6 +61,13 @@ Deno.serve(async (req) => {
     const data = await res.json();
 
     if (!res.ok) {
+      // Upstream Agromonitoring often 500s on get_stats for unavailable
+      // indices/dates. Return null so the client can skip gracefully.
+      if (action === "get_stats") {
+        return new Response(JSON.stringify(null), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       return new Response(JSON.stringify({ error: JSON.stringify(data) }), {
         status: res.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
